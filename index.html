@@ -1,3 +1,5 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><script>window.LIFEOS_PUBLIC={"projects":[{"blocks":[],"body":"","color":"orange","cover":"","created":"2026-10-31","emoji":"🍷","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"1. AA 2. Alcohol supplements 3. K w therapy 4. Gatekeep his K","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Make Substance plan","id":"pmvx4ascnxq3ax"},{"body":"","color":"red","cover":"","created":"2026-11-02","emoji":"🗺️","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Emotional map of my life","id":"pmvz5zlbicbcr8"},{"body":"","color":"orange","cover":"","created":"2026-11-02","emoji":"","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"Maybe tell Katie","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Promissory note for house","id":"pmvz60yn96kxsg"}],"areas":[],"pages":[],"title":"1"};</script>
+</head><body>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -608,6 +610,22 @@ td .tags { flex-wrap: nowrap; overflow: hidden; }
 .pub-toggle input:checked + .pub-switch::after { transform: translateX(16px); background: var(--accent); }
 .pub-toggle input:focus-visible + .pub-switch { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pub-hint { font-size: 12px; color: var(--muted); }
+/* One-click switches shown wherever an entry appears */
+.qt { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 999px; padding: 2px 9px 2px 5px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; line-height: 18px; vertical-align: middle; }
+.qt:hover { border-color: var(--panel-line); color: var(--ink); }
+.qt-sw { width: 24px; height: 14px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.qt-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+.qt[aria-pressed="true"] { color: var(--accent); border-color: var(--forest); }
+.qt[aria-pressed="true"] .qt-sw { background: var(--forest); }
+.qt[aria-pressed="true"] .qt-sw::after { transform: translateX(10px); background: var(--accent); }
+.card-qt { margin-top: 2px; }
+.post-meta .qt { margin-left: auto; }
+.prop-btn.qt-prop { flex-direction: row; align-items: center; gap: 8px; }
+.prop-btn.qt-prop .qt-txt { display: inline-flex; flex-direction: column; gap: 1px; }
+.prop-btn.qt-prop[aria-pressed="true"] { border-color: var(--forest); }
+.prop-btn.qt-prop[aria-pressed="true"] .qt-sw { background: var(--forest); }
+.prop-btn.qt-prop[aria-pressed="true"] .qt-sw::after { transform: translateX(10px); background: var(--accent); }
+.prop-btn.qt-prop[aria-pressed="true"] .pb-v { color: var(--accent); }
 
 /* Entry window: Back, Delete, Cancel and Save stay pinned at the top while you scroll */
 .dialog { padding-top: 0; }
@@ -764,7 +782,7 @@ td .tags { flex-wrap: nowrap; overflow: hidden; }
 @media (max-width: 600px) { .db-table table { width: 100% !important; } .db-row td[data-label]:not(:first-child)::before { display: none; } .db-row td { display: flex !important; align-items: center; gap: 6px; } }
 #view-planner { max-width: 1240px; }
 .is-public #siteBtn, .is-public #siteBuild, .is-public #easyBtn, .is-public [data-r="add"], .is-public .tl-add, .is-public #deleteBtn, .is-public #archiveBtn, .is-public #editForm [type=submit], .is-public #bodyToggle, .is-public .att-tools, .is-public .att-link, .is-public #ntMeta, .is-public .nt-add, .is-public .md-hint, .is-public .pub-hint, .is-public #notice, .is-public .emo-auto { display: none !important; }
-.is-public .att-list .ax, .is-public [data-pk="public"], .is-public [data-propbtn="public"], .is-public #vNewNote, .is-public #vNewFolder, .is-public #vEdit, .is-public .ghint, .is-public [data-r="resetCols"] { display: none !important; }
+.is-public .att-list .ax, .is-public #plSubs, .is-public .pl-add, .is-public .pl-rchip, .is-public .pl-note, .is-public [data-pk="public"], .is-public [data-propbtn="public"], .is-public #vNewNote, .is-public #vNewFolder, .is-public #vEdit, .is-public .ghint, .is-public [data-r="resetCols"] { display: none !important; }
 .is-public .db-selwrap, .is-public .sub-tasks input, .is-public .post-tasks input { pointer-events: none; }
 .is-public #edFields .pf, .is-public #edFields .prop-bar, .is-public #ed-emoji, .is-public #ed-task-blank { pointer-events: none; }
 .is-public .att:not(:has(.att-list a)) { display: none; }
@@ -1006,7 +1024,6 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 .dialog[class*="ec-"] #ed-title { border-color: color-mix(in srgb, var(--ec) 45%, var(--line)); }
 .vm-note[class*="ec-"] .vm-title .t-main { color: color-mix(in srgb, var(--ec) 55%, var(--ink)); }
 </style>
-<script>window.LIFEOS_PUBLIC={"projects":[{"body":"","color":"orange","cover":"","created":"2026-10-31","emoji":"🍷","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"status":"Not started","subtitle":"1. AA 2. Alcohol supplements 3. K w therapy 4. Gatekeep his K","tags":[],"tasks":[],"title":"Make Substance plan","id":"pmvx4ascnxq3ax"},{"body":"","color":"red","cover":"","created":"2026-11-02","emoji":"🗺️","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"status":"Not started","subtitle":"","tags":[],"tasks":[],"title":"Emotional map of my life","id":"pmvz5zlbicbcr8"},{"body":"","color":"orange","cover":"","created":"2026-11-02","emoji":"","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"status":"Not started","subtitle":"Maybe tell Katie","tags":[],"tasks":[],"title":"Promissory note for house","id":"pmvz60yn96kxsg"}],"areas":[],"pages":[],"title":"1"};</script>
 </head>
 <body>
 <header class="appbar">
@@ -1587,6 +1604,29 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     catch (err) { notice(err.message); renderAll(); }
   }
 
+  // ---------- One-click switches ----------
+  // On/off properties (like Show on website) flip with a single click wherever the entry is shown.
+  const qtLabel = (P, on) => P.key === "public" ? (on ? "On website" : "Not on website") : P.label;
+  const qtHtml = (e, type, only) => {
+    if (PUBLIC || !e || e._pub) return ""; const T = TYPE[type]; if (!T) return "";
+    const ps = only ? [only] : T.props.filter(p => p.kind === "check");
+    return ps.map(p => { const on = K.check.on(e, p); return `<button type="button" class="qt" data-qt="${esc(p.key)}" data-qttype="${esc(type)}" data-qtid="${esc(e.id)}" aria-pressed="${on}" title="${esc(p.label)}: click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${esc(qtLabel(p, on))}</span></button>`; }).join("");
+  };
+  async function quickToggle(type, id, key) {
+    const T = TYPE[type], P = T && T.props.find(p => p.key === key && p.kind === "check");
+    const e = P && data[type].find(x => x.id === id); if (!e || e._pub || PUBLIC) return;
+    const val = !K.check.on(e, P);
+    document.querySelectorAll("[data-qt]").forEach(b => { if (b.dataset.qt === key && b.dataset.qtid === id && b.dataset.qttype === type) { b.setAttribute("aria-pressed", String(val)); const l = b.querySelector(".qt-l"); if (l) l.textContent = qtLabel(P, val); b.title = `${P.label}: click to turn ${val ? "off" : "on"}`; } });
+    if (editing && editing.id === id && editing.type === type) { const cb = document.getElementById("ed-" + P.key); if (cb) cb.checked = val; renderPropBar(); }
+    try { await saveEntry(type, { ...e, [P.field]: val, updatedAt: new Date().toISOString() }); }
+    catch (err) { notice(err.message); renderAll(); }
+  }
+  document.addEventListener("click", ev => {
+    const b = ev.target.closest && ev.target.closest("[data-qt]"); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    quickToggle(b.dataset.qttype, b.dataset.qtid, b.dataset.qt);
+  }, true);
+
   // ---------- Property kinds ----------
   // "Scheduled" is a kind of project: it lives in Projects with a Scheduled tag
   const isSched = (e, type) => type === "projects" && !!(e && e.scheduled);
@@ -1752,7 +1792,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       search: () => "",
       filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="chips" data-dyn></div>`,
       sync: (box, f) => { box.querySelector("[data-dyn]").innerHTML = [["yes", "Shown"], ["no", "Not shown"]].map(([k, l]) => `<button type="button" class="chip" aria-pressed="${f.mode === k}" data-act="lmode" data-val="${k}">${l}</button>`).join(""); },
-      cell: (e, P) => K.check.on(e, P) ? '<span class="pub-on">● On website</span>' : '<span style="color:var(--muted)">Not shown</span>',
+      cell: (e, P, T) => (T && qtHtml(e, T.key, P)) || (K.check.on(e, P) ? '<span class="pub-on">● On website</span>' : '<span style="color:var(--muted)">Not shown</span>'),
       editHtml: (P, e) => `<div class="pub-edit"><label class="pub-toggle" for="ed-${P.key}"><input type="checkbox" id="ed-${P.key}"${(e ? K.check.on(e, P) : siteAdd) ? " checked" : ""}><span class="pub-switch" aria-hidden="true"></span><span>${P.label}</span></label><span class="pub-hint">Off unless you turn it on. When "🌐 Add to website" at the top is on, new entries start switched on.</span></div>`,
       read: (P, out) => { out[P.field] = $("ed-" + P.key).checked; },
     },
@@ -2077,7 +2117,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const props = shown().map(c => PROP[c.key]).filter(P => !["title", "text", "image", "check", "color"].includes(P.kind) && hasVal(e, P));
       return `<article class="card${done ? " done" : ""}${ecClass(e)}" data-id="${esc(e.id)}" tabindex="0" aria-label="${esc(e.title || "Untitled")}">
         <div class="card-cover">${e.cover ? `<img src="${esc(e.cover)}" alt="" loading="lazy">` : `<span class="card-initial" aria-hidden="true">${initial}</span>`}</div>
-        <div class="card-body"><div class="card-title">${K.title.cell(e, PROP.title, T)}</div>${props.map(P => `<div class="card-prop" title="${esc(P.label)}">${cardCell(e, P)}</div>`).join("")}</div>
+        <div class="card-body"><div class="card-title">${K.title.cell(e, PROP.title, T)}</div>${props.map(P => `<div class="card-prop" title="${esc(P.label)}">${cardCell(e, P)}</div>`).join("")}${qtHtml(e, T.key) ? `<div class="card-prop card-qt">${qtHtml(e, T.key)}</div>` : ""}</div>
       </article>`;
     };
     function groupedKeys(list) {
@@ -2114,7 +2154,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       return `<article class="post${done ? " done" : ""}${ecClass(e)}" data-id="${esc(e.id)}">
         ${e.cover ? `<div class="post-cover"><img src="${esc(e.cover)}" alt="" loading="lazy"></div>` : ""}
         <div class="post-inner">
-          <div class="post-meta"><i class="tdot t-${T.key}" aria-hidden="true"></i>${esc(T.singular[0].toUpperCase() + T.singular.slice(1))}${postDate(e) ? ` · ${esc(postDate(e))}` : ""}</div>
+          <div class="post-meta"><i class="tdot t-${T.key}" aria-hidden="true"></i>${esc(T.singular[0].toUpperCase() + T.singular.slice(1))}${postDate(e) ? ` · ${esc(postDate(e))}` : ""}${qtHtml(e, T.key)}</div>
           <button type="button" class="post-title" data-post="${esc(e.id)}">${isPinned(e) ? `<span class="pinned" title="Pinned: tagged Now">${PIN_SVG}</span> ` : ""}${done ? '<span class="check" aria-label="Done">✓</span> ' : ""}${emo(e, T.key)} <span class="t-main">${esc(e.title || "Untitled")}</span>${e.subtitle ? `<span class="t-sub">${esc(e.subtitle)}</span>` : ""}${done && T.archive ? ' <span class="done-badge">Done</span>' : ""}${isSched(e, T.key) ? " " + SCHED_TAG : ""}</button>
           ${props.length ? `<div class="post-props">${props.map(P => `<span title="${esc(P.label)}">${cardCell(e, P)}</span>`).join("")}</div>` : ""}
           ${showTasks ? `<ul class="tasklist post-tasks">${taskList(e).map(t => taskRowHtml(t, { entry: e.id, type: T.key, disabled: !!e._pub })).join("")}</ul>` : ""}
@@ -2478,6 +2518,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   $("edFields").addEventListener("keydown", e => { if (e.target.id === "ed-newlink-t") { if (e.key === "Enter") { e.preventDefault(); createLinked(); } if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); $("ed-newlink").hidden = true; } } });
   $("edFields").addEventListener("click", e => {
     const pb = e.target.closest("[data-propbtn]");
+    if (pb && pb.dataset.propqt) {
+      const key = pb.dataset.propbtn, exists = data[editing.type].some(x => x.id === editing.id);
+      if (exists && !editing.ro) quickToggle(editing.type, editing.id, key);
+      else if (!editing.ro) { const cb = document.getElementById("ed-" + key); if (cb) cb.checked = !cb.checked; renderPropBar(); }
+      return;
+    }
     if (pb) { const box = $("edFields").querySelector(`[data-pk="${pb.dataset.propbtn}"]`); if (box) { box.classList.toggle("open"); renderPropBar(); if (box.classList.contains("open")) { const f = box.querySelector("input:not([type=hidden]):not([hidden]), select, textarea, button:not([disabled])"); if (f && f.type !== "file") f.focus({ preventScroll: true }); box.scrollIntoView({ block: "nearest", behavior: "smooth" }); } } return; }
     refreshPropBar();
     if (e.target.id === "ed-newlink-go") { createLinked(); return; }
@@ -2724,7 +2770,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const propColor = (P) => { if (P.kind !== "color") return ""; const s = propSummary(P).toLowerCase().split(" ")[0]; return COLORS.includes(s) ? s : "white"; };
   function renderPropBar() {
     const bar = $("propBar"); if (!bar || !editing) return; const T = TYPE[editing.type];
-    bar.innerHTML = T.props.filter(P => P.kind !== "title").map(P => { const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
+    bar.innerHTML = T.props.filter(P => P.kind !== "title").map(P => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
       return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; }).join("");
   }
   var propBarTimer = null;
@@ -3210,6 +3256,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         ${hasStatus(T) ? `<span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>` : ""}
         ${tagsOf(e).length ? K.tags.cell(e) : ""}
         <label class="vm-folder">Folder <select id="vFolderSel"${ro || VAULT_READONLY ? " disabled" : ""}><option value="">${esc(T.label)} (default)</option>${folderOptions(e.folder || "")}</select></label>
+        ${qtHtml(e, x.type)}
         <button type="button" class="btn vm-props" id="vProps">Properties</button>
       </div>
       ${taskList(e).length ? `<ul class="tasklist vm-tasks">${taskList(e).map(t => taskRowHtml(t, { entry: e.id, type: x.type, disabled: ro })).join("")}</ul>` : ""}
@@ -3450,6 +3497,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function renderPlanner() {
     if (!$("plBody") || $("view-planner").hidden) return;
     document.querySelectorAll("[data-plsub]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.plsub === pl.sub)));
+    if (PUBLIC) pl.sub = "calendar";
     const isRt = pl.sub === "routines", isWk = pl.sub === "week";
     $("plBar").hidden = isRt || isWk; $("plBody").hidden = isRt || isWk; $("rtBody").hidden = !isRt; $("wkBody").hidden = !isWk;
     if (isRt) { renderRoutines(); return; }
@@ -3889,7 +3937,8 @@ Don't invent appointments or facts that aren't listed.`);
     if (e.target.closest("[data-rtremove]") && plMenuFor && plMenuFor.kind === "routine") { const f = plMenuFor, x = rtPlans(rtById(f.rid)).find(y => y.id === f.pid); plCloseMenu(); await rtRemovePlan(f.rid, f.pid); if (x && x.slot) setNote(x.date, x.slot, "rt-" + f.rid, ""); return; }
     if (e.target.closest("[data-rtgo]")) { plCloseMenu(); pl.sub = "routines"; savePl(); renderPlanner(); return; }
     const add = e.target.closest("[data-pladd]"); if (add) { const [d, s] = add.dataset.pladd.split("|"); plSlotMenu(d, s, add); return; }
-    const ch = e.target.closest(".pl-chip"); if (ch) { plEntryMenu(ch.dataset.pltype, ch.dataset.plid, ch.dataset.pldate, ch, ch.dataset.plslot || ""); return; }
+    const ch = e.target.closest(".pl-chip"); if (ch && PUBLIC) { openEditor(ch.dataset.pltype, ch.dataset.plid); return; }
+    if (ch) { plEntryMenu(ch.dataset.pltype, ch.dataset.plid, ch.dataset.pldate, ch, ch.dataset.plslot || ""); return; }
     if (!e.target.closest("#plMenu")) plCloseMenu();
   });
   $("view-planner").addEventListener("keydown", async e => {
@@ -4286,11 +4335,11 @@ Don't invent appointments or facts that aren't listed.`);
     obsidian: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5 13 5l-1.5 7L8 14.5 4.5 12 3 5z"/><path d="M8 1.5 6.5 8 8 14.5M3 5l3.5 3L13 5"/></svg>',
   };
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [...(PUBLIC ? [] : [{ key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" }))];
+  const TABS = [{ key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" }))];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
-    const home = PUBLIC ? "projects" : "planner";
+    const home = "planner";
     let v = (location.hash || "#" + home).slice(1);
     if (!TABS.some(t => t.key === v)) v = home;
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v)));
@@ -4377,3 +4426,5 @@ Don't invent appointments or facts that aren't listed.`);
 </script>
 </body>
 </html>
+
+</body></html>

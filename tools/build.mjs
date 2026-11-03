@@ -24,7 +24,7 @@ const readCol = (name) => {
   });
 };
 // Fields that only matter inside LifeOS and never go on the website
-const PRIVATE_FIELDS = ["blocks", "scheduled", "timeStart", "timeEnd", "createdAt", "updatedAt", "archivedFrom", "archivedAt"];
+const PRIVATE_FIELDS = ["createdAt", "updatedAt", "archivedFrom", "archivedAt"];
 const clean = (e) => {
   const o = { ...e };
   PRIVATE_FIELDS.forEach(k => delete o[k]);
