@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LifeOS</title>
+<title>1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
@@ -1006,7 +1006,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 .dialog[class*="ec-"] #ed-title { border-color: color-mix(in srgb, var(--ec) 45%, var(--line)); }
 .vm-note[class*="ec-"] .vm-title .t-main { color: color-mix(in srgb, var(--ec) 55%, var(--ink)); }
 </style>
-<script>window.LIFEOS_PUBLIC={"projects":[],"areas":[],"pages":[],"title":""};</script>
+<script>window.LIFEOS_PUBLIC={"projects":[{"body":"","color":"orange","cover":"","created":"2026-10-31","emoji":"🍷","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"status":"Not started","subtitle":"1. AA 2. Alcohol supplements 3. K w therapy 4. Gatekeep his K","tags":[],"tasks":[],"title":"Make Substance plan","id":"pmvx4ascnxq3ax"}],"areas":[],"pages":[],"title":"1"};</script>
 </head>
 <body>
 <header class="appbar">
@@ -4179,7 +4179,7 @@ Don't invent appointments or facts that aren't listed.`);
     if (sitePushing) return;
     sitePushing = true; sitePushMsg = ""; renderSitePop();
     if (mcpApi === undefined) { try { mcpApi = await window.claude?.use?.("mcp"); } catch (e) { mcpApi = null; } }
-    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude. Your website still updates by itself every evening."; renderSitePop(); return; }
+    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude. Your website still updates by itself once a day."; renderSitePop(); return; }
     try {
       await mcpApi.callTool("Claude Code Remote", "fire_trigger", { trigger_id: SITE_TASK, text: "Manual update requested with the LifeOS 'Update website now' button." }, { cache: false });
       sitePushBad = false; sitePushMsg = "Update started. Your website will show the changes in about 5 minutes; you'll get a notification when it's done.";
@@ -4196,7 +4196,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${list.length ? `<ul class="sp-list">${list.slice(0, 40).map(x => `<li>${esc(x.e.title || "Untitled")}</li>`).join("")}${list.length > 40 ? `<li>…and ${list.length - 40} more</li>` : ""}</ul>` : ""}
       <label class="flabel" for="spTitle">Website title</label>
       <input type="text" id="spTitle" maxlength="80" placeholder="e.g. Maggie's Resources" value="${esc(siteTitle)}">
-      <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself every day at 7:47 PM.</div>
+      <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself once a day, overnight.</div>
       <button type="button" class="btn primary" data-sppush${sitePushing ? " disabled" : ""}>${sitePushing ? "Starting the update…" : "🚀 Update website now"}</button>
       ${sitePushMsg ? `<div class="sp-msg${sitePushBad ? " bad" : ""}">${esc(sitePushMsg)}</div>` : ""}
       <button type="button" class="btn" data-spbuild${list.length ? "" : " disabled"}>⬇ Download website file (backup)</button>

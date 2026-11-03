@@ -4178,7 +4178,7 @@ Don't invent appointments or facts that aren't listed.`);
     if (sitePushing) return;
     sitePushing = true; sitePushMsg = ""; renderSitePop();
     if (mcpApi === undefined) { try { mcpApi = await window.claude?.use?.("mcp"); } catch (e) { mcpApi = null; } }
-    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude. Your website still updates by itself every evening."; renderSitePop(); return; }
+    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude. Your website still updates by itself once a day."; renderSitePop(); return; }
     try {
       await mcpApi.callTool("Claude Code Remote", "fire_trigger", { trigger_id: SITE_TASK, text: "Manual update requested with the LifeOS 'Update website now' button." }, { cache: false });
       sitePushBad = false; sitePushMsg = "Update started. Your website will show the changes in about 5 minutes; you'll get a notification when it's done.";
@@ -4195,7 +4195,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${list.length ? `<ul class="sp-list">${list.slice(0, 40).map(x => `<li>${esc(x.e.title || "Untitled")}</li>`).join("")}${list.length > 40 ? `<li>…and ${list.length - 40} more</li>` : ""}</ul>` : ""}
       <label class="flabel" for="spTitle">Website title</label>
       <input type="text" id="spTitle" maxlength="80" placeholder="e.g. Maggie's Resources" value="${esc(siteTitle)}">
-      <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself every day at 7:47 PM.</div>
+      <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself once a day, overnight.</div>
       <button type="button" class="btn primary" data-sppush${sitePushing ? " disabled" : ""}>${sitePushing ? "Starting the update…" : "🚀 Update website now"}</button>
       ${sitePushMsg ? `<div class="sp-msg${sitePushBad ? " bad" : ""}">${esc(sitePushMsg)}</div>` : ""}
       <button type="button" class="btn" data-spbuild${list.length ? "" : " disabled"}>⬇ Download website file (backup)</button>
