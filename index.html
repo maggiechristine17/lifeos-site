@@ -1073,11 +1073,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbShowPanel" aria-label="Layers columns" hidden>
-    <div class="panel-head"><span class="panel-name">Show</span><span class="panel-tools"><button class="btn ghost" type="button" id="dbShowReset">Reset</button><button class="x" type="button" id="dbShowX" aria-label="Close show">×</button></span></div>
+    <div class="panel-head"><span class="panel-name">Show Properties</span><span class="panel-tools"><button class="btn ghost" type="button" id="dbShowReset">Reset</button><button class="x" type="button" id="dbShowX" aria-label="Close Show Properties">×</button></span></div>
     <div class="hint">Tap a property to show or hide its column. Hold and drag one to change the order, left to right.</div>
     <div class="col-list" id="dbShowList"></div>
   </section>
@@ -1871,7 +1871,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="head-actions">
           <button class="btn toggle" type="button" data-r="tCtl" aria-expanded="false">Filter<span class="badge" data-r="badge" hidden></span></button>
           <button class="btn toggle" type="button" data-r="tSort" aria-expanded="false">Sort<span class="badge" data-r="sbadge" hidden></span></button>
-          <button class="btn toggle" type="button" data-r="tCols" aria-expanded="false"><span data-r="colsLabel">Show</span></button>
+          <button class="btn toggle" type="button" data-r="tCols" aria-expanded="false"><span data-r="colsLabel">Show Properties</span></button>
           <button class="btn primary" type="button" data-r="add">+ New ${T.singular}</button>
         </div>
       </div>
@@ -1888,7 +1888,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="ctl-block"><div class="ctl-title">Sort by <button class="btn ghost" type="button" data-r="sortClear">Clear sorts</button></div><div class="chips" data-r="sort"></div><div class="hint" data-r="sortSum"></div><div class="hint">Click sorts in order of importance: the first is the main sort, the next sorts within it, and so on. Click a chosen sort again to flip it, and a third time to remove it.</div></div>
       </section>
       <section class="panel" data-r="colsPanel" aria-label="${T.label} columns" hidden>
-        <div class="panel-head"><span class="panel-name" data-r="colsName">Show</span><button class="x" type="button" data-r="colsX" aria-label="Close show">×</button></div>
+        <div class="panel-head"><span class="panel-name" data-r="colsName">Show Properties</span><button class="x" type="button" data-r="colsX" aria-label="Close Show Properties">×</button></div>
         <div class="gsize" data-r="gsize" hidden></div>
         <div class="hint" data-r="colsHint">Tick the columns to show and use the arrows to reorder them. On a computer you can also drag a column header to move it, or drag its right edge to resize it.</div>
         <div class="col-list" data-r="colList"></div>
@@ -1922,20 +1922,23 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const saveUi = () => store(`chevy.${T.key}.view`, { ...ui, q: "" });
 
     // Columns
-    const defaults = T.props.map(P => ({ key: P.key, visible: !P.hidden, width: P.width }));
+    // Default columns: Title, When, Links, Status; everything else starts hidden. Subtitle is never a column (it always shows under the title).
+    const DEF_SHOW = ["title", "focus", "links", "status"];
+    const colProps = T.props.filter(P => P.key !== "subtitle");
+    const defaults = [...DEF_SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !DEF_SHOW.includes(P.key))].map(P => ({ key: P.key, visible: DEF_SHOW.includes(P.key), width: P.width }));
     const normalize = (list) => {
       const out = [];
-      (Array.isArray(list) ? list : []).forEach(c => { if (c && PROP[c.key] && !out.some(o => o.key === c.key)) out.push({ key: c.key, visible: c.visible !== false, width: Math.max(90, Number(c.width) || PROP[c.key].width) }); });
+      (Array.isArray(list) ? list : []).forEach(c => { if (c && PROP[c.key] && c.key !== "subtitle" && !out.some(o => o.key === c.key)) out.push({ key: c.key, visible: c.visible !== false, width: Math.max(90, Number(c.width) || PROP[c.key].width) }); });
       defaults.forEach(d => { if (!out.some(o => o.key === d.key)) out.push({ ...d }); });
       if (!out.some(c => c.visible)) out[0].visible = true;
       return out;
     };
-    cols[T.key] = normalize(recall(`chevy.${T.key}.cols`) || defaults);
+    cols[T.key] = normalize(recall(`chevy.${T.key}.cols2`) || defaults);
     let colSave = Promise.resolve();
     const saveCols = () => {
-      store(`chevy.${T.key}.cols`, cols[T.key]);
+      store(`chevy.${T.key}.cols2`, cols[T.key]);
       const ref = settingsRefs[T.key]; if (!ref) return;
-      const body = { columns: cols[T.key].map(c => ({ ...c })) };
+      const body = { columns: cols[T.key].map(c => ({ ...c })), v: 2 };
       colSave = colSave.then(() => ref.set(body)).catch(() => {});
     };
     const shown = () => cols[T.key].filter(c => c.visible);
@@ -2380,13 +2383,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     function renderLayout() {
       const g = false, fd = ui.layout === "feed", tl = ui.layout === "timeline";
       R("layouts").querySelectorAll("[data-layout]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.layout === ui.layout)));
-      R("colsLabel").textContent = R("colsName").textContent = "Show";
+      R("colsLabel").textContent = R("colsName").textContent = "Show Properties";
       R("colsHint").textContent = tl ? "The timeline shows each title with a bar for its dates. Switch to Table to choose and reorder columns." : fd ? "Tap a property to show or hide it on each post. Hold and drag one to change the order. Posts always show the cover, title, date and full notes." : g ? "Tick the properties to show on each card and use the arrows to reorder them. Cards always show the cover and title." : "Tap a property to show or hide its column. Hold and drag one to change the order, left to right. You can also drag a column header to move it, or drag its right edge to resize it.";
       R("gsize").hidden = !g;
       R("gsize").innerHTML = `<span class="ctl-title">Card size</span><span class="chips">${[["s", "Small"], ["m", "Medium"], ["l", "Large"]].map(([k, l]) => `<button type="button" class="chip" aria-pressed="${ui.gsize === k}" data-gsize="${k}">${l}</button>`).join("")}</span>`;
     }
     function render() { renderLayout(); renderControls(); renderColPanel(); renderHead(); renderRows(); renderBadge(); }
-    function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols`, cols[T.key]); render(); }
+    function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols2`, cols[T.key]); render(); }
     return { T, main, render, applyRemoteCols };
   }
 
@@ -3987,10 +3990,11 @@ Don't invent appointments or facts that aren't listed.`);
   if (!Array.isArray(dbs.sorts)) dbs.sorts = [{ key: dbs.sort || "title", dir: dbs.dir || "asc" }];
   dbs.group = false;
   // [key, label, width, shown by default]
-  const DB_COLS = [["title", "Title", 300, true], ["subtitle", "Subtitle", 200, false], ["type", "Database", 140, true], ["links", "Links", 220, false], ["tags", "Tags", 180, true], ["layer", "Layer", 130, true], ["color", "Color", 130, false], ["created", "Created", 150, true], ["status", "Status", 140, true], ["focus", "When", 240, true], ["public", "Show on website", 150, false], ["updated", "Last edited", 150, false]];
+  const DB_COLS = [["title", "Title", 300, true], ["focus", "When", 240, true], ["links", "Links", 220, true], ["status", "Status", 140, true], ["type", "Database", 140, false], ["tags", "Tags", 180, false], ["layer", "Layer", 130, false], ["color", "Color", 130, false], ["created", "Created", 150, false], ["public", "Show on website", 150, false], ["updated", "Last edited", 150, false]];
   const DB_COL = Object.fromEntries(DB_COLS.map(c => [c[0], c]));
   const dbNormCols = (list) => { const out = (Array.isArray(list) ? list : []).filter(c => c && DB_COL[c.key]).map(c => ({ key: c.key, width: Math.max(80, Number(c.width) || DB_COL[c.key][2]), visible: c.key === "title" ? true : c.visible !== false })).filter((c, i, a) => a.findIndex(x => x.key === c.key) === i); DB_COLS.forEach(([k, , w, v]) => { if (!out.some(c => c.key === k)) out.push({ key: k, width: w, visible: v }); }); return out; };
   const dbShown = () => dbs.cols.filter(c => c.visible);
+  if (!dbs.colsV2) { dbs.cols = []; dbs.colsV2 = true; store("chevy.database", dbs); }
   dbs.cols = dbNormCols(dbs.cols);
   let dbQ = "";
   const saveDb = () => store("chevy.database", dbs);
@@ -4414,7 +4418,7 @@ Don't invent appointments or facts that aren't listed.`);
       });
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
-        if (snap.exists && Array.isArray(snap.data().columns)) views[T.key].applyRemoteCols(snap.data().columns);
+        if (snap.exists && Array.isArray(snap.data().columns) && snap.data().v === 2) views[T.key].applyRemoteCols(snap.data().columns);
       }, () => {});
     });
   })();
