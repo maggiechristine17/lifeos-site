@@ -834,7 +834,7 @@ td[data-qe]:hover, .card-prop[data-qe]:hover, .post-props [data-qe]:hover { back
 @media (max-width: 600px) { .db-table table { width: 100% !important; } .db-row td[data-label]:not(:first-child)::before { display: none; } .db-row td { display: flex !important; align-items: center; gap: 6px; } }
 #view-planner { max-width: 1240px; }
 .is-public #setBtn, .is-public #setPop, .is-public [data-r="add"], .is-public .tl-add, .is-public #deleteBtn, .is-public #archiveBtn, .is-public #editForm [type=submit], .is-public #bodyToggle, .is-public .att-tools, .is-public .att-link, .is-public #ntMeta, .is-public .nt-add, .is-public .md-hint, .is-public .pub-hint, .is-public #notice, .is-public .emo-auto { display: none !important; }
-.is-public .att-list .ax, .is-public #plSubs, .is-public .pl-add, .is-public .pl-rchip, .is-public .pl-note, .is-public [data-pk="public"], .is-public [data-propbtn="public"], .is-public #vNewNote, .is-public #vNewFolder, .is-public #vEdit, .is-public .ghint, .is-public [data-r="resetCols"] { display: none !important; }
+.is-public .att-list .ax, .is-public [data-plsub="week"], .is-public .pl-add, .is-public .pl-note, .is-public .rt-new, .is-public .rt-tools, .is-public .rt-foot, .is-public [data-rtlog], .is-public .rt-web, .is-public .cd-areas, .is-public .cd-open.cd-back, .is-public .tdel, .is-public [data-pk="public"], .is-public [data-propbtn="public"], .is-public #vNewNote, .is-public #vNewFolder, .is-public #vEdit, .is-public .ghint, .is-public [data-r="resetCols"] { display: none !important; }
 .is-public .db-selwrap, .is-public .sub-tasks input, .is-public .post-tasks input { pointer-events: none; }
 .is-public #edFields .pf, .is-public #edFields .prop-bar, .is-public #ed-emoji, .is-public #ed-task-blank { pointer-events: none; }
 .is-public .att:not(:has(.att-list a)) { display: none; }
@@ -1359,6 +1359,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <label class="switch"><input type="checkbox" id="gProjects" checked> Projects</label>
       <label class="switch"><input type="checkbox" id="gAreas" checked> Areas</label>
       <label class="switch"><input type="checkbox" id="gPages" checked> Resources</label>
+      <label class="switch"><input type="checkbox" id="gArchive" checked> Archive</label>
+      <label class="switch"><input type="checkbox" id="gRoutines" checked> Routines</label>
       <label class="switch"><input type="checkbox" id="gOrphans" checked> Show unlinked items</label>
       <label class="switch"><input type="checkbox" id="gDone" checked> Show done projects</label>
       <label class="switch"><input type="checkbox" id="gLabels" checked> Always show names</label>
@@ -3316,10 +3318,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   
   let settledFit = false, graphVisible = false, gNodes = [], gLinks = [], sim = null, hoverId = null, fitted = false, gSel = null, gMsg = "";
   let transform = { x: 0, y: 0, k: 1 };
-  const gOpts = { projects: true, areas: true, pages: true, orphans: true, done: true, labels: true };
+  const gOpts = { projects: true, areas: true, pages: true, archive: true, routine: true, orphans: true, done: true, labels: true };
   try { Object.assign(gOpts, JSON.parse(localStorage.getItem("chevy.graph.opts") || "{}")); } catch (e) {}
-  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels;
-  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
+  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false;
+  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
     gOpts[k] = e.target.checked;
     try { localStorage.setItem("chevy.graph.opts", JSON.stringify(gOpts)); } catch (err) {}
     if (k === "labels") draw(); else { fitted = false; renderGraph(); }
@@ -3351,10 +3353,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function setEmpty(html) { const el = $("graphEmpty"); el.hidden = !html; if (html) el.innerHTML = html; }
 
   function renderGraph() {
-    $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>`;
+    $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
     const prev = new Map(gNodes.map(n => [n.id, n]));
-    let items = [...byId.values()].filter(({ type, e }) => gOpts[type] && (gOpts.done || e.status !== "Done"));
+    let items = [...byId.values()].filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
+    if (gOpts.routine !== false) items = items.concat(routines.map(r => ({ type: "routine", e: { id: r.id, title: (r.emoji || rtEmoji(r)) + " " + (r.name || "Untitled routine"), status: "" } })));
     const ids = new Set(items.map(x => x.e.id));
     const links = [];
     adj.forEach((set, a) => set.forEach(b => { if (a < b && ids.has(a) && ids.has(b)) links.push({ source: a, target: b }); }));
@@ -3367,7 +3370,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         { id: e.id, type, title: e.title || "Untitled", status: e.status || "", color: colorOf(e), degree: deg.get(e.id) || 0 });
     });
     gLinks = links.map(l => ({ ...l }));
-    $("graphCount").textContent = TYPES.filter(T => !T.archive).map(T => { const n = gNodes.filter(x => x.type === T.key).length; return `${n} ${n === 1 ? T.singular : T.label.toLowerCase()}`; }).join(" · ") + ` · ${gLinks.length} link${gLinks.length === 1 ? "" : "s"}`;
+    $("graphCount").textContent = [...TYPES.map(T => { const n = gNodes.filter(x => x.type === T.key).length; return T.archive ? `${n} archived` : `${n} ${n === 1 ? T.singular : T.label.toLowerCase()}`; }), (() => { const n = gNodes.filter(x => x.type === "routine").length; return `${n} routine${n === 1 ? "" : "s"}`; })()].join(" · ") + ` · ${gLinks.length} link${gLinks.length === 1 ? "" : "s"}`;
     if (!byId.size) setEmpty("<div><strong>Nothing here yet</strong>Add projects, areas or resources, then link them.</div>");
     else if (!gNodes.length) setEmpty("<div><strong>Nothing to show</strong>Change what's shown under Display, or link some projects, areas and resources.</div>");
     else if (!gLinks.length) setEmpty("<div style='align-self:end'>Open a project, area or resource and use Links to draw your first connection.</div>");
@@ -3416,10 +3419,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       ctx.globalAlpha = hi && !hi.has(n.id) ? 0.2 : 1;
       const r = radius(n);
       ctx.beginPath();
-      if (n.type === "areas") { const d = r * 1.2; ctx.moveTo(n.x, n.y - d); ctx.lineTo(n.x + d, n.y); ctx.lineTo(n.x, n.y + d); ctx.lineTo(n.x - d, n.y); ctx.closePath(); }
+      if (n.type === "routine") { const d = r * 1.15; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; i ? ctx.lineTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)) : ctx.moveTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)); } ctx.closePath(); }
+      else if (n.type === "areas") { const d = r * 1.2; ctx.moveTo(n.x, n.y - d); ctx.lineTo(n.x + d, n.y); ctx.lineTo(n.x, n.y + d); ctx.lineTo(n.x - d, n.y); ctx.closePath(); }
       else if (n.type === "pages") { const s = r * 0.9; if (ctx.roundRect) ctx.roundRect(n.x - s, n.y - s, s * 2, s * 2, s * 0.35); else ctx.rect(n.x - s, n.y - s, s * 2, s * 2); }
       else ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = cssVar(n.type === "pages" ? "--page" : n.type === "areas" ? "--area" : statusOf(n.status).color); ctx.fill();
+      ctx.fillStyle = cssVar(n.type === "routine" ? "--hold" : n.type === "pages" ? "--page" : n.type === "areas" ? "--area" : n.type === "archive" ? "--muted" : statusOf(n.status).color); ctx.fill();
       if (n.color) { ctx.lineWidth = 3 / transform.k; ctx.strokeStyle = cssVar("--c-" + n.color); ctx.stroke(); }
       if (n.id === hoverId || n.id === gSel) { ctx.lineWidth = (n.id === gSel ? 4 : 2.5) / transform.k; ctx.strokeStyle = n.id === gSel ? accent : ink; ctx.stroke(); }
     });
@@ -3499,6 +3503,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     buildAdj(); renderGraph(); renderGSel();
   }
   function graphTap(n) {
+    if (n.type === "routine") { gSel = null; renderGSel(); pl.sub = "routines"; savePl(); rtView.over[n.id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${n.id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     if (PUBLIC) { openEditor(n.type, n.id); return; }
     if (!gSel || gSel === n.id) { gSel = gSel === n.id ? null : n.id; gMsg = ""; renderGSel(); draw(); return; }
     toggleLink(gSel, n.id);
@@ -3571,7 +3576,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const VAULT_READONLY = false;
   const DEFAULT_WELCOME = "# Welcome\n\nThis is your LifeOS vault. Every note here also lives in your **Projects**, **Areas** and **Resources** databases.\n\n## Start here\n- Open notes and folders from the **Files** sidebar.\n- Link notes by typing two brackets on each side, like [[My first note]].\n- Tap **Edit** to change this page.\n";
   const vault = { folders: [], welcome: null, foldersLoaded: false };
-  let vCurrent = { kind: "welcome" }, vHistory = [], vEditing = false, vDraft = "", vOpen = new Set(recall("chevy.vault.open") || ["type:projects", "type:areas", "type:pages"]);
+  let vCurrent = { kind: "welcome" }, vHistory = [], vEditing = false, vDraft = "", vOpen = new Set(recall("chevy.vault.open") || ["type:projects", "type:areas", "type:pages", "type:routines"]);
   let vFilesOpen = false;
   const saveOpenState = () => store("chevy.vault.open", [...vOpen]);
   const folderById = (id) => vault.folders.find(f => f.id === id);
@@ -3712,6 +3717,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if ((q || vFa) && !notes.length) return "";
       return folderRow("type:" + T.key, T.label, 0, notes.map(x => noteRow(x, 1)).join(""), { forceOpen: !!q || vFa });
     }).join("");
+    { const rts = routines.filter(r => !q || (r.name || "").toLowerCase().includes(q)).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      if (rts.length || !(q || vFa)) html += folderRow("type:routines", "Routines", 0, rts.map(r => `<button type="button" class="vnote${vCurrent.kind === "routine" && vCurrent.id === r.id ? " active" : ""}" style="--d:1" data-vroutine="${esc(r.id)}"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span>${esc(r.name || "Untitled routine")}</span></button>`).join("") || '<div class="vempty" style="--d:1">No routines yet.</div>', { forceOpen: !!q }); }
     if ((q || vFa) && !html.includes("data-vnote=")) html += `<div class="vempty" style="--d:0;padding-left:8px">No notes match.${vFa ? " Try clearing the filter." : ""}</div>`;
     $("vTree").innerHTML = html;
     if (vRenaming) { const i = $("vRenameInput"); if (i) { i.focus(); i.select(); } }
@@ -3744,7 +3751,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <section class="vm-back"><h2>Linked notes</h2>${back.length ? `<div class="lchips">${back.map(b => `<button type="button" class="lchip" data-vgo="${esc(b.e.id)}"><i class="tdot t-${b.type}" aria-hidden="true"></i>${esc(b.e.title || "Untitled")}</button>`).join("")}</div>` : '<p class="placeholder">No linked notes yet.</p>'}</section>`;
   }
   function renderMain() {
-    const canEdit = vCurrent.kind === "welcome" ? !VAULT_READONLY : (() => { const x = byId.get(vCurrent.id); return x && !x.e._pub; })();
+    const canEdit = vCurrent.kind === "welcome" ? !VAULT_READONLY : vCurrent.kind === "routine" ? (!PUBLIC && !!rtById(vCurrent.id)) : (() => { const x = byId.get(vCurrent.id); return x && !x.e._pub; })();
     $("vBack").hidden = !vHistory.length;
     $("vEdit").hidden = !canEdit;
     $("vEdit").textContent = vEditing ? "Done" : "Edit";
@@ -3755,6 +3762,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       html = vEditing
         ? `<div class="vm-crumb"><strong>Welcome</strong></div><textarea id="vEditor" class="vm-editor" aria-label="Welcome page in Markdown">${esc(vDraft)}</textarea>`
         : `<div class="vm-crumb"><strong>Welcome</strong></div><div class="md vm-body" id="vBody">${renderMd(body)}</div>`;
+    } else if (vCurrent.kind === "routine") {
+      const r = rtById(vCurrent.id);
+      if (!r) html = `<p class="placeholder">This routine was deleted.</p>`;
+      else { const ps = rtPlans(r), done = ps.filter(x => x.status === "done"), last = done.slice().sort((a, b) => (b.doneAt || b.date).localeCompare(a.doneAt || a.date))[0];
+        html = `<div class="vm-crumb">Routines / <strong>${esc(r.name || "Untitled routine")}</strong></div>
+          <h1 class="vm-title"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span> <span class="t-main">${esc(r.name || "Untitled routine")}</span></h1>
+          <div class="vm-meta"><span class="vm-type">🔁 Routine · Layer 7</span><span>${done.length} done${last ? ` · last ${esc(fmt(last.date, false))}` : ""}</span>${rtWebBtn(r)}<button type="button" class="btn" data-vrtgo="${esc(r.id)}">Open in Planner → Routines</button></div>
+          ${vEditing ? `<textarea id="vEditor" class="vm-editor" aria-label="Routine notes in Markdown">${esc(vDraft)}</textarea>` : `<div class="md vm-body" id="vBody">${(r.body || "").trim() ? renderMd(r.body) : '<p class="placeholder">No notes yet. Tap Edit to add some.</p>'}</div>`}`; }
     } else {
       const x = byId.get(vCurrent.id);
       html = x ? vaultNoteHtml(x) : `<p class="placeholder">This note was deleted.</p>`;
@@ -3765,6 +3780,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     $("vNote").querySelectorAll('.vm-body a[href]:not(.wikilink)').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
     $("vNote").querySelectorAll('.vm-body input[type="checkbox"]').forEach(c => { c.disabled = true; });
   }
+  $("vNote").addEventListener("click", e => { const g = e.target.closest("[data-vrtgo]"); if (!g) return; const id = g.dataset.vrtgo; pl.sub = "routines"; savePl(); rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); });
   function renderVault() { if (!$("vTree")) return; renderTree(); if (!vEditing) renderMain(); else { $("vBack").hidden = !vHistory.length; } }
 
   async function commitEdit() {
@@ -3772,6 +3788,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const body = $("vEditor") ? $("vEditor").value : vDraft;
     try {
       if (vCurrent.kind === "welcome") await saveWelcome(body);
+      else if (vCurrent.kind === "routine") { const r = rtById(vCurrent.id); if (r) { const next = { ...r, body, updatedAt: new Date().toISOString() }; routines = routines.map(x => x.id === r.id ? next : x); await saveRoutine(next); } }
       else { const x = byId.get(vCurrent.id); if (x) await saveNoteBody(x.type, x.e.id, body); }
       vEditing = false; return true;
     } catch (err) { notice(err.message || "Couldn't save the note. Try again."); return false; }
@@ -3800,6 +3817,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   $("vTree").addEventListener("click", async e => {
     const w = e.target.closest("[data-vwelcome]"); if (w) { vGo({ kind: "welcome" }); return; }
     const n = e.target.closest("[data-vnote]"); if (n) { vGo({ kind: "note", id: n.dataset.vnote }); return; }
+    const vr = e.target.closest("[data-vroutine]"); if (vr) { vGo({ kind: "routine", id: vr.dataset.vroutine }); return; }
     const t = e.target.closest("[data-vtoggle]"); if (t) { const k = t.dataset.vtoggle; vOpen.has(k) ? vOpen.delete(k) : vOpen.add(k); saveOpenState(); renderTree(); return; }
     const rn = e.target.closest("[data-vrename]"); if (rn) { vRenaming = rn.dataset.vrename; renderTree(); return; }
     const df = e.target.closest("[data-vdelf]");
@@ -3851,7 +3869,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Main pane
   $("vEdit").addEventListener("click", async () => {
     if (vEditing) { if (await commitEdit()) { buildAdj(); renderVault(); } return; }
-    vDraft = vCurrent.kind === "welcome" ? (vault.welcome ?? DEFAULT_WELCOME) : (byId.get(vCurrent.id)?.e.body || "");
+    vDraft = vCurrent.kind === "welcome" ? (vault.welcome ?? DEFAULT_WELCOME) : vCurrent.kind === "routine" ? (rtById(vCurrent.id)?.body || "") : (byId.get(vCurrent.id)?.e.body || "");
     vEditing = true; renderMain();
     const t = $("vEditor"); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
   });
@@ -3903,6 +3921,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   let routines = [];
   const RT_ICON = '<svg class="rt-ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>';
   const rtById = (id) => routines.find(r => r.id === id);
+  // A routine is a Layer 7 entry: it has its own "Show on website" switch like every other entry
+  const rtWebBtn = (r) => PUBLIC ? "" : `<button type="button" class="qt rt-web" data-rtweb="${esc(r.id)}" aria-pressed="${r.public === true}" title="${r.public === true ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On website" : "Not on website"}</span></button>`;
+  async function rtToggleWeb(id) { const r = rtById(id); if (!r || PUBLIC) return; const next = { ...r, public: r.public !== true, updatedAt: new Date().toISOString() }; routines = routines.map(x => x.id === id ? next : x); renderPlanner(); renderDatabase(); renderVault(); await saveRoutine(next); }
+  document.addEventListener("click", ev => { const b = ev.target.closest && ev.target.closest("[data-rtweb]"); if (!b) return; ev.preventDefault(); ev.stopPropagation(); rtToggleWeb(b.dataset.rtweb); }, true);
   const rtPlans = (r) => (Array.isArray(r && r.plans) ? r.plans : []).filter(x => x && x.id && /^\d{4}-\d\d-\d\d$/.test(x.date || ""));
   const rtPid = () => "rp" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   async function saveRoutine(r) {
@@ -3976,7 +3998,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function renderPlanner() {
     if (!$("plBody") || $("view-planner").hidden) return;
     document.querySelectorAll("[data-plsub]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.plsub === pl.sub)));
-    if (PUBLIC) pl.sub = "calendar";
+    if (PUBLIC && pl.sub === "week") pl.sub = "calendar";
     const isRt = pl.sub === "routines", isWk = pl.sub === "week", isCd = pl.sub === "cards";
     $("plBar").hidden = isRt || isWk || isCd; $("plBody").hidden = isRt || isWk || isCd; $("rtBody").hidden = !isRt; $("wkBody").hidden = !isWk; $("cdBody").hidden = !isCd;
     if (isRt) { renderRoutines(); return; }
@@ -4041,7 +4063,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const s = statsOf(r), maxSlot = Math.max(1, ...s.bySlot.map(b => b[1]));
       const hist = s.done.slice().sort((a, b) => (b.doneAt || b.date).localeCompare(a.doneAt || a.date));
       const open = rtIsOpen(r.id);
-      const head = `<div class="rt-head"><button type="button" class="rt-tog" data-rttoggle="${esc(r.id)}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(r.name)}"><svg class="vcaret${open ? " open" : ""}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" class="emoji-btn rt-emoji${r.emoji ? "" : " is-auto"}" data-rtemoji="${esc(r.id)}" aria-label="Choose an emoji for ${esc(r.name)}" title="Choose an emoji"><span class="emo">${esc(rtEmoji(r))}</span>${r.emoji ? "" : '<span class="emo-auto">auto</span>'}</button><input class="rt-name" value="${esc(r.name)}" data-rtname="${esc(r.id)}" aria-label="Routine name"><button type="button" class="btn primary rt-today" data-rtlog="${esc(r.id)}">✓ Did it today</button></div>`;
+      const head = `<div class="rt-head"><button type="button" class="rt-tog" data-rttoggle="${esc(r.id)}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(r.name)}"><svg class="vcaret${open ? " open" : ""}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" class="emoji-btn rt-emoji${r.emoji ? "" : " is-auto"}" data-rtemoji="${esc(r.id)}" aria-label="Choose an emoji for ${esc(r.name)}" title="Choose an emoji"><span class="emo">${esc(rtEmoji(r))}</span>${r.emoji ? "" : '<span class="emo-auto">auto</span>'}</button><input class="rt-name" value="${esc(r.name)}" data-rtname="${esc(r.id)}" aria-label="Routine name"${PUBLIC ? " readonly" : ""}>${rtWebBtn(r)}<button type="button" class="btn primary rt-today" data-rtlog="${esc(r.id)}">✓ Did it today</button></div>`;
       if (!open) return `<article class="rt-card closed" data-rtcard="${esc(r.id)}">${head}<div class="rt-mini">${s.w} in the last 7 days · ${s.total} all time${s.streak ? ` · ${s.streak}-day streak` : ""} · ${s.last ? "last done " + esc(fmt(s.last.date, false)) : "not done yet"}</div></article>`;
       return `<article class="rt-card" data-rtcard="${esc(r.id)}">
         ${head}
@@ -4293,29 +4315,30 @@ Don't invent appointments or facts that aren't listed.`);
     return { zone: "deck", why: "later" };
   }
   function cdCard(x) {
-    const e = x.e, wt = whenText(e), sel = cd.sel === e.id, isArea = x.type === "areas";
+    const e = x.e, wt = whenText(e), sel = cd.sel === e.id, isArea = x.type !== "projects";
     return `<div class="cd-card${isArea ? " cd-area" : ""}${ecClass(e)}${sel ? " sel" : ""}" draggable="true" data-cdid="${esc(e.id)}" data-cdtype="${x.type}" tabindex="0" role="button" aria-pressed="${sel}" aria-label="${esc(e.title || "Untitled")}: drag to a day or week, or tap then tap a spot">
-      <div class="cd-top"><span class="emo" aria-hidden="true">${esc(emojiOf(e, x.type))}</span><span class="cd-t">${esc(e.title || "Untitled")} <button type="button" class="cd-open" data-cdopen="${esc(e.id)}" data-cdtype="${x.type}" title="Open" aria-label="Open ${esc(e.title || "Untitled")}">↗</button></span>${isArea ? `<button type="button" class="cd-open cd-back" data-cdback="${esc(e.id)}" title="Put back in the area list (clears its dates)" aria-label="Put ${esc(e.title || "Untitled")} back in the area list">↩</button>` : ""}</div>
-      ${isArea ? '<div class="cd-kind"><i class="tdot t-areas" aria-hidden="true"></i>Area</div>' : ""}${e.subtitle ? `<div class="cd-sub">${esc(e.subtitle)}</div>` : ""}${subTasksHtml(e, x.type)}
+      <div class="cd-top"><span class="emo" aria-hidden="true">${esc(emojiOf(e, x.type))}</span><span class="cd-t">${esc(e.title || "Untitled")} <button type="button" class="cd-open" data-cdopen="${esc(e.id)}" data-cdtype="${x.type}" title="Open" aria-label="Open ${esc(e.title || "Untitled")}">↗</button></span>${isArea ? `<button type="button" class="cd-open cd-back" data-cdback="${esc(e.id)}" title="Put back in the list (clears its dates)" aria-label="Put ${esc(e.title || "Untitled")} back in the list">↩</button>` : ""}</div>
+      ${isArea ? `<div class="cd-kind"><i class="tdot t-${x.type}" aria-hidden="true"></i>${esc(TYPE[x.type].singular[0].toUpperCase() + TYPE[x.type].singular.slice(1))}</div>` : ""}${e.subtitle ? `<div class="cd-sub">${esc(e.subtitle)}</div>` : ""}${subTasksHtml(e, x.type)}
       <div class="cd-meta"><span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>${wt ? `<span class="cd-when">${esc(wt)}</span>` : ""}</div></div>`;
   }
   function renderCards() {
     const t = today(), thisMon = mondayOf(t), lastSun = dIso(dn(thisMon) + 7 * (CD_WEEKS + 1) - 1);
     const q = cd.q.trim().toLowerCase();
     const projList = (data.projects || []).filter(e => (e.status || "") !== "Done").map(e => ({ type: "projects", e })).sort(titleSort);
-    const areaCards = (data.areas || []).filter(e => e.cardOn === true).map(e => ({ type: "areas", e })).sort(titleSort);
-    const areaRest = (data.areas || []).filter(e => e.cardOn !== true).sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    const CD_EXTRA = ["areas", "pages", "archive"];
+    const areaCards = CD_EXTRA.flatMap(k => (data[k] || []).filter(e => e.cardOn === true && !(k === "archive" && false)).map(e => ({ type: k, e }))).sort(titleSort);
+    const areaRest = CD_EXTRA.map(k => [k, (data[k] || []).filter(e => e.cardOn !== true).sort((a, b) => (a.title || "").localeCompare(b.title || ""))]);
     const list = [...projList, ...areaCards];
     const areaDeck = [];
     const zones = new Map(), deck = { none: [], earlier: [], later: [] };
-    list.forEach(x => { const p = cdPlace(x.e, thisMon, lastSun); if (p.zone === "deck") (x.type === "areas" ? areaDeck : deck[p.why]).push(x); else { if (!zones.has(p.zone)) zones.set(p.zone, []); zones.get(p.zone).push(x); } });
+    list.forEach(x => { const p = cdPlace(x.e, thisMon, lastSun); if (p.zone === "deck") (x.type !== "projects" ? areaDeck : deck[p.why]).push(x); else { if (!zones.has(p.zone)) zones.set(p.zone, []); zones.get(p.zone).push(x); } });
     const match = (x) => !q || (x.e.title || "").toLowerCase().includes(q) || (x.e.subtitle || "").toLowerCase().includes(q);
     const cardsIn = (z) => (zones.get(z) || []).map(cdCard).join("");
     const deckSec = (label, arr) => { const a = arr.filter(match); return a.length ? `<div class="cd-dlabel">${label} · ${a.length}</div>${a.map(cdCard).join("")}` : ""; };
     const deckCount = deck.none.length + deck.earlier.length + deck.later.length;
-    const areaSec = `<div class="cd-areas"><div class="cd-dlabel">Area cards${areaDeck.length ? " · " + areaDeck.length : ""}</div>
-      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an area into a card"><option value="">+ Add an area card…</option>${areaRest.map(a => `<option value="${esc(a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</select>
-      ${areaDeck.filter(match).map(cdCard).join("")}${!areaDeck.length && !areaCards.length ? '<div class="pl-none">Pick an area above to make it a card you can place.</div>' : ""}</div>`;
+    const areaSec = `<div class="cd-areas"><div class="cd-dlabel">Area, resource &amp; archive cards${areaDeck.length ? " · " + areaDeck.length : ""}</div>
+      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an entry into a card"><option value="">+ Add a card from Areas, Resources or Archive…</option>${areaRest.map(([k, l]) => l.length ? `<optgroup label="${esc(TYPE[k].label)}">${l.map(a => `<option value="${esc(k + "|" + a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</optgroup>` : "").join("")}</select>
+      ${areaDeck.filter(match).map(cdCard).join("")}${!areaDeck.length && !areaCards.length ? '<div class="pl-none">Pick an area, resource or archive entry above to make it a card you can place.</div>' : ""}</div>`;
     const days = [0, 1, 2, 3, 4, 5, 6].map(i => dIso(dn(thisMon) + i));
     const wi = isoWeekInfo(thisMon);
     const weeks = Array.from({ length: CD_WEEKS }, (_, i) => dIso(dn(thisMon) + 7 * (i + 1)));
@@ -4339,7 +4362,7 @@ Don't invent appointments or facts that aren't listed.`);
     $("plHint").textContent = "Drag a card onto a day this week, \"Anytime this week\", or a week. On a phone, tap a card, then tap where it goes. Dropping on a day sets its When to that day; on a week, to Monday–Sunday of that week. Drag it back to the deck to clear its dates.";
   }
   async function cdMove(id, zone) {
-    const type = (data.areas || []).some(x => x.id === id) ? "areas" : "projects";
+    const type = ["projects", "areas", "pages", "archive"].find(k => (data[k] || []).some(x => x.id === id)) || "projects";
     const e = (data[type] || []).find(x => x.id === id); if (!e) return;
     let patch;
     if (zone === "deck") patch = { focusStart: "", focusEnd: "", timeStart: "", timeEnd: "" };
@@ -4359,7 +4382,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("cdBody").addEventListener("click", async e => {
     const op = e.target.closest("[data-cdopen]"); if (op) { e.stopPropagation(); openEditor(op.dataset.cdtype || "projects", op.dataset.cdopen); return; }
     const bk = e.target.closest("[data-cdback]");
-    if (bk) { e.stopPropagation(); const a = (data.areas || []).find(x => x.id === bk.dataset.cdback); if (!a) return; if (cd.sel === a.id) cd.sel = null; try { await saveEntry("areas", { ...a, cardOn: false, focusStart: "", focusEnd: "", timeStart: "", timeEnd: "", updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't put it back."); } renderPlanner(); return; }
+    if (bk) { e.stopPropagation(); const bt = ["areas", "pages", "archive"].find(k => (data[k] || []).some(x => x.id === bk.dataset.cdback)); const a = bt && data[bt].find(x => x.id === bk.dataset.cdback); if (!a) return; if (cd.sel === a.id) cd.sel = null; try { await saveEntry(bt, { ...a, cardOn: false, focusStart: "", focusEnd: "", timeStart: "", timeEnd: "", updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't put it back."); } renderPlanner(); return; }
     if (e.target.closest("select")) return;
     if (e.target.closest(".st-item") || e.target.closest("input")) return;
     const c = e.target.closest(".cd-card");
@@ -4370,7 +4393,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("cdBody").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches(".cd-card")) openEditor(e.target.dataset.cdtype || "projects", e.target.dataset.cdid); });
   $("cdBody").addEventListener("input", e => { if (e.target.id === "cdQ") { cd.q = e.target.value; const pos = e.target.selectionStart; renderPlanner(); const q = $("cdQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
   $("cdBody").addEventListener("change", async e => {
-    if (e.target.id === "cdAreaAdd" && e.target.value) { const a = (data.areas || []).find(x => x.id === e.target.value); if (!a) return; try { await saveEntry("areas", { ...a, cardOn: true, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't add the card."); } cd.sel = a.id; renderPlanner(); return; }
+    if (e.target.id === "cdAreaAdd" && e.target.value) { const [k, aid] = e.target.value.split("|"); const a = (data[k] || []).find(x => x.id === aid); if (!a) return; try { await saveEntry(k, { ...a, cardOn: true, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't add the card."); } cd.sel = a.id; renderPlanner(); return; }
   });
   $("cdBody").addEventListener("change", e => { const tk = e.target.closest("input[data-task][data-entry]"); if (tk) toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); });
   let rtConfirm = null;
@@ -4466,6 +4489,7 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="task-add pl-rnew"><input id="plRNew" type="text" placeholder="New routine, like Morning walk" autocomplete="off" aria-label="New routine name"><button type="button" class="btn" data-plrnew>Add</button></div>
       <div class="pl-msub">In focus that day</div>
       <div class="pl-picks">${focus.length ? focus.map(row).join("") : '<span class="pl-none">Nothing else in focus that day.</span>'}</div>
+      <select class="qe-sel" id="plAny" aria-label="Pick any entry"><option value="">+ Pick from any database…</option>${TYPES.map(T => { const its = plPool().filter(x => x.type === T.key && !x.e._pub && !blocksOf(x.e).some(b => b.date === date && b.slot === slot)).sort(titleSort); return its.length ? `<optgroup label="${esc(T.label)}">${its.map(x => `<option value="${esc(T.key + "|" + x.e.id)}">${esc(x.e.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("")}</select>
       <input type="search" class="search pl-q" id="plQ" placeholder="Find any other entry…" value="${esc(q)}" aria-label="Find any other entry">
       ${q.trim() ? `<div class="pl-picks pl-all">${others.length ? others.map(row).join("") : '<span class="pl-none">No matches.</span>'}</div>`
         : browse ? `<div class="pl-msub">All projects (${others.length}) · type to search everything</div><div class="pl-picks pl-all">${others.length ? others.map(row).join("") : '<span class="pl-none">No other projects.</span>'}</div>` : ""}`;
@@ -4513,7 +4537,7 @@ Don't invent appointments or facts that aren't listed.`);
     const rpick = e.target.closest("[data-plroutine]");
     if (rpick && plMenuFor && plMenuFor.kind === "slot") { const f = plMenuFor; plCloseMenu(); await rtAssign(rpick.dataset.plroutine, f.date, f.slot); if (f.note) setNote(f.date, f.slot, "rt-" + rpick.dataset.plroutine, f.note); return; }
     if (e.target.closest("[data-plrnew]") && plMenuFor && plMenuFor.kind === "slot") { const f = plMenuFor, r = await newRoutine($("plRNew").value); if (r) { plCloseMenu(); await rtAssign(r.id, f.date, f.slot); if (f.note) setNote(f.date, f.slot, "rt-" + r.id, f.note); } return; }
-    const rch = e.target.closest(".pl-rchip"); if (rch) { plRoutineMenu(rch.dataset.rt, rch.dataset.rp, rch); return; }
+    const rch = e.target.closest(".pl-rchip"); if (rch && PUBLIC) return; if (rch) { plRoutineMenu(rch.dataset.rt, rch.dataset.rp, rch); return; }
     const rdone = e.target.closest("[data-rtdone]"); if (rdone && plMenuFor && plMenuFor.kind === "routine") { const f = plMenuFor; plCloseMenu(); await rtSetDone(f.rid, f.pid, rdone.dataset.rtdone === "1"); return; }
     if (e.target.closest("[data-rtremove]") && plMenuFor && plMenuFor.kind === "routine") { const f = plMenuFor, x = rtPlans(rtById(f.rid)).find(y => y.id === f.pid); plCloseMenu(); await rtRemovePlan(f.rid, f.pid); if (x && x.slot) setNote(x.date, x.slot, "rt-" + f.rid, ""); return; }
     if (e.target.closest("[data-rtgo]")) { plCloseMenu(); pl.sub = "routines"; savePl(); renderPlanner(); return; }
@@ -4530,6 +4554,9 @@ Don't invent appointments or facts that aren't listed.`);
     if (e.target.id === "plQ" && plMenuFor && plMenuFor.kind === "slot" && !plMenuFor.browse && !e.target.value.trim()) {
       plSlotMenu(plMenuFor.date, plMenuFor.slot, plMenuFor.el, "", true); $("plQ").focus();
     }
+  });
+  $("view-planner").addEventListener("change", async e => {
+    if (e.target.id === "plAny" && e.target.value && plMenuFor && plMenuFor.kind === "slot") { const [type, id] = e.target.value.split("|"), f = plMenuFor; plCloseMenu(); await addBlock(type, id, f.date, f.slot); if (f.note) setNote(f.date, f.slot, id, f.note); }
   });
   $("view-planner").addEventListener("input", e => { if (e.target.id === "plNoteNew" && plMenuFor && plMenuFor.kind === "slot") plMenuFor.note = e.target.value; });
   $("view-planner").addEventListener("input", e => { if (e.target.id === "plQ" && plMenuFor && plMenuFor.kind === "slot") { const pos = e.target.selectionStart; plSlotMenu(plMenuFor.date, plMenuFor.slot, plMenuFor.el, e.target.value, true); const q = $("plQ"); q.focus(); q.setSelectionRange(pos, pos); } });
@@ -4617,6 +4644,7 @@ Don't invent appointments or facts that aren't listed.`);
         if (k === "created") return `<td data-label="Created" class="num">${r.createdAt ? esc(fmt(r.createdAt.slice(0, 10))) : "—"}</td>`;
         if (k === "updated") return `<td data-label="Last edited" class="num">${x.e.updatedAt ? esc(fmt(x.e.updatedAt.slice(0, 10))) : "—"}</td>`;
         if (k === "tasks") return `<td data-label="Tasks" class="num">${done.length} done</td>`;
+        if (k === "public") return `<td data-label="Show on website">${PUBLIC ? (r.public === true ? "On" : "Off") : rtWebBtn(r)}</td>`;
         return `<td data-label="${DB_COL[k][1]}"><span class="db-empty">—</span></td>`;
       }
       const e = x.e, T = TYPE[x.type], ro = !!e._pub, done = (e.status || "") === "Done";
@@ -4626,7 +4654,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "status") return `<td data-label="Status"><select class="pill ${statusOf(e.status).cls}" data-dbedit="status" ${attrs} aria-label="Status for ${esc(e.title)}"${ro ? " disabled" : ""}>${STATUSES.map(s => `<option${s.v === (e.status || "Not started") ? " selected" : ""}>${s.v}</option>`).join("")}</select></td>`;
       if (k === "subtitle") return `<td data-label="Subtitle"><input type="text" class="db-inline db-text" data-dbedit="subtitle" ${attrs} value="${esc(e.subtitle || "")}" placeholder="—" aria-label="Subtitle for ${esc(e.title)}"${ro ? " disabled" : ""}>${subTasksHtml(e, x.type)}</td>`;
       if (k === "color") return `<td data-label="Color"><span class="db-type">${colorOf(e) ? `<i class="swatch sw-${colorOf(e)}" aria-hidden="true"></i>` : '<i class="swatch sw-white" aria-hidden="true"></i>'}<select class="db-inline" data-dbedit="color" ${attrs} aria-label="Color for ${esc(e.title)}"${ro ? " disabled" : ""}><option value=""${ownColor(e) ? "" : " selected"}>${areaColorFor(e) ? "From area (" + areaColorFor(e) + ")" : "White"}</option>${COLORS.map(c => `<option value="${c}"${ownColor(e) === c ? " selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("")}</select></span></td>`;
-      if (k === "public") return `<td data-label="Show on website"><label class="db-chk"><input type="checkbox" data-dbedit="public" ${attrs}${e.public !== false ? " checked" : ""}${ro ? " disabled" : ""}> ${e.public !== false ? "On" : "Off"}</label></td>`;
+      if (k === "public") return `<td data-label="Show on website"><label class="db-chk"><input type="checkbox" data-dbedit="public" ${attrs}${e.public === true ? " checked" : ""}${ro ? " disabled" : ""}> ${e.public === true ? "On" : "Off"}</label></td>`;
       if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}"><i class="tdot t-${y.type}" aria-hidden="true"></i>${esc(y.e.title || "Untitled")}</button>`).join("")}</span>` : dash}</td>`; }
       if (k === "tasks") { const ts = taskList(e), d = ts.filter(t => t.done).length; return `<td data-label="Tasks">${ts.length ? `<span class="tprog"><span class="tbar"><i style="width:${Math.round(d / ts.length * 100)}%"></i></span><span class="num">${d}/${ts.length}</span></span>` : dash}</td>`; }
       if (k === "updated") return `<td data-label="Last edited" class="num">${e.updatedAt ? esc(fmt(e.updatedAt.slice(0, 10))) : "—"}</td>`;
@@ -4954,7 +4982,8 @@ Don't invent appointments or facts that aren't listed.`);
   let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
   let inventory = [], rooms = recall("chevy.rooms") || [];
   const inv = { q: "", room: "", sort: "title", roomsOpen: false };
-  const webOn = (k) => k === "home" || !!homeWeb[k];
+  const HOME_SWITCH = ["inventory", "meals"]; // databases without their own per-entry "Show on website"
+  const webOn = (k) => !HOME_SWITCH.includes(k) || !!homeWeb[k];
   async function saveHomeWeb() {
     store("chevy.homeWeb", homeWeb);
     if (local || !db) return;
@@ -4963,17 +4992,17 @@ Don't invent appointments or facts that aren't listed.`);
   const countFor = (k) => k === "inventory" ? inventory.length : k === "meals" ? (typeof meals !== "undefined" ? meals.filter(m => !isArchivedMeal(m)).length : 0) : TYPE[k] ? data[k].length : k === "planner" ? (routines || []).length : null;
   function renderHome() {
     const el = $("homeBody"); if (!el) return;
-    const links = HOME_LINKS.filter(l => !PUBLIC || webOn(l.key)).filter(l => !(PUBLIC && l.key === "archive"));
+    const links = HOME_LINKS.filter(l => !PUBLIC || webOn(l.key));
     el.innerHTML = `<div class="hm-page">
       <div class="hm-icon" aria-hidden="true">🏠</div>
       <h1 class="hm-title">${esc(PUBLIC && String(PUBLIC.title || "").trim() ? PUBLIC.title : "Home")}</h1>
-      <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : "Jump to any part of LifeOS. The switch on each link decides whether it appears on your public website."}</p>
+      <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : "Jump to any part of LifeOS. Every tab is on your public website; each entry's own \"Show on website\" decides whether that entry appears. Inventory and Meals have one switch for the whole list."}</p>
       <div class="hm-label">Databases &amp; tools</div>
       <div class="hm-links">${links.map(l => { const n = countFor(l.key), on = webOn(l.key); return `<div class="hm-link">
         <a href="#${l.key}" class="hm-go" data-hmgo="${l.key}"><span class="hm-emo" aria-hidden="true">${l.icon}</span><span class="hm-txt"><b>${esc(l.label)}</b><span>${esc(PUBLIC && l.key === "planner" ? "What's coming up, by day, week and month" : l.desc)}${n != null && !(l.key === "planner") ? ` · ${n}` : ""}</span></span></a>
-        ${PUBLIC ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On website" : "Not on website"}</span></button>`}
+        ${PUBLIC || !HOME_SWITCH.includes(l.key) ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On website" : "Not on website"}</span></button>`}
       </div>`; }).join("")}</div>
-      ${PUBLIC ? "" : `<p class="hm-foot">On the website, only the links switched on appear (as tabs and here). Projects, Areas and Resources still show only entries marked "Show on website"; Inventory shows all its items when it's on.</p>`}
+      ${PUBLIC ? "" : `<p class="hm-foot">The website always has the same layout as LifeOS. Projects, Areas, Resources, Archive and Routines show only entries marked "Show on website". Inventory and Meals show all their items while their switch is on.</p>`}
     </div>`;
   }
   $("homeBody").addEventListener("click", async e => {
@@ -5153,7 +5182,7 @@ Don't invent appointments or facts that aren't listed.`);
   };
   TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
@@ -5189,6 +5218,7 @@ Don't invent appointments or facts that aren't listed.`);
       inventory = webOn("inventory") && Array.isArray(PUBLIC.inventory) ? PUBLIC.inventory.filter(x => x && x.id) : [];
       rooms = Array.isArray(PUBLIC.rooms) ? PUBLIC.rooms : [];
       meals = webOn("meals") && Array.isArray(PUBLIC.meals) ? PUBLIC.meals.filter(x => x && x.id) : [];
+      routines = Array.isArray(PUBLIC.routines) ? PUBLIC.routines.filter(r => r && r.id) : [];
       vault.welcome = "# Welcome\n\nBrowse everything here by **Projects**, **Areas** and **Resources**, see how it fits together in **Layers**, and how it all connects in **Graph**.\n\nOpen any note from the **Files** list. Links inside notes take you to related notes.";
       const title = String(PUBLIC.title || "").trim();
       if (title) { document.querySelector(".brand").textContent = title; document.title = title; }
