@@ -1075,6 +1075,52 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .ml-text { white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
 #view-home { max-width: 860px; }
 .hm-page { padding: 24px 8px 40px; display: grid; gap: 10px; }
+.wf-page { gap: 12px; }
+.wf-jump { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.wf-jbtn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 14px 7px 7px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.wf-jbtn span { width: 22px; height: 22px; border-radius: 50%; background: var(--forest); color: var(--accent); display: inline-grid; place-items: center; font-size: 12px; }
+.wf-jbtn:hover { border-color: var(--accent); }
+.wf-sec { display: grid; gap: 10px; padding-top: 22px; scroll-margin-top: 64px; }
+.wf-sub { margin: 0; color: var(--muted); font-size: 13px; }
+.wf-list { display: grid; gap: 6px; }
+.wf-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wf-in { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--ink); font: inherit; font-size: 14.5px; }
+.wf-in:focus { outline: none; border-color: var(--accent); }
+.wf-in[readonly] { background: none; border-color: transparent; }
+.wf-name { font-weight: 600; }
+.wf-dot { color: var(--accent); font-size: 11px; width: 16px; text-align: center; }
+.wf-x, .wf-open, .wf-star { flex: none; border: 1px solid transparent; background: none; color: var(--muted); border-radius: 8px; padding: 4px 8px; cursor: pointer; font: inherit; font-size: 14px; }
+.wf-x:hover, .wf-open:hover { color: var(--ink); border-color: var(--line); }
+.wf-star { font-size: 18px; line-height: 1; padding: 4px 6px; }
+.wf-star[aria-pressed="true"] { color: var(--accent); }
+.wf-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wf-add .wf-in { flex: 1 1 200px; }
+.wf-area { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 6px; background: var(--surface); }
+.wf-area.top { border-color: var(--forest); }
+.wf-area .wf-in { background: var(--bg); }
+.wf-goalrow { padding-left: 34px; }
+.wf-glabel { flex: none; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); width: 52px; }
+.wf-vals { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-left: 34px; }
+.wf-vpick { background: none; color: var(--muted); border-color: var(--line); }
+.wf-vpick::before { content: "+ "; }
+.wf-vpick[aria-pressed="true"] { background: var(--forest); color: var(--accent); border-color: var(--forest); }
+.wf-vpick[aria-pressed="true"]::before { content: "✓ "; }
+.wf-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; background: var(--surface); }
+.wf-card .wf-vals { padding-left: 0; }
+.wf-chead { display: flex; align-items: center; gap: 8px; font-size: 16px; flex-wrap: wrap; }
+.wf-chead .wf-open { margin-left: auto; }
+.wf-meta { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.wf-goal { color: var(--ink); font-size: 14px; }
+.wf-vchip { font-size: 12px; border: 1px solid var(--forest); background: color-mix(in srgb, var(--forest) 40%, transparent); color: var(--accent); border-radius: 999px; padding: 2px 9px; }
+.wf-vchip.sug { border-style: dashed; background: none; color: var(--muted); }
+.wf-prow { flex-wrap: wrap; }
+.wf-ptitle { flex: 1 1 160px; min-width: 0; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14.5px; cursor: pointer; padding: 6px 0; }
+.wf-ptitle:hover { color: var(--accent); text-decoration: underline; }
+.wf-when { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.wf-date { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; color: var(--ink); font: inherit; font-size: 13px; }
+.wf-empty { margin: 0; color: var(--muted); font-size: 13.5px; }
+@media (max-width: 640px) { .wf-sec { scroll-margin-top: 110px; } .wf-goalrow, .wf-vals { padding-left: 0; } .wf-glabel { width: auto; } .wf-when { flex-wrap: wrap; } }
+
 .hm-icon { font-size: 56px; line-height: 1; }
 .hm-title { font-size: 40px; margin: 4px 0 0; }
 .hm-sub { color: var(--muted); margin: 0 0 14px; font-size: 14.5px; }
@@ -1305,6 +1351,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
 <main id="view-home" hidden>
   <div id="homeBody"></div>
+</main>
+
+<main id="view-workflow" hidden>
+  <div id="wfBody"></div>
 </main>
 
 <main id="view-inventory" hidden>
@@ -4966,11 +5016,120 @@ Don't invent appointments or facts that aren't listed.`);
 
   // ---------- Tabs ----------
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
+  // ---------- Workflow: Values → Areas with goals → Projects and timing → Resources ----------
+  // Values live only here (settings/workflow), never as entries. Areas, projects and resources made here are real entries.
+  const WF_EMPTY = { values: [], topAreas: [], topProjects: [], areaValues: {} };
+  const wfNorm = (d) => ({ values: Array.isArray(d && d.values) ? d.values.filter(v => v && v.id).map(v => ({ id: String(v.id), text: String(v.text || "") })) : [], topAreas: Array.isArray(d && d.topAreas) ? d.topAreas.map(String) : [], topProjects: Array.isArray(d && d.topProjects) ? d.topProjects.map(String) : [], areaValues: d && d.areaValues && typeof d.areaValues === "object" ? Object.fromEntries(Object.entries(d.areaValues).map(([k, v]) => [k, Array.isArray(v) ? v.map(String) : []])) : {} });
+  let wf = PUBLIC ? wfNorm(null) : wfNorm(recall("chevy.workflow"));
+  const wfId = () => "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  async function saveWf() {
+    store("chevy.workflow", wf);
+    if (PUBLIC || local || !db) return;
+    try { await db.doc("settings/workflow").set({ ...JSON.parse(JSON.stringify(wf)), updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the Workflow page."); }
+  }
+  const WF_STOP = new Set("a an and the of to for in on my me i be with at by from is are it as or our we that this be being have has more less very really".split(" "));
+  const wfWords = (s) => new Set(String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2 && !WF_STOP.has(w)).map(w => w.slice(0, 5)));
+  // Values connected to an area: the ones I picked, plus "suggested" ones that share words with the area's name or goals
+  function wfAreaValues(a) {
+    const picked = new Set(wf.areaValues[a.id] || []);
+    const aw = wfWords((a.title || "") + " " + (a.subtitle || ""));
+    return wf.values.map(v => ({ v, picked: picked.has(v.id), suggested: !picked.has(v.id) && [...wfWords(v.text)].some(w => aw.has(w)) })).filter(x => x.picked || x.suggested);
+  }
+  const wfLinked = (id, type) => linksOf(id).filter(x => x.type === type).map(x => x.e);
+  const wfDate = (e) => e.focusStart && e.focusEnd && e.focusEnd !== e.focusStart ? `${fmt(e.focusStart)} – ${fmt(e.focusEnd)}` : e.focusStart ? fmt(e.focusStart) : "";
+  let wfDelArm = null;
+  function renderWorkflow() {
+    const el = $("wfBody"); if (!el) return;
+    const areas = data.areas.slice().sort((a, b) => (wf.topAreas.includes(b.id) - wf.topAreas.includes(a.id)) || titleSort({ e: a }, { e: b }));
+    const topAreas = wf.topAreas.map(id => data.areas.find(a => a.id === id)).filter(Boolean);
+    const topProjects = wf.topProjects.map(id => data.projects.find(p => p.id === id)).filter(Boolean);
+    const ro = PUBLIC ? " readonly" : "", dis = PUBLIC ? " disabled" : "";
+    const star = (on, attr, id, what) => `<button type="button" class="wf-star" ${attr}="${esc(id)}" aria-pressed="${on}" title="${on ? `Top ${what}. Click to remove it from the top.` : `Make this a top ${what}`}"${dis}>${on ? "★" : "☆"}</button>`;
+    const openBtn = (type, id) => `<button type="button" class="wf-open" data-wfopen="${type}" data-wfid="${esc(id)}" title="Open the entry">↗</button>`;
+    const valChip = (x) => `<span class="wf-vchip${x.suggested ? " sug" : ""}" title="${x.suggested ? "Suggested: shares words with this area" : "Connected value"}">${esc(x.v.text)}</span>`;
+    const sec = (id, n, title, sub, body) => `<section class="wf-sec" id="wf-${id}"><div class="hm-label">${n}. ${title}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
+    const values = PUBLIC ? `<p class="wf-empty">This is a private brainstorming page.</p>` : `<div class="wf-list">${wf.values.map(v => `<div class="wf-row"><span class="wf-dot" aria-hidden="true">◆</span><input class="wf-in" data-wfval="${esc(v.id)}" value="${esc(v.text)}" aria-label="Value" maxlength="200"><button type="button" class="wf-x" data-wfvdel="${esc(v.id)}" title="${wfDelArm === v.id ? "Tap again to delete" : "Delete this value"}">${wfDelArm === v.id ? "Delete?" : "×"}</button></div>`).join("") || `<p class="wf-empty">No values yet. What matters most to you? Add one at a time.</p>`}</div>
+      <div class="wf-add"><input class="wf-in" id="wfValNew" placeholder="A value, like Freedom or Time with Felicity" maxlength="200" aria-label="New value"><button type="button" class="btn primary" id="wfValAdd">Add value</button></div>`;
+    const areaRows = areas.map(a => { const top = wf.topAreas.includes(a.id), picked = new Set(wf.areaValues[a.id] || []); return `<div class="wf-area${top ? " top" : ""}">
+        <div class="wf-row">${star(top, "data-wfatop", a.id, "area")}${emo(a, "areas")}<input class="wf-in wf-name" data-wfedit="areas" data-wfid="${esc(a.id)}" data-wffield="title" value="${esc(a.title || "")}" placeholder="Area" aria-label="Area name"${ro}>${openBtn("areas", a.id)}</div>
+        <div class="wf-row wf-goalrow"><span class="wf-glabel">Goals</span><input class="wf-in" data-wfedit="areas" data-wfid="${esc(a.id)}" data-wffield="subtitle" value="${esc(a.subtitle || "")}" placeholder="What I want for this area" aria-label="Goals for ${esc(a.title || "this area")}"${ro}></div>
+        ${!PUBLIC && wf.values.length ? `<div class="wf-vals"><span class="wf-glabel">Values</span>${wf.values.map(v => `<button type="button" class="chip wf-vpick" data-wfav="${esc(a.id)}" data-wfv="${esc(v.id)}" aria-pressed="${picked.has(v.id)}">${esc(v.text)}</button>`).join("")}</div>` : ""}
+      </div>`; }).join("");
+    const areasSec = `${areaRows || `<p class="wf-empty">No areas yet.</p>`}${PUBLIC ? "" : `<div class="wf-add wf-add2"><input class="wf-in" id="wfAreaNew" placeholder="New area, like Health or Money" maxlength="200" aria-label="New area"><input class="wf-in" id="wfAreaGoal" placeholder="Goals for it" maxlength="300" aria-label="Goals for the new area"><button type="button" class="btn primary" id="wfAreaAdd">Add area</button></div>`}`;
+    const projSec = topAreas.length ? topAreas.map(a => { const vals = wfAreaValues(a), projs = wfLinked(a.id, "projects"); return `<div class="wf-card">
+        <div class="wf-chead">${emo(a, "areas")} <b>${esc(a.title || "Untitled")}</b>${openBtn("areas", a.id)}</div>
+        ${a.subtitle ? `<div class="wf-goal">🎯 ${esc(a.subtitle)}</div>` : ""}
+        ${vals.length ? `<div class="wf-vals">${vals.map(valChip).join("")}</div>` : ""}
+        <div class="wf-list">${projs.map(p => { const top = wf.topProjects.includes(p.id); return `<div class="wf-row wf-prow">${star(top, "data-wfptop", p.id, "project")}${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${esc(p.title || "Untitled")}</button><span class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></span></div>`; }).join("") || `<p class="wf-empty">No projects for this area yet.</p>`}</div>
+        ${PUBLIC ? "" : `<div class="wf-add wf-add3"><input class="wf-in" data-wfpnew="${esc(a.id)}" placeholder="New project for ${esc(a.title || "this area")}" maxlength="200" aria-label="New project"><span class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(a.id)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(a.id)}" aria-label="End"></span><button type="button" class="btn primary" data-wfpadd="${esc(a.id)}">Add project</button></div>`}
+      </div>`; }).join("") : (PUBLIC ? `<p class="wf-empty">Nothing here yet.</p>` : `<p class="wf-empty">Star (☆) your top areas in “Areas with goals” and they'll show up here.</p>`);
+    const resSec = topProjects.length ? topProjects.map(p => { const res = wfLinked(p.id, "pages"), area = wfLinked(p.id, "areas")[0]; return `<div class="wf-card">
+        <div class="wf-chead">${emo(p, "projects")} <b>${esc(p.title || "Untitled")}</b>${area ? `<span class="wf-meta">${esc(area.title || "")}</span>` : ""}${wfDate(p) ? `<span class="wf-meta">${esc(wfDate(p))}</span>` : ""}${openBtn("projects", p.id)}</div>
+        <div class="wf-list">${res.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${esc(r.title || "Untitled")}</button></div>`).join("") || `<p class="wf-empty">No resources for this project yet.</p>`}</div>
+        ${PUBLIC ? "" : `<div class="wf-add"><input class="wf-in" data-wfrnew="${esc(p.id)}" placeholder="New resource for ${esc(p.title || "this project")}" maxlength="200" aria-label="New resource"><button type="button" class="btn primary" data-wfradd="${esc(p.id)}">Add resource</button></div>`}
+      </div>`; }).join("") : (PUBLIC ? `<p class="wf-empty">Nothing here yet.</p>` : `<p class="wf-empty">Star (☆) your top projects in “Projects and timing” and they'll show up here.</p>`);
+    el.innerHTML = `<div class="hm-page wf-page">
+      <div class="hm-icon" aria-hidden="true">🧠</div>
+      <h1 class="hm-title">Workflow</h1>
+      ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Values, then areas and their goals, then projects and timing, then resources.</p>`}
+      <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas with goals"], ["projects", "Projects and timing"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
+      ${sec("values", 1, "Values", "What matters most to me. These stay on this page only (they aren't entries).", values)}
+      ${sec("areas", 2, "Areas with goals", "Each area's goals are its subtitle. Star (☆) your top areas. Tap values to connect them to an area.", areasSec)}
+      ${sec("projects", 3, "Projects and timing", "Your top areas with their goals and related values (dashed ones are suggested). Add projects and set their dates. Star (☆) your top projects.", projSec)}
+      ${sec("resources", 4, "Resources", "Your top projects. Add the resources that go with each one; they're linked to the project.", resSec)}
+    </div>`;
+  }
+  const wfAddValue = () => { const i = $("wfValNew"), t = (i && i.value || "").trim(); if (!t) { if (i) i.focus(); return; } wf.values.push({ id: wfId(), text: t.slice(0, 200) }); saveWf(); renderWorkflow(); const n = $("wfValNew"); if (n) n.focus(); };
+  async function wfCreate(type, title, extra) {
+    const T = TYPE[type], now = new Date().toISOString(), cf = T.props.find(P => P.kind === "date").field;
+    const ne = { id: newId(T), title, subtitle: "", status: "Not started", [cf]: today(), focusStart: "", focusEnd: "", tags: [], layers: [], color: "", tasks: [], links: [], body: "", createdAt: now, updatedAt: now, ...extra };
+    try { await saveEntry(type, ne); } catch (err) { notice(err.message); }
+    return ne;
+  }
+  async function wfEdit(type, id, field, value) {
+    const e = data[type].find(x => x.id === id); if (!e || e._pub || PUBLIC) return;
+    if ((e[field] || "") === value) return;
+    if (field === "title" && !value.trim()) { renderWorkflow(); return; }
+    const next = { ...e, [field]: value, updatedAt: new Date().toISOString() };
+    if (field === "focusStart" && value && next.focusEnd && next.focusEnd < value) next.focusEnd = value;
+    if (field === "focusEnd" && value && next.focusStart && next.focusStart > value) next.focusStart = value;
+    try { await saveEntry(type, next); } catch (err) { notice(err.message); }
+  }
+  $("wfBody").addEventListener("click", async ev => {
+    const t = ev.target;
+    const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
+    if (PUBLIC) return;
+    if (t.closest("#wfValAdd")) { wfAddValue(); return; }
+    const vd = t.closest("[data-wfvdel]"); if (vd) { const id = vd.dataset.wfvdel; if (wfDelArm !== id) { wfDelArm = id; renderWorkflow(); setTimeout(() => { if (wfDelArm === id) { wfDelArm = null; renderWorkflow(); } }, 3000); return; } wfDelArm = null; wf.values = wf.values.filter(v => v.id !== id); Object.keys(wf.areaValues).forEach(k => { wf.areaValues[k] = wf.areaValues[k].filter(x => x !== id); }); saveWf(); renderWorkflow(); return; }
+    const at = t.closest("[data-wfatop]"); if (at) { const id = at.dataset.wfatop; wf.topAreas = wf.topAreas.includes(id) ? wf.topAreas.filter(x => x !== id) : [...wf.topAreas, id]; saveWf(); renderWorkflow(); return; }
+    const pt = t.closest("[data-wfptop]"); if (pt) { const id = pt.dataset.wfptop; wf.topProjects = wf.topProjects.includes(id) ? wf.topProjects.filter(x => x !== id) : [...wf.topProjects, id]; saveWf(); renderWorkflow(); return; }
+    const av = t.closest("[data-wfav]"); if (av) { const a = av.dataset.wfav, v = av.dataset.wfv, cur = wf.areaValues[a] || []; wf.areaValues[a] = cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v]; saveWf(); renderWorkflow(); return; }
+    if (t.closest("#wfAreaAdd")) { const n = $("wfAreaNew"), g = $("wfAreaGoal"), title = (n.value || "").trim(); if (!title) { n.focus(); return; } const ne = await wfCreate("areas", title, { subtitle: (g.value || "").trim() }); n.value = ""; g.value = ""; renderWorkflow(); const n2 = $("wfAreaNew"); if (n2) n2.focus(); return ne; }
+    const pa = t.closest("[data-wfpadd]"); if (pa) { const a = pa.dataset.wfpadd, box = pa.closest(".wf-add"), n = box.querySelector("[data-wfpnew]"), s = box.querySelector("[data-wfpstart]").value, e = box.querySelector("[data-wfpend]").value, title = (n.value || "").trim(); if (!title) { n.focus(); return; } await wfCreate("projects", title, { links: [a], focusStart: s || "", focusEnd: e && (!s || e >= s) ? e : (s || "") }); renderWorkflow(); const n2 = $("wfBody").querySelector(`[data-wfpnew="${CSS.escape(a)}"]`); if (n2) n2.focus(); return; }
+    const ra = t.closest("[data-wfradd]"); if (ra) { const p = ra.dataset.wfradd, n = ra.closest(".wf-add").querySelector("[data-wfrnew]"), title = (n.value || "").trim(); if (!title) { n.focus(); return; } await wfCreate("pages", title, { links: [p] }); renderWorkflow(); const n2 = $("wfBody").querySelector(`[data-wfrnew="${CSS.escape(p)}"]`); if (n2) n2.focus(); return; }
+  });
+  $("wfBody").addEventListener("keydown", ev => {
+    if (ev.key !== "Enter" || PUBLIC) return; const t = ev.target;
+    if (t.id === "wfValNew") { ev.preventDefault(); wfAddValue(); return; }
+    if (t.id === "wfAreaNew" || t.id === "wfAreaGoal") { ev.preventDefault(); $("wfAreaAdd").click(); return; }
+    if (t.dataset.wfpnew) { ev.preventDefault(); t.closest(".wf-add").querySelector("[data-wfpadd]").click(); return; }
+    if (t.dataset.wfrnew) { ev.preventDefault(); t.closest(".wf-add").querySelector("[data-wfradd]").click(); return; }
+    if (t.matches("[data-wfval], [data-wfedit]")) { ev.preventDefault(); t.blur(); }
+  });
+  $("wfBody").addEventListener("change", ev => {
+    if (PUBLIC) return; const t = ev.target;
+    if (t.dataset.wfval) { const v = wf.values.find(x => x.id === t.dataset.wfval), txt = t.value.trim(); if (!v) return; if (!txt) { t.value = v.text; return; } if (txt !== v.text) { v.text = txt.slice(0, 200); saveWf(); } return; }
+    if (t.dataset.wfedit) wfEdit(t.dataset.wfedit, t.dataset.wfid, t.dataset.wffield, t.value.trim ? (t.dataset.wffield === "title" || t.dataset.wffield === "subtitle" ? t.value.trim() : t.value) : t.value);
+  });
+  const wfTyping = () => { const a = document.activeElement; return !!(a && a.closest && a.closest("#wfBody") && a.matches("input")); };
+
   // ---------- Home (a Notion-style page of links) and Inventory ----------
   // Each Home link has its own "On website" switch; the public website only shows the tabs switched on.
   const HOME_LINKS = [
     { key: "inventory", icon: "📦", label: "Inventory", desc: "My things, and which room they're in" },
     { key: "meals", icon: "🍽️", label: "Meals", desc: "Recipes by category, menu, cuisine and method" },
+    { key: "workflow", icon: "🧠", label: "Workflow", desc: "Values, areas with goals, projects and timing, resources" },
     { key: "planner", icon: "🗓️", label: "Planner", desc: "Cards, calendar, routines and weekly planning" },
     { key: "projects", icon: "📌", label: "Projects", desc: "Everything I'm working on" },
     { key: "areas", icon: "🧭", label: "Areas", desc: "The parts of my life I look after" },
@@ -4980,7 +5139,7 @@ Don't invent appointments or facts that aren't listed.`);
     { key: "database", icon: "🧱", label: "Layers", desc: "Every entry by layer, L0–L9" },
     { key: "graph", icon: "🕸️", label: "Graph", desc: "How everything links together" },
   ];
-  const HOME_WEB_DEFAULT = { planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
+  const HOME_WEB_DEFAULT = { workflow: true, planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
   let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
   let inventory = [], rooms = recall("chevy.rooms") || [];
   const inv = { q: "", room: "", sort: "title", roomsOpen: false };
@@ -5183,8 +5342,9 @@ Don't invent appointments or facts that aren't listed.`);
     obsidian: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5 13 5l-1.5 7L8 14.5 4.5 12 3 5z"/><path d="M8 1.5 6.5 8 8 14.5M3 5l3.5 3L13 5"/></svg>',
   };
   TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
+  TOOL_ICON.workflow = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="3.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="8" r="1.8"/><circle cx="3.5" cy="12.5" r="1.8"/><path d="M5.3 3.5h3.2a2 2 0 0 1 2 2v.7M5.3 12.5h3.2a2 2 0 0 0 2-2v-.7"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "home", label: "Home", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "workflow", label: "Workflow", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
@@ -5197,7 +5357,7 @@ Don't invent appointments or facts that aren't listed.`);
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
     $("view-planner").hidden = v !== "planner";
-    $("view-home").hidden = v !== "home"; $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
+    $("view-home").hidden = v !== "home"; $("view-workflow").hidden = v !== "workflow"; if (v === "workflow") renderWorkflow(); $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
     if (v === "home") renderHome(); if (v === "inventory") renderInventory(); if (v === "meals") renderMeals();
     $("view-database").hidden = v !== "database";
     if (v === "database") renderDatabase();
@@ -5209,7 +5369,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
-  function renderAll() { buildAdj(); renderHome(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
+  function renderAll() { buildAdj(); renderHome(); if (!wfTyping()) renderWorkflow(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
 
   // ---------- Connect to saved data ----------
   (async () => {
@@ -5258,6 +5418,7 @@ Don't invent appointments or facts that aren't listed.`);
     }, () => {});
     db.doc("settings/mealOptions").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { ML_FIELDS.forEach(([k]) => { if (Array.isArray(d[k])) mealOpts[k] = d[k]; }); store("chevy.mealOpts", mealOpts); } }, () => {});
     db.doc("settings/rooms").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && Array.isArray(d.rooms)) { rooms = d.rooms; store("chevy.rooms", rooms); renderInventory(); } }, () => {});
+    db.doc("settings/workflow").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { wf = wfNorm(JSON.parse(JSON.stringify(d))); store("chevy.workflow", wf); if (!wfTyping()) renderWorkflow(); } }, () => {});
     db.doc("settings/home").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.web && typeof d.web === "object") { homeWeb = { ...HOME_WEB_DEFAULT, ...d.web }; store("chevy.homeWeb", homeWeb); renderHome(); } }, () => {});
     db.doc("settings/site").onSnapshot(snap => {
       const d = snap.exists ? snap.data() : null; if (!d) return;
