@@ -45,6 +45,16 @@ Object.values(out).flat().forEach(e => { if (Array.isArray(e.links)) e.links = e
 let title = "";
 for (const f of ["settings/site.json", "settings/site"]) { const p = path.join(dir, f); if (fs.existsSync(p)) { try { const s = JSON.parse(fs.readFileSync(p, "utf8")); title = String(s.title || (s.data && s.data.title) || "").trim(); } catch (e) {} } }
 out.title = title;
+// Home page switches: which tabs appear on the website (missing file = the original set)
+const readJson = (f) => { for (const n of [f + ".json", f]) { const p = path.join(dir, n); if (fs.existsSync(p)) { try { const j = JSON.parse(fs.readFileSync(p, "utf8")); return j && j.data && typeof j.data === "object" && !j.web && !j.rooms ? j.data : j; } catch (e) {} } } return null; };
+const home = readJson("settings/home");
+if (home && home.web && typeof home.web === "object") out.home = { web: Object.fromEntries(Object.entries(home.web).map(([k, v]) => [k, v === true])) };
+// Inventory is published (all items) only while its Home link is switched on for the website
+if (out.home && out.home.web.inventory) {
+  out.inventory = readCol("inventory").map(x => ({ id: x.id, title: String(x.title || ""), room: String(x.room || "") }));
+  const r = readJson("settings/rooms"); out.rooms = r && Array.isArray(r.rooms) ? r.rooms.map(String) : [];
+  count += out.inventory.length; titles.push(`${out.inventory.length} inventory items`);
+}
 
 const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
 const json = JSON.stringify(out).replace(/</g, "\\u003c").split(LS).join("\\u2028").split(PS).join("\\u2029");
