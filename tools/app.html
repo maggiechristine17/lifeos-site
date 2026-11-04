@@ -1001,7 +1001,43 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .rt-foot { display: flex; justify-content: flex-end; }
 .rt-foot .btn { padding: 3px 8px; font-size: 12.5px; }
 @media (max-width: 480px) { .rt-head { flex-wrap: wrap; } }
-#view-planner[hidden], #view-home[hidden], #view-inventory[hidden] { display: none; }
+#view-planner[hidden], #view-home[hidden], #view-inventory[hidden], #view-meals[hidden] { display: none; }
+#view-meals { max-width: 1180px; }
+.ml-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ml-tools .search { max-width: 280px; }
+.ml-gl { font-size: 12px; color: var(--muted); margin-right: 2px; align-self: center; }
+.ml-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.ml-filt { border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; background: var(--surface); max-width: 100%; }
+.ml-filt summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.ml-filt[open] { flex-basis: 100%; }
+.ml-filt .chips { margin: 6px 0 4px; flex-wrap: wrap; gap: 5px; }
+.ml-group h2 { font-size: 15px; margin: 10px 0 8px; display: flex; gap: 8px; align-items: baseline; }
+.ml-group h2 span { font-size: 12px; color: var(--muted); font-weight: 500; }
+.ml-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.ml-card { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--ink); font: inherit; }
+.ml-card:hover { border-color: var(--panel-line); }
+.ml-emo { font-size: 22px; line-height: 1.1; }
+.ml-body { display: grid; gap: 4px; min-width: 0; }
+.ml-body b { font-size: 14px; }
+.ml-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ml-chip { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.ml-meta { font-size: 11.5px; color: var(--muted); }
+.ml-dialog { width: min(760px, 100%); }
+.ml-dbody { display: grid; gap: 14px; padding: 16px 20px 22px; overflow-y: auto; }
+.ml-titlerow { display: flex; gap: 10px; align-items: center; }
+.ml-emobtn { font-size: 26px; width: 52px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; flex: 0 0 52px; }
+.ml-title { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; padding: 8px 12px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.ml-h { margin: 0; font-size: 24px; }
+.ml-f { display: grid; gap: 5px; }
+.ml-f .chips { flex-wrap: wrap; gap: 5px; align-items: center; }
+.ml-addopt { width: 90px; padding: 3px 8px; border: 1px dashed var(--panel-line); border-radius: 999px; background: none; color: var(--ink); font-size: 12px; }
+.ml-row { display: flex; flex-wrap: wrap; gap: 16px; }
+.ml-row label, .ml-row > span { display: grid; gap: 4px; font-size: 14px; }
+.ml-row select, .ml-row input, .ml-linkrow input { padding: 6px 9px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); color: var(--ink); font-size: 14px; }
+.ml-linkrow { display: flex; gap: 8px; }
+.ml-linkrow input { flex: 1; min-width: 0; }
+.ml-f textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; resize: vertical; }
+.ml-text { white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
 #view-home { max-width: 860px; }
 .hm-page { padding: 24px 8px 40px; display: grid; gap: 10px; }
 .hm-icon { font-size: 56px; line-height: 1; }
@@ -1240,6 +1276,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="view-head"><div><h1>📦 Inventory</h1><div class="count" id="invCount"></div></div></div>
   <div id="invBody"></div>
 </main>
+
+<main id="view-meals" hidden>
+  <div class="view-head"><div><h1>🍽️ Meals</h1><div class="count" id="mlCount"></div></div></div>
+  <div id="mlBody"></div>
+</main>
+<div class="overlay" id="mlOverlay" hidden><div class="dialog ml-dialog" id="mlDialog" role="dialog" aria-modal="true" aria-label="Meal"></div></div>
 
 <main id="view-planner" hidden>
   <div class="view-head">
@@ -4795,17 +4837,18 @@ Don't invent appointments or facts that aren't listed.`);
   // ---------- Home (a Notion-style page of links) and Inventory ----------
   // Each Home link has its own "On website" switch; the public website only shows the tabs switched on.
   const HOME_LINKS = [
+    { key: "inventory", icon: "📦", label: "Inventory", desc: "My things, and which room they're in" },
+    { key: "meals", icon: "🍽️", label: "Meals", desc: "Recipes by category, menu, cuisine and method" },
     { key: "planner", icon: "🗓️", label: "Planner", desc: "Cards, calendar, routines and weekly planning" },
     { key: "projects", icon: "📌", label: "Projects", desc: "Everything I'm working on" },
     { key: "areas", icon: "🧭", label: "Areas", desc: "The parts of my life I look after" },
     { key: "pages", icon: "📚", label: "Resources", desc: "Notes, references and things to keep" },
     { key: "archive", icon: "🗄️", label: "Archive", desc: "Done and set-aside entries" },
-    { key: "inventory", icon: "📦", label: "Inventory", desc: "My things, and which room they're in" },
     { key: "obsidian", icon: "🪨", label: "Obsidian", desc: "All notes as files and folders" },
     { key: "database", icon: "🧱", label: "Layers", desc: "Every entry by layer, L0–L9" },
     { key: "graph", icon: "🕸️", label: "Graph", desc: "How everything links together" },
   ];
-  const HOME_WEB_DEFAULT = { planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, obsidian: true, database: true, graph: true };
+  const HOME_WEB_DEFAULT = { planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
   let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
   let inventory = [], rooms = recall("chevy.rooms") || [];
   const inv = { q: "", room: "", sort: "title", roomsOpen: false };
@@ -4815,7 +4858,7 @@ Don't invent appointments or facts that aren't listed.`);
     if (local || !db) return;
     try { await db.doc("settings/home").set({ web: { ...homeWeb }, updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the Home setting."); }
   }
-  const countFor = (k) => k === "inventory" ? inventory.length : TYPE[k] ? data[k].length : k === "planner" ? (routines || []).length : null;
+  const countFor = (k) => k === "inventory" ? inventory.length : k === "meals" ? (typeof meals !== "undefined" ? meals.filter(m => !isArchivedMeal(m)).length : 0) : TYPE[k] ? data[k].length : k === "planner" ? (routines || []).length : null;
   function renderHome() {
     const el = $("homeBody"); if (!el) return;
     const links = HOME_LINKS.filter(l => !PUBLIC || webOn(l.key)).filter(l => !(PUBLIC && l.key === "archive"));
@@ -4906,6 +4949,101 @@ Don't invent appointments or facts that aren't listed.`);
     if (e.target.id === "invRoomNew") { e.preventDefault(); $("invBody").querySelector("[data-invroomadd]").click(); }
     if (e.target.matches("[data-invname]")) { e.preventDefault(); e.target.blur(); }
   });
+  // ----- Meals: recipes imported from Notion, with Category, Menu, Cuisine and Method choices I can add to -----
+  const ML_FIELDS = [["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"]];
+  const ML_DEFAULT_OPTS = { category: ["Entree", "Meat", "Soups", "Side", "Dessert", "Sauce", "Kids", "Breakfast", "Vegan", "New", "Archived"], menu: ["Menu 1", "Menu 2", "Menu 3", "Menu 4", "Menu 5", "Other"], cuisine: ["Italian", "American", "European", "Mexican", "Korean & Chinese", "Indian & Thai", "Mediterranean", "Kids"], method: ["Assemble", "Air Fryer", "Food Processor", "Pressure Cook", "George Foreman", "Oven", "Pot", "Skillet"] };
+  let meals = [], mealOpts = { ...ML_DEFAULT_OPTS, ...(recall("chevy.mealOpts") || {}) };
+  const ml = Object.assign({ q: "", group: "category", archived: false, f: {} }, recall("chevy.meals.view") || {});
+  ml.open = null; ml.del = false;
+  const saveMlView = () => store("chevy.meals.view", { q: "", group: ml.group, archived: ml.archived, f: ml.f });
+  const mlArr = (v) => Array.isArray(v) ? v.filter(Boolean).map(String) : (v ? String(v).split(",").map(s => s.trim()).filter(Boolean) : []);
+  const mlOptsFor = (k) => [...new Set([...(mealOpts[k] || []), ...meals.flatMap(m => mlArr(m[k]))])];
+  const isArchivedMeal = (m) => mlArr(m.category).includes("Archived");
+  async function saveMeal(m) {
+    const { id, ...body } = m; const i = meals.findIndex(x => x.id === id); if (i >= 0) meals[i] = m; else meals.push(m);
+    if (local || !db) { renderMeals(); renderHome(); return; }
+    try { await db.collection("meals").doc(id).set(body); } catch (err) { notice("Couldn't save the meal (" + (err.code || "error") + ")."); }
+  }
+  async function deleteMeal(id) {
+    meals = meals.filter(x => x.id !== id);
+    if (local || !db) { renderMeals(); renderHome(); return; }
+    try { await db.collection("meals").doc(id).delete(); } catch (err) { notice("Couldn't delete the meal."); }
+  }
+  async function saveMealOpts() {
+    store("chevy.mealOpts", mealOpts);
+    if (local || !db) return;
+    try { await db.doc("settings/mealOptions").set({ ...mealOpts, updatedAt: new Date().toISOString() }); } catch (e) {}
+  }
+  const mlChip = (v) => `<span class="ml-chip">${esc(v)}</span>`;
+  function renderMeals() {
+    const el = $("mlBody"); if (!el) return;
+    const ro = !!PUBLIC, q = ml.q.trim().toLowerCase();
+    let list = meals.filter(m => (ml.archived || !isArchivedMeal(m)) && (!q || [m.title, m.ingredients, (m.ingList || []).join(" "), mlArr(m.cuisine).join(" "), mlArr(m.category).join(" ")].join(" ").toLowerCase().includes(q)));
+    ML_FIELDS.forEach(([k]) => { const sel = (ml.f[k] || []); if (sel.length) list = list.filter(m => mlArr(m[k]).some(v => sel.includes(v))); });
+    list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    $("mlCount").textContent = `${meals.filter(m => !isArchivedMeal(m)).length} meals${meals.some(isArchivedMeal) ? ` · ${meals.filter(isArchivedMeal).length} archived` : ""}`;
+    const card = (m) => `<button type="button" class="ml-card" data-mlopen="${esc(m.id)}"><span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
+    let groups;
+    if (ml.group === "none") groups = [["All meals", list]];
+    else { const key = ml.group, opts = mlOptsFor(key), g = new Map(opts.map(o => [o, []])); const none = []; list.forEach(m => { const vs = mlArr(m[key]); if (!vs.length) none.push(m); vs.forEach(v => { if (!g.has(v)) g.set(v, []); g.get(v).push(m); }); }); groups = [...g.entries()].filter(([, l]) => l.length); if (none.length) groups.push(["No " + ML_FIELDS.find(f => f[0] === key)[1].toLowerCase(), none]); }
+    const filt = ML_FIELDS.map(([k, label]) => `<details class="ml-filt"${(ml.f[k] || []).length ? " open" : ""}><summary>${label}${(ml.f[k] || []).length ? ` · ${(ml.f[k] || []).length}` : ""}</summary><span class="chips">${mlOptsFor(k).filter(o => k !== "category" || ml.archived || o !== "Archived").map(o => `<button type="button" class="chip" data-mlf="${k}|${esc(o)}" aria-pressed="${(ml.f[k] || []).includes(o)}">${esc(o)}</button>`).join("")}</span></details>`).join("");
+    el.innerHTML = `<div class="ml-tools">
+        <input type="search" id="mlQ" class="search" placeholder="Search meals or ingredients…" value="${esc(ml.q)}" aria-label="Search meals">
+        <span class="chips" role="group" aria-label="Group by"><span class="ml-gl">Group by</span>${[["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"], ["none", "None"]].map(([k, l]) => `<button type="button" class="chip" data-mlgroup="${k}" aria-pressed="${ml.group === k}">${l}</button>`).join("")}</span>
+        <label class="switch"><input type="checkbox" id="mlArch"${ml.archived ? " checked" : ""}> Show archived</label>
+        ${ro ? "" : `<button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+      <div class="ml-filters">${filt}${Object.values(ml.f).some(a => a && a.length) ? '<button type="button" class="btn ghost" data-mlclear>Clear filters</button>' : ""}</div>
+      ${list.length ? groups.map(([g, l]) => `<section class="ml-group"><h2>${esc(g)} <span>${l.length}</span></h2><div class="ml-grid">${l.map(card).join("")}</div></section>`).join("") : `<div class="empty"><strong>${meals.length ? "Nothing matches" : "No meals yet"}</strong>${meals.length ? "Try another search or clear the filters." : ""}</div>`}`;
+    if (ml.open) renderMealDialog();
+  }
+  function renderMealDialog() {
+    const m = meals.find(x => x.id === ml.open); const ov = $("mlOverlay");
+    if (!m) { ov.hidden = true; ml.open = null; return; }
+    const ro = !!PUBLIC;
+    const multi = (k, label) => { const cur = mlArr(m[k]); return `<div class="ml-f"><span class="flabel">${label}</span><span class="chips">${ro ? (cur.map(mlChip).join("") || '<span class="pl-none">—</span>') : mlOptsFor(k).map(o => `<button type="button" class="chip" data-mlset="${k}|${esc(o)}" aria-pressed="${cur.includes(o)}">${esc(o)}</button>`).join("") + `<input type="text" class="ml-addopt" data-mladdopt="${k}" placeholder="+ New" aria-label="Add a ${label.toLowerCase()} choice">`}</span></div>`; };
+    const link = m.link && /^https?:/i.test(m.link) ? m.link : "";
+    $("mlDialog").innerHTML = `<div class="dlg-head"><div class="dlg-top"><span class="dlg-kind">Meal</span></div><div class="dialog-actions">${ro ? "" : `<button type="button" class="btn danger" data-mldel>${ml.del ? "Tap again to delete" : "Delete"}</button>`}<div class="right"><button type="button" class="btn" data-mlclose>Close</button></div></div></div>
+      <div class="ml-dbody">
+        <div class="ml-titlerow"><button type="button" class="emoji-btn ml-emobtn" data-mlemoji${ro ? " disabled" : ""} aria-label="Change emoji">${esc(m.icon || "🍽️")}</button>${ro ? `<h2 class="ml-h">${esc(m.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-mltext="title" value="${esc(m.title || "")}" placeholder="Meal name" aria-label="Meal name">`}</div>
+        ${multi("category", "Category")}${multi("menu", "Menu")}${multi("cuisine", "Cuisine")}${multi("method", "Method")}
+        <div class="ml-f ml-row"><label><span class="flabel">Status</span>${ro ? esc(m.status || "—") : `<select data-mltext="status"><option value="">—</option>${["Not started", "In progress", "Done"].map(s => `<option${m.status === s ? " selected" : ""}>${s}</option>`).join("")}</select>`}</label>
+          <label><span class="flabel">Date</span>${ro ? esc(m.date ? fmt(m.date) : "—") : `<input type="date" data-mltext="date" value="${esc(m.date || "")}">`}</label>
+          <span><span class="flabel">Added</span>${esc(m.created ? fmt(m.created) : "—")}</span></div>
+        <div class="ml-f"><span class="flabel">Recipe link</span>${ro ? (link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\/(www\.)?/, "").slice(0, 70))}</a>` : "—") : `<div class="ml-linkrow"><input type="url" data-mltext="link" value="${esc(m.link || "")}" placeholder="https://…" aria-label="Recipe link">${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Open ↗</a>` : ""}</div>`}</div>
+        ${(m.ingList || []).length ? `<div class="ml-f"><span class="flabel">Main ingredients</span><span class="chips">${m.ingList.map(mlChip).join("")}</span></div>` : ""}
+        <div class="ml-f"><span class="flabel">Ingredients</span>${ro ? `<div class="ml-text">${esc(m.ingredients || "—")}</div>` : `<textarea data-mltext="ingredients" rows="8" placeholder="One per line">${esc(m.ingredients || "")}</textarea>`}</div>
+        <div class="ml-f"><span class="flabel">Directions</span>${ro ? `<div class="ml-text">${esc(m.directions || "—")}</div>` : `<textarea data-mltext="directions" rows="8" placeholder="Steps">${esc(m.directions || "")}</textarea>`}</div>
+        ${m.notionPage ? `<div class="ml-f pub-hint">This recipe also has notes or photos inside its Notion page, which weren't copied over.</div>` : ""}
+      </div>`;
+    ov.hidden = false;
+  }
+  const mlNewId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  $("mlBody").addEventListener("click", async e => {
+    const o = e.target.closest("[data-mlopen]"); if (o) { ml.open = o.dataset.mlopen; ml.del = false; renderMealDialog(); return; }
+    const g = e.target.closest("[data-mlgroup]"); if (g) { ml.group = g.dataset.mlgroup; saveMlView(); renderMeals(); return; }
+    const f = e.target.closest("[data-mlf]"); if (f) { const [k, v] = f.dataset.mlf.split("|"); const cur = ml.f[k] || []; ml.f = { ...ml.f, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }; saveMlView(); renderMeals(); return; }
+    if (e.target.closest("[data-mlclear]")) { ml.f = {}; saveMlView(); renderMeals(); return; }
+    if (e.target.closest("[data-mlnew]")) { const m = { id: mlNewId(), title: "", icon: "🍽️", category: [], menu: [], cuisine: [], method: [], created: today(), createdAt: new Date().toISOString() }; await saveMeal(m); ml.open = m.id; renderMealDialog(); setTimeout(() => { const t = $("mlDialog").querySelector(".ml-title"); if (t) t.focus(); }, 0); }
+  });
+  $("mlBody").addEventListener("change", e => { if (e.target.id === "mlArch") { ml.archived = e.target.checked; saveMlView(); renderMeals(); } });
+  $("mlBody").addEventListener("input", e => { if (e.target.id === "mlQ") { ml.q = e.target.value; const pos = e.target.selectionStart; renderMeals(); const q = $("mlQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
+  const mlClose = () => { $("mlOverlay").hidden = true; ml.open = null; ml.del = false; renderMeals(); };
+  $("mlOverlay").addEventListener("click", async e => {
+    if (e.target.id === "mlOverlay" || e.target.closest("[data-mlclose]")) { mlClose(); return; }
+    const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
+    const s = e.target.closest("[data-mlset]"); if (s) { const [k, v] = s.dataset.mlset.split("|"); const cur = mlArr(m[k]); await saveMeal({ ...m, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v], updatedAt: new Date().toISOString() }); renderMealDialog(); return; }
+    if (e.target.closest("[data-mldel]")) { if (!ml.del) { ml.del = true; renderMealDialog(); setTimeout(() => { if (ml.del) { ml.del = false; if (ml.open) renderMealDialog(); } }, 3000); return; } const id = m.id; ml.open = null; ml.del = false; $("mlOverlay").hidden = true; await deleteMeal(id); return; }
+    const em = e.target.closest("[data-mlemoji]"); if (em) { openFloatPicker(em, m.icon || "", async (pick) => { const cur = meals.find(x => x.id === m.id); if (cur) { await saveMeal({ ...cur, icon: pick || "🍽️" }); renderMealDialog(); } }); return; }
+  });
+  $("mlOverlay").addEventListener("change", async e => {
+    const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
+    const t = e.target.closest("[data-mltext]"); if (t) { const k = t.dataset.mltext; const v = k === "title" ? t.value.trim() : t.value; if ((m[k] || "") !== v) await saveMeal({ ...m, [k]: v, updatedAt: new Date().toISOString() }); }
+  });
+  $("mlOverlay").addEventListener("keydown", async e => {
+    if (e.key === "Escape") { mlClose(); return; }
+    const a = e.target.closest("[data-mladdopt]");
+    if (a && e.key === "Enter") { e.preventDefault(); const k = a.dataset.mladdopt, v = a.value.trim().slice(0, 40); if (!v) return; const m = meals.find(x => x.id === ml.open); mealOpts = { ...mealOpts, [k]: [...new Set([...(mealOpts[k] || []), v])] }; saveMealOpts(); if (m) await saveMeal({ ...m, [k]: [...new Set([...mlArr(m[k]), v])] }); renderMealDialog(); const n = $("mlDialog").querySelector(`[data-mladdopt="${k}"]`); if (n) n.focus(); }
+  });
   const TOOL_ICON = {
     planner: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>',
     graph: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="4" cy="4.5" r="2"/><circle cx="12" cy="4" r="1.6"/><circle cx="8.5" cy="12" r="2"/><path d="M5.6 5.6 7.4 10.4M10.6 5.2 9.3 10.2M5.9 4.4 10.4 4.1"/></svg>',
@@ -4913,7 +5051,7 @@ Don't invent appointments or facts that aren't listed.`);
   };
   TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "inventory", label: "Inventory", kind: "db" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "inventory", label: "Inventory", kind: "db" }, { key: "meals", label: "Meals", kind: "db" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
@@ -4925,8 +5063,8 @@ Don't invent appointments or facts that aren't listed.`);
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
     $("view-planner").hidden = v !== "planner";
-    $("view-home").hidden = v !== "home"; $("view-inventory").hidden = v !== "inventory";
-    if (v === "home") renderHome(); if (v === "inventory") renderInventory();
+    $("view-home").hidden = v !== "home"; $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
+    if (v === "home") renderHome(); if (v === "inventory") renderInventory(); if (v === "meals") renderMeals();
     $("view-database").hidden = v !== "database";
     if (v === "database") renderDatabase();
     if (v === "planner") renderPlanner(); else plCloseMenu();
@@ -4937,7 +5075,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
-  function renderAll() { buildAdj(); renderHome(); renderInventory(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
+  function renderAll() { buildAdj(); renderHome(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
 
   // ---------- Connect to saved data ----------
   (async () => {
@@ -4947,6 +5085,7 @@ Don't invent appointments or facts that aren't listed.`);
       vault.foldersLoaded = true;
       inventory = webOn("inventory") && Array.isArray(PUBLIC.inventory) ? PUBLIC.inventory.filter(x => x && x.id) : [];
       rooms = Array.isArray(PUBLIC.rooms) ? PUBLIC.rooms : [];
+      meals = webOn("meals") && Array.isArray(PUBLIC.meals) ? PUBLIC.meals.filter(x => x && x.id) : [];
       vault.welcome = "# Welcome\n\nBrowse everything here by **Projects**, **Areas** and **Resources**, see how it fits together in **Layers**, and how it all connects in **Graph**.\n\nOpen any note from the **Files** list. Links inside notes take you to related notes.";
       const title = String(PUBLIC.title || "").trim();
       if (title) { document.querySelector(".brand").textContent = title; document.title = title; }
@@ -4977,6 +5116,12 @@ Don't invent appointments or facts that aren't listed.`);
       inventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const a = document.activeElement; if (!(a && a.closest && a.closest("#invBody") && a.matches("input[type=text], input[type=search]"))) renderInventory(); renderHome();
     }, () => {});
+    db.collection("meals").onSnapshot(snap => {
+      meals = snap.docs.map(d => ({ id: d.id, ...JSON.parse(JSON.stringify(d.data())) }));
+      const a = document.activeElement; const typing = a && a.closest && (a.closest("#mlDialog") || a.id === "mlQ") && a.matches("input, textarea");
+      if (!typing) renderMeals(); renderHome();
+    }, () => {});
+    db.doc("settings/mealOptions").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { ML_FIELDS.forEach(([k]) => { if (Array.isArray(d[k])) mealOpts[k] = d[k]; }); store("chevy.mealOpts", mealOpts); } }, () => {});
     db.doc("settings/rooms").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && Array.isArray(d.rooms)) { rooms = d.rooms; store("chevy.rooms", rooms); renderInventory(); } }, () => {});
     db.doc("settings/home").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.web && typeof d.web === "object") { homeWeb = { ...HOME_WEB_DEFAULT, ...d.web }; store("chevy.homeWeb", homeWeb); renderHome(); } }, () => {});
     db.doc("settings/site").onSnapshot(snap => {

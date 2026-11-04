@@ -55,6 +55,12 @@ if (out.home && out.home.web.inventory) {
   const r = readJson("settings/rooms"); out.rooms = r && Array.isArray(r.rooms) ? r.rooms.map(String) : [];
   count += out.inventory.length; titles.push(`${out.inventory.length} inventory items`);
 }
+// Meals are published (all of them) only while the Meals Home link is switched on for the website
+if (out.home && out.home.web.meals) {
+  const keep = ["title", "icon", "category", "menu", "cuisine", "method", "status", "date", "created", "link", "ingredients", "directions", "ingList"];
+  out.meals = readCol("meals").map(m => Object.fromEntries([["id", m.id], ...keep.filter(k => m[k] !== undefined).map(k => [k, m[k]])]));
+  count += out.meals.length; titles.push(`${out.meals.length} meals`);
+}
 
 const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
 const json = JSON.stringify(out).replace(/</g, "\\u003c").split(LS).join("\\u2028").split(PS).join("\\u2029");
