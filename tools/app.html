@@ -652,6 +652,8 @@ td .tags { flex-wrap: nowrap; overflow: hidden; }
 /* One-click switches shown wherever an entry appears */
 .qt { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 999px; padding: 2px 9px 2px 5px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; line-height: 18px; vertical-align: middle; }
 .qt:hover { border-color: var(--panel-line); color: var(--ink); }
+.qt.qt-ro { cursor: default; }
+.qt[data-qt="public"], .qt.rt-web, .qt.hm-web, .qt.qt-ro { min-width: 58px; }
 .qt-sw { width: 24px; height: 14px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s; }
 .qt-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
 .qt[aria-pressed="true"] { color: var(--accent); border-color: var(--forest); }
@@ -1843,7 +1845,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
   // ---------- One-click switches ----------
   // On/off properties (like Show on website) flip with a single click wherever the entry is shown.
-  const qtLabel = (P, on) => P.key === "public" ? (on ? "On website" : "Not on website") : P.label;
+  const qtLabel = (P, on) => P.key === "public" ? (on ? "On" : "Off") : P.label;
   const qtHtml = (e, type, only) => {
     if (PUBLIC || !e || e._pub) return ""; const T = TYPE[type]; if (!T) return "";
     const ps = only ? [only] : T.props.filter(p => p.kind === "check");
@@ -2067,7 +2069,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       search: () => "",
       filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="chips" data-dyn></div>`,
       sync: (box, f) => { box.querySelector("[data-dyn]").innerHTML = [["yes", "Shown"], ["no", "Not shown"]].map(([k, l]) => `<button type="button" class="chip" aria-pressed="${f.mode === k}" data-act="lmode" data-val="${k}">${l}</button>`).join(""); },
-      cell: (e, P, T) => (T && qtHtml(e, T.key, P)) || (K.check.on(e, P) ? '<span class="pub-on">● On website</span>' : '<span style="color:var(--muted)">Not shown</span>'),
+      cell: (e, P, T) => (T && qtHtml(e, T.key, P)) || (K.check.on(e, P) ? '<span class="qt qt-ro" aria-pressed="true"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">On</span></span>' : '<span class="qt qt-ro" aria-pressed="false"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">Off</span></span>'),
       editHtml: (P, e) => `<div class="pub-edit"><label class="pub-toggle" for="ed-${P.key}"><input type="checkbox" id="ed-${P.key}"${(e ? K.check.on(e, P) : siteAdd) ? " checked" : ""}><span class="pub-switch" aria-hidden="true"></span><span>${P.label}</span></label><span class="pub-hint">Off unless you turn it on. When "🌐 Add to website" at the top is on, new entries start switched on.</span></div>`,
       read: (P, out) => { out[P.field] = $("ed-" + P.key).checked; },
     },
@@ -3922,7 +3924,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const RT_ICON = '<svg class="rt-ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>';
   const rtById = (id) => routines.find(r => r.id === id);
   // A routine is a Layer 7 entry: it has its own "Show on website" switch like every other entry
-  const rtWebBtn = (r) => PUBLIC ? "" : `<button type="button" class="qt rt-web" data-rtweb="${esc(r.id)}" aria-pressed="${r.public === true}" title="${r.public === true ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On website" : "Not on website"}</span></button>`;
+  const rtWebBtn = (r) => PUBLIC ? "" : `<button type="button" class="qt rt-web" data-rtweb="${esc(r.id)}" aria-pressed="${r.public === true}" title="${r.public === true ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On" : "Off"}</span></button>`;
   async function rtToggleWeb(id) { const r = rtById(id); if (!r || PUBLIC) return; const next = { ...r, public: r.public !== true, updatedAt: new Date().toISOString() }; routines = routines.map(x => x.id === id ? next : x); renderPlanner(); renderDatabase(); renderVault(); await saveRoutine(next); }
   document.addEventListener("click", ev => { const b = ev.target.closest && ev.target.closest("[data-rtweb]"); if (!b) return; ev.preventDefault(); ev.stopPropagation(); rtToggleWeb(b.dataset.rtweb); }, true);
   const rtPlans = (r) => (Array.isArray(r && r.plans) ? r.plans : []).filter(x => x && x.id && /^\d{4}-\d\d-\d\d$/.test(x.date || ""));
@@ -4644,7 +4646,7 @@ Don't invent appointments or facts that aren't listed.`);
         if (k === "created") return `<td data-label="Created" class="num">${r.createdAt ? esc(fmt(r.createdAt.slice(0, 10))) : "—"}</td>`;
         if (k === "updated") return `<td data-label="Last edited" class="num">${x.e.updatedAt ? esc(fmt(x.e.updatedAt.slice(0, 10))) : "—"}</td>`;
         if (k === "tasks") return `<td data-label="Tasks" class="num">${done.length} done</td>`;
-        if (k === "public") return `<td data-label="Show on website">${PUBLIC ? (r.public === true ? "On" : "Off") : rtWebBtn(r)}</td>`;
+        if (k === "public") return `<td data-label="Show on website">${PUBLIC ? `<span class="qt qt-ro" aria-pressed="${r.public === true}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On" : "Off"}</span></span>` : rtWebBtn(r)}</td>`;
         return `<td data-label="${DB_COL[k][1]}"><span class="db-empty">—</span></td>`;
       }
       const e = x.e, T = TYPE[x.type], ro = !!e._pub, done = (e.status || "") === "Done";
@@ -4654,7 +4656,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "status") return `<td data-label="Status"><select class="pill ${statusOf(e.status).cls}" data-dbedit="status" ${attrs} aria-label="Status for ${esc(e.title)}"${ro ? " disabled" : ""}>${STATUSES.map(s => `<option${s.v === (e.status || "Not started") ? " selected" : ""}>${s.v}</option>`).join("")}</select></td>`;
       if (k === "subtitle") return `<td data-label="Subtitle"><input type="text" class="db-inline db-text" data-dbedit="subtitle" ${attrs} value="${esc(e.subtitle || "")}" placeholder="—" aria-label="Subtitle for ${esc(e.title)}"${ro ? " disabled" : ""}>${subTasksHtml(e, x.type)}</td>`;
       if (k === "color") return `<td data-label="Color"><span class="db-type">${colorOf(e) ? `<i class="swatch sw-${colorOf(e)}" aria-hidden="true"></i>` : '<i class="swatch sw-white" aria-hidden="true"></i>'}<select class="db-inline" data-dbedit="color" ${attrs} aria-label="Color for ${esc(e.title)}"${ro ? " disabled" : ""}><option value=""${ownColor(e) ? "" : " selected"}>${areaColorFor(e) ? "From area (" + areaColorFor(e) + ")" : "White"}</option>${COLORS.map(c => `<option value="${c}"${ownColor(e) === c ? " selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("")}</select></span></td>`;
-      if (k === "public") return `<td data-label="Show on website"><label class="db-chk"><input type="checkbox" data-dbedit="public" ${attrs}${e.public === true ? " checked" : ""}${ro ? " disabled" : ""}> ${e.public === true ? "On" : "Off"}</label></td>`;
+      if (k === "public") { const PP = TYPE[x.type] && TYPE[x.type].props.find(p => p.key === "public"); const sw = !ro && PP ? qtHtml(e, x.type, PP) : ""; return `<td data-label="Show on website">${sw || `<span class="qt qt-ro" aria-pressed="${e.public === true}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${e.public === true ? "On" : "Off"}</span></span>`}</td>`; }
       if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}"><i class="tdot t-${y.type}" aria-hidden="true"></i>${esc(y.e.title || "Untitled")}</button>`).join("")}</span>` : dash}</td>`; }
       if (k === "tasks") { const ts = taskList(e), d = ts.filter(t => t.done).length; return `<td data-label="Tasks">${ts.length ? `<span class="tprog"><span class="tbar"><i style="width:${Math.round(d / ts.length * 100)}%"></i></span><span class="num">${d}/${ts.length}</span></span>` : dash}</td>`; }
       if (k === "updated") return `<td data-label="Last edited" class="num">${e.updatedAt ? esc(fmt(e.updatedAt.slice(0, 10))) : "—"}</td>`;
@@ -5000,7 +5002,7 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="hm-label">Databases &amp; tools</div>
       <div class="hm-links">${links.map(l => { const n = countFor(l.key), on = webOn(l.key); return `<div class="hm-link">
         <a href="#${l.key}" class="hm-go" data-hmgo="${l.key}"><span class="hm-emo" aria-hidden="true">${l.icon}</span><span class="hm-txt"><b>${esc(l.label)}</b><span>${esc(PUBLIC && l.key === "planner" ? "What's coming up, by day, week and month" : l.desc)}${n != null && !(l.key === "planner") ? ` · ${n}` : ""}</span></span></a>
-        ${PUBLIC || !HOME_SWITCH.includes(l.key) ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On website" : "Not on website"}</span></button>`}
+        ${PUBLIC || !HOME_SWITCH.includes(l.key) ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On" : "Off"}</span></button>`}
       </div>`; }).join("")}</div>
       ${PUBLIC ? "" : `<p class="hm-foot">The website always has the same layout as LifeOS. Projects, Areas, Resources, Archive and Routines show only entries marked "Show on website". Inventory and Meals show all their items while their switch is on.</p>`}
     </div>`;
