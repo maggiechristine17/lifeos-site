@@ -1003,6 +1003,39 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 @media (max-width: 480px) { .rt-head { flex-wrap: wrap; } }
 #view-planner[hidden], #view-home[hidden], #view-inventory[hidden], #view-meals[hidden] { display: none; }
 #view-meals { max-width: 1180px; }
+.hm-back { font-size: 13px; color: var(--muted); text-decoration: none; width: fit-content; }
+.hm-back:hover { color: var(--accent); }
+.area-colors.in-props { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+.board[hidden] { display: none; }
+.bd-wrap { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x proximity; }
+.bd-col { flex: 0 0 280px; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 8px; align-content: start; max-height: calc(100vh - 220px); grid-template-rows: auto auto minmax(0, 1fr); }
+.bd-col.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.bd-head { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.bd-name { flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: text; padding: 3px 4px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-name:hover { background: var(--bg); }
+.bd-name.fixed { cursor: default; color: var(--muted); }
+.bd-name.fixed:hover { background: none; }
+.bd-rename { flex: 1; min-width: 0; font: inherit; font-weight: 700; font-size: 14px; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.bd-n { font-size: 12px; color: var(--muted); }
+.bd-x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; white-space: nowrap; }
+.bd-x:hover { color: var(--danger, #e5484d); }
+.bd-here { border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 6px; font-weight: 600; cursor: pointer; }
+.bd-list { display: grid; gap: 8px; overflow-y: auto; min-height: 40px; align-content: start; }
+.bd-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 12px 4px; border: 1px dashed var(--line); border-radius: 8px; }
+.bd-card { background: var(--bg); border: 1px solid var(--line); border-left: 4px solid var(--ec, var(--line)); border-radius: 8px; padding: 7px 9px; display: grid; gap: 5px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.bd-card.ec-white { border-left-color: #fff; }
+.bd-card.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bd-card.dragging { opacity: .45; }
+.bd-card.ins { box-shadow: 0 -3px 0 var(--accent); }
+.bd-card.done .t-main { text-decoration: line-through; opacity: .7; }
+.bd-top { display: flex; gap: 6px; align-items: flex-start; }
+.bd-grip { border: 0; background: none; color: var(--muted); cursor: grab; font-size: 14px; padding: 0 2px; line-height: 1.3; }
+.bd-title { flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; cursor: pointer; padding: 0; overflow-wrap: break-word; }
+.bd-title:hover .t-main { text-decoration: underline; }
+.bd-sub { font-size: 12px; color: var(--muted); }
+.bd-props { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; font-size: 12px; }
+.bd-addcol { flex: 0 0 200px; border: 1px dashed var(--panel-line); background: none; color: var(--muted); border-radius: 12px; padding: 14px; cursor: pointer; font-weight: 600; }
+.bd-addcol:hover { color: var(--ink); border-style: solid; }
 .ml-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .ml-tools .search { max-width: 280px; }
 .ml-gl { font-size: 12px; color: var(--muted); margin-right: 2px; align-self: center; }
@@ -1273,11 +1306,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </main>
 
 <main id="view-inventory" hidden>
+  <a class="hm-back" href="#home">← Home</a>
   <div class="view-head"><div><h1>📦 Inventory</h1><div class="count" id="invCount"></div></div></div>
   <div id="invBody"></div>
 </main>
 
 <main id="view-meals" hidden>
+  <a class="hm-back" href="#home">← Home</a>
   <div class="view-head"><div><h1>🍽️ Meals</h1><div class="count" id="mlCount"></div></div></div>
   <div id="mlBody"></div>
 </main>
@@ -2113,7 +2148,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           <button class="btn primary" type="button" data-r="add">+ New ${T.singular}</button>
         </div>
       </div>
-      <div class="layout-tabs" role="tablist" aria-label="${T.label} views" data-r="layouts"><button type="button" role="tab" data-layout="table"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M2 10h12M6 6.5V13"/></svg>Table</button><button type="button" role="tab" data-layout="timeline"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 4h7M5 8h8M3 12h6"/></svg>Timeline</button><button type="button" role="tab" data-layout="feed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="2" width="10" height="5" rx="1"/><rect x="3" y="9" width="10" height="5" rx="1"/></svg>Feed</button></div>
+      <div class="layout-tabs" role="tablist" aria-label="${T.label} views" data-r="layouts"><button type="button" role="tab" data-layout="table"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M2 10h12M6 6.5V13"/></svg>Table</button><button type="button" role="tab" data-layout="timeline"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 4h7M5 8h8M3 12h6"/></svg>Timeline</button><button type="button" role="tab" data-layout="feed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="2" width="10" height="5" rx="1"/><rect x="3" y="9" width="10" height="5" rx="1"/></svg>Feed</button><button type="button" role="tab" data-layout="cards"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2.5" width="3.5" height="11" rx="1"/><rect x="6.5" y="2.5" width="3.5" height="7" rx="1"/><rect x="11" y="2.5" width="3.5" height="9" rx="1"/></svg>Cards</button></div>
       <section class="panel" data-r="ctl" aria-label="Filter ${T.label}" hidden>
         <div class="panel-head"><span class="panel-name">Filter</span><span class="panel-tools"><button class="btn ghost" type="button" data-r="clear">Clear all</button><button class="x" type="button" data-r="ctlX" aria-label="Close filter">×</button></span></div>
         <input class="search" data-r="q" type="search" placeholder="Search ${T.label.toLowerCase()}…" aria-label="Search ${T.label.toLowerCase()}">
@@ -2130,12 +2165,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="gsize" data-r="gsize" hidden></div>
         <div class="hint" data-r="colsHint">Tick the columns to show and use the arrows to reorder them. On a computer you can also drag a column header to move it, or drag its right edge to resize it.</div>
         <div class="col-list" data-r="colList"></div>
+        <div class="area-colors in-props" data-r="areaColors" hidden></div>
         <div><button class="btn ghost" type="button" data-r="resetCols" style="padding:2px 6px;font-size:12px">Reset columns</button></div>
       </section>
       <div class="gallery" data-r="gallery" hidden></div>
       <div class="timeline" data-r="timeline" hidden></div>
       <div class="feed" data-r="feed" hidden></div>
-      <div class="area-colors" data-r="areaColors" hidden></div>
+      <div class="board" data-r="board" hidden></div>
       <div class="table-wrap" data-r="tableWrap"><table data-r="table"><colgroup data-r="colgroup"></colgroup><thead><tr data-r="head"></tr></thead><tbody data-r="rows"></tbody></table></div>`;
     $("views").appendChild(main);
     const R = (k) => main.querySelector(`[data-r="${k}"]`);
@@ -2151,7 +2187,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (saved) {
       if (Array.isArray(saved.sorts)) ui.sorts = saved.sorts.filter(s => s && PROP[s.key] && !PROP[s.key].noSort).map(s => ({ key: s.key, dir: s.dir === "asc" ? "asc" : "desc" }));
       else if (PROP[saved.sortKey]) ui.sorts = [{ key: saved.sortKey, dir: saved.sortDir === "asc" ? "asc" : "desc" }];
-      if (["table", "timeline", "feed"].includes(saved.layout)) ui.layout = saved.layout;
+      if (["table", "timeline", "feed", "cards"].includes(saved.layout)) ui.layout = saved.layout;
       if (saved.tl) { if (TL_PROPS.some(P => P.key === saved.tl.by)) ui.tl.by = saved.tl.by; if (TL_ZOOM[saved.tl.zoom]) ui.tl.zoom = saved.tl.zoom; }
       if (["s", "m", "l"].includes(saved.gsize)) ui.gsize = saved.gsize;
       if (typeof saved.linksOpen === "boolean") ui.linksOpen = saved.linksOpen;
@@ -2419,12 +2455,78 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       el.querySelectorAll('.post-body a[href]:not(.wikilink)').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
       el.querySelectorAll('.post-body input[type="checkbox"]').forEach(c => { c.disabled = true; });
     }
+    // ----- Cards layout: index cards I sort into my own named categories -----
+    let board = (() => { const b = recall(`chevy.board.${T.key}`); return b && Array.isArray(b.cols) ? b : { cols: [] }; })();
+    let bdDrag = null, bdSel = null, bdRename = null, bdDelArm = null;
+    const bdId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    async function saveBoard() {
+      board = { cols: board.cols.map(c => ({ id: c.id, name: c.name, ids: [...new Set(c.ids || [])] })) };
+      store(`chevy.board.${T.key}`, board);
+      if (local || !db) return;
+      try { await db.doc(`settings/board_${T.key}`).set({ cols: board.cols, updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the cards layout."); }
+    }
+    function applyBoard(b) { if (bdDrag || bdRename) return; if (b && Array.isArray(b.cols)) { board = { cols: b.cols.map(c => ({ id: String(c.id), name: String(c.name || "Category"), ids: Array.isArray(c.ids) ? c.ids.map(String) : [] })) }; store(`chevy.board.${T.key}`, board); if (ui.layout === "cards") renderRows(); } }
+    const bdCard = (e) => {
+      const props = shown().map(c => PROP[c.key]).filter(P => P.kind !== "title" && P.kind !== "subtitle");
+      const done = hasStatus(T) && e.status === "Done", sel = bdSel === e.id;
+      return `<article class="bd-card${done ? " done" : ""}${ecClass(e)}${sel ? " sel" : ""}" draggable="${PUBLIC || e._pub ? "false" : "true"}" data-bdid="${esc(e.id)}">
+        <div class="bd-top">${PUBLIC ? "" : `<button type="button" class="bd-grip" data-bdgrip="${esc(e.id)}" title="Drag to move, or tap and then tap a category" aria-label="Move ${esc(e.title || "Untitled")}">⠿</button>`}<button type="button" class="bd-title" data-open="${esc(e.id)}">${isPinned(e) ? `<span class="pinned">${PIN_SVG}</span> ` : ""}${done ? '<span class="check" aria-label="Done">✓</span> ' : ""}${emo(e, T.key)} <span class="t-main">${esc(e.title || "Untitled")}</span></button></div>
+        ${e.subtitle && !taskList(e).length ? `<div class="bd-sub">${esc(e.subtitle)}</div>` : ""}${subTasksHtml(e, T.key)}
+        ${(() => { const ps = props.map(P => { const inner = cardCell(e, P); const txt = inner.replace(/<[^>]+>/g, "").trim(); return (txt === "" || txt === "—") && P.kind !== "status" ? "" : `<span title="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, inner)}</span>`; }).join(""); return ps ? `<div class="bd-props">${ps}</div>` : ""; })()}
+      </article>`;
+    };
+    function renderBoard(list, total) {
+      const el = R("board");
+      if (!total) { el.innerHTML = loaded[T.key] ? `<div class="empty"><strong>No ${T.label.toLowerCase()} yet</strong>Add your first one with “+ New ${T.singular}”.</div>` : ""; return; }
+      const byIdMap = new Map(list.map(e => [e.id, e])), placed = new Set();
+      const cols = board.cols.map(c => { const items = (c.ids || []).map(id => byIdMap.get(id)).filter(Boolean); items.forEach(e => placed.add(e.id)); return { ...c, items }; });
+      const unsorted = list.filter(e => !placed.has(e.id));
+      const colHtml = (c, fixed) => `<section class="bd-col${bdSel ? " can-drop" : ""}" data-bdcol="${esc(c.id)}">
+        <header class="bd-head">${fixed ? `<span class="bd-name fixed">${esc(c.name)}</span>` : bdRename === c.id ? `<input class="bd-rename" data-bdrename="${esc(c.id)}" value="${esc(c.name)}" maxlength="60" aria-label="Category name">` : `<button type="button" class="bd-name" data-bdname="${esc(c.id)}" title="Click to rename">${esc(c.name)}</button>`}<span class="bd-n">${c.items.length}</span>${fixed || PUBLIC ? "" : `<button type="button" class="bd-x" data-bddel="${esc(c.id)}" title="${bdDelArm === c.id ? "Tap again: cards go back to Unsorted" : "Remove this category"}">${bdDelArm === c.id ? "Remove?" : "×"}</button>`}</header>
+        ${bdSel ? `<button type="button" class="bd-here" data-bdhere="${esc(c.id)}">Move here</button>` : ""}
+        <div class="bd-list" data-bdlist="${esc(c.id)}">${c.items.map(bdCard).join("") || `<div class="bd-empty">${fixed ? "Everything is sorted." : "Drag cards here"}</div>`}</div>
+      </section>`;
+      el.innerHTML = `<div class="bd-wrap">${colHtml({ id: "_unsorted", name: "Unsorted", items: unsorted }, true)}${cols.map(c => colHtml(c, false)).join("")}${PUBLIC ? "" : `<button type="button" class="bd-addcol" data-bdadd>+ Add category</button>`}</div>`;
+      if (bdRename) { const i = el.querySelector(".bd-rename"); if (i) { i.focus(); i.select(); } }
+    }
+    function bdMove(id, colId, beforeId) {
+      board.cols.forEach(c => { c.ids = (c.ids || []).filter(x => x !== id); });
+      if (colId !== "_unsorted") { const c = board.cols.find(x => x.id === colId); if (!c) return; const i = beforeId ? c.ids.indexOf(beforeId) : -1; if (i >= 0) c.ids.splice(i, 0, id); else c.ids.push(id); }
+      bdSel = null; saveBoard(); renderRows();
+    }
+    R("board").addEventListener("click", e => {
+      if (e.target.closest("[data-bdadd]")) { const c = { id: bdId(), name: "New category", ids: [] }; board.cols.push(c); bdRename = c.id; saveBoard(); renderRows(); return; }
+      const nm = e.target.closest("[data-bdname]"); if (nm) { bdRename = nm.dataset.bdname; renderRows(); return; }
+      const dl = e.target.closest("[data-bddel]"); if (dl) { const id = dl.dataset.bddel; if (bdDelArm !== id) { bdDelArm = id; renderRows(); setTimeout(() => { if (bdDelArm === id) { bdDelArm = null; renderRows(); } }, 3000); return; } bdDelArm = null; board.cols = board.cols.filter(c => c.id !== id); saveBoard(); renderRows(); return; }
+      const hr = e.target.closest("[data-bdhere]"); if (hr && bdSel) { bdMove(bdSel, hr.dataset.bdhere, null); return; }
+      const gp = e.target.closest("[data-bdgrip]"); if (gp) { bdSel = bdSel === gp.dataset.bdgrip ? null : gp.dataset.bdgrip; renderRows(); return; }
+      const op = e.target.closest("[data-open]"); if (op) { openEditor(T.key, op.dataset.open); return; }
+    });
+    const bdFinishRename = (inp, save) => { const c = board.cols.find(x => x.id === inp.dataset.bdrename); const v = inp.value.trim().slice(0, 60); bdRename = null; if (c && save && v && v !== c.name) { c.name = v; saveBoard(); } renderRows(); };
+    R("board").addEventListener("keydown", e => { const i = e.target.closest("[data-bdrename]"); if (!i) return; if (e.key === "Enter") { e.preventDefault(); bdFinishRename(i, true); } if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); bdFinishRename(i, false); } });
+    R("board").addEventListener("focusout", e => { const i = e.target.closest("[data-bdrename]"); if (i && bdRename) setTimeout(() => { if (bdRename === i.dataset.bdrename) bdFinishRename(i, true); }, 0); });
+    R("board").addEventListener("change", e => { const tk = e.target.closest("input[data-task][data-entry]"); if (tk) toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); });
+    R("board").addEventListener("dragstart", e => { const c = e.target.closest(".bd-card"); if (!c || c.getAttribute("draggable") !== "true") return; bdDrag = c.dataset.bdid; c.classList.add("dragging"); try { e.dataTransfer.setData("text/plain", bdDrag); e.dataTransfer.effectAllowed = "move"; } catch (err) {} });
+    R("board").addEventListener("dragend", () => { bdDrag = null; R("board").querySelectorAll(".dragging, .over, .ins").forEach(x => x.classList.remove("dragging", "over", "ins")); });
+    R("board").addEventListener("dragover", e => {
+      const col = e.target.closest("[data-bdcol]"); if (!col || !bdDrag) return; e.preventDefault();
+      R("board").querySelectorAll(".over, .ins").forEach(x => x.classList.remove("over", "ins")); col.classList.add("over");
+      const card = e.target.closest(".bd-card"); if (card && card.dataset.bdid !== bdDrag) card.classList.add("ins");
+    });
+    R("board").addEventListener("drop", e => {
+      const col = e.target.closest("[data-bdcol]"); if (!col || !bdDrag) return; e.preventDefault();
+      const card = e.target.closest(".bd-card"); const id = bdDrag; bdDrag = null;
+      let before = card && card.dataset.bdid !== id ? card.dataset.bdid : null;
+      if (card && before) { const r = card.getBoundingClientRect(); if (e.clientY > r.top + r.height / 2) { const next = card.nextElementSibling && card.nextElementSibling.dataset ? card.nextElementSibling.dataset.bdid : null; before = next && next !== id ? next : null; } }
+      bdMove(id, col.dataset.bdcol, before);
+    });
     function renderRows() {
       const list = visible(), total = data[T.key].length, span = shown().length, noun = (n) => n === 1 ? T.singular : T.label.toLowerCase();
       R("count").textContent = !loaded[T.key] && !total ? "Loading…" : (list.length === total ? `${total} ${noun(total)}` : `Showing ${list.length} of ${total} ${noun(total)}`);
-      const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline";
-      R("areaColors").hidden = !groupByArea || tline || feed; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("tableWrap").hidden = feed || tline;
+      const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline", cards = ui.layout === "cards";
+      R("areaColors").hidden = !groupByArea || tline || feed || cards; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("board").hidden = !cards; R("tableWrap").hidden = feed || tline || cards;
       if (tline) { renderTimeline(list, total); return; }
+      if (cards) { renderBoard(list, total); return; }
       if (feed) { renderFeed(list, total); return; }
       const tb = R("rows");
       R("areaColors").hidden = !groupByArea || tline || feed;
@@ -2627,13 +2729,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const g = false, fd = ui.layout === "feed", tl = ui.layout === "timeline";
       R("layouts").querySelectorAll("[data-layout]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.layout === ui.layout)));
       R("colsLabel").textContent = R("colsName").textContent = "Show Properties";
-      R("colsHint").textContent = tl ? "The timeline shows each title with a bar for its dates. Switch to Table to choose and reorder columns." : fd ? "Tap a property to show or hide it on each post. Hold and drag one to change the order. Posts always show the cover, title, date and full notes." : g ? "Tick the properties to show on each card and use the arrows to reorder them. Cards always show the cover and title." : "Tap a property to show or hide its column. Hold and drag one to change the order, left to right. You can also drag a column header to move it, or drag its right edge to resize it.";
+      R("colsHint").textContent = ui.layout === "cards" ? "Tap a property to show or hide it on each card. Hold and drag one to change the order. Cards always show the title and its tasks." : tl ? "The timeline shows each title with a bar for its dates. Switch to Table to choose and reorder columns." : fd ? "Tap a property to show or hide it on each post. Hold and drag one to change the order. Posts always show the cover, title, date and full notes." : g ? "Tick the properties to show on each card and use the arrows to reorder them. Cards always show the cover and title." : "Tap a property to show or hide its column. Hold and drag one to change the order, left to right. You can also drag a column header to move it, or drag its right edge to resize it.";
       R("gsize").hidden = !g;
       R("gsize").innerHTML = `<span class="ctl-title">Card size</span><span class="chips">${[["s", "Small"], ["m", "Medium"], ["l", "Large"]].map(([k, l]) => `<button type="button" class="chip" aria-pressed="${ui.gsize === k}" data-gsize="${k}">${l}</button>`).join("")}</span>`;
     }
     function render() { renderLayout(); renderControls(); renderColPanel(); renderHead(); renderRows(); renderBadge(); }
     function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols2`, cols[T.key]); render(); }
-    return { T, main, render, applyRemoteCols };
+    return { T, main, render, applyRemoteCols, applyBoard };
   }
 
   // ---------- Editor ----------
@@ -5051,14 +5153,15 @@ Don't invent appointments or facts that aren't listed.`);
   };
   TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "inventory", label: "Inventory", kind: "db" }, { key: "meals", label: "Meals", kind: "db" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
     const home = "home";
     let v = (location.hash || "#" + home).slice(1);
-    if (!TABS.some(t => t.key === v)) v = home;
-    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v)));
+    const HOME_ONLY = ["inventory", "meals"]; // opened from the Home page only, never in the top bar
+    if (!TABS.some(t => t.key === v) && !(HOME_ONLY.includes(v) && (!PUBLIC || webOn(v)))) v = home;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v || (t.dataset.view === "home" && ["inventory", "meals"].includes(v)))));
     TYPES.forEach(T => { views[T.key].main.hidden = v !== T.key; });
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
@@ -5145,6 +5248,7 @@ Don't invent appointments or facts that aren't listed.`);
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
         renderAll();
       });
+      db.doc(`settings/board_${T.key}`).onSnapshot(snap => { if (snap.exists) views[T.key].applyBoard(snap.data()); }, () => {});
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
         if (snap.exists && Array.isArray(snap.data().columns) && snap.data().v === 2) views[T.key].applyRemoteCols(snap.data().columns);

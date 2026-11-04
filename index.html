@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><script>window.LIFEOS_PUBLIC={"projects":[{"blocks":[],"body":"","color":"orange","cover":"","created":"2026-10-31","emoji":"🍷","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"1. AA 2. Alcohol supplements 3. K w therapy 4. Gatekeep his K","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Make Substance plan","id":"pmvx4ascnxq3ax"},{"body":"","color":"red","cover":"","created":"2026-11-02","emoji":"🗺️","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Emotional map of my life","id":"pmvz5zlbicbcr8"},{"body":"","color":"orange","cover":"","created":"2026-11-02","emoji":"","files":[],"focusEnd":"","focusStart":"","layers":["6"],"links":[],"noteTabs":[],"public":true,"scheduled":false,"status":"Not started","subtitle":"Maybe tell Katie","tags":[],"tasks":[],"timeEnd":"","timeStart":"","title":"Promissory note for house","id":"pmvz60yn96kxsg"}],"areas":[],"pages":[],"title":"1"};</script>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><script>window.LIFEOS_PUBLIC={"projects":[],"areas":[],"pages":[],"title":"1"};</script>
 </head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,6 +54,12 @@ button, input, select { font: inherit; color: inherit; }
 .site-build:hover { color: var(--ink); border-color: var(--panel-line); }
 .site-pop { position: fixed; z-index: 30; top: 56px; left: 12px; width: min(380px, calc(100vw - 24px)); background: var(--surface); border: 1px solid var(--panel-line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.35); padding: 14px; display: grid; gap: 10px; font-size: 13px; }
 .site-pop[hidden] { display: none; }
+.set-pop { position: fixed; z-index: 30; top: 56px; left: 12px; width: min(400px, calc(100vw - 24px)); max-height: calc(100vh - 80px); overflow-y: auto; background: var(--surface); border: 1px solid var(--panel-line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.35); padding: 14px; display: grid; gap: 12px; font-size: 13px; }
+.set-pop[hidden] { display: none; }
+.set-pop > h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+.set-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.set-desc { font-size: 12px; color: var(--muted); flex: 1; min-width: 160px; }
+.site-pop.in-set { position: static; width: auto; box-shadow: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 12px 0 0; background: none; }
 .site-pop h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
 .site-pop input[type=text] { width: 100%; padding: 6px 9px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); color: var(--ink); font-size: 13px; }
 .site-pop ol { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
@@ -111,6 +117,7 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .chip .dir { font-size: 11px; }
 .srank { display: inline-grid; place-items: center; min-width: 15px; height: 15px; border-radius: 50%; background: var(--on-accent); color: var(--accent); font-size: 10px; font-weight: 800; margin-right: 1px; }
 th button sup { font-size: 9px; margin-left: 2px; }
+#dbBar[hidden] { display: none !important; }
 .db-sorts { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .db-sl { font-size: 13px; }
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
@@ -218,6 +225,12 @@ tr.group td { background: var(--bg); font-size: 13px; font-weight: 600; color: v
 .lchip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 1px 7px; font-size: 12px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .lchip:hover { border-color: var(--accent); color: var(--accent); }
 td .lchips { flex-wrap: nowrap; overflow: hidden; }
+.links-open td[data-label="Links"] { white-space: normal; overflow: visible; }
+.links-open td .lchips { flex-wrap: wrap; overflow: visible; }
+.links-open td .lchip { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
+.lk-tog { margin-left: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 999px; padding: 0 8px; font-size: 10.5px; font-weight: 600; letter-spacing: 0; text-transform: none; cursor: pointer; vertical-align: middle; line-height: 18px; }
+.lk-tog:hover { color: var(--ink); border-color: var(--panel-line); }
+.lk-tog[aria-pressed="true"] { color: var(--accent); border-color: var(--forest); }
 .link-edit { display: grid; gap: 6px; }
 .link-edit .lchip { display: inline-flex; align-items: center; gap: 4px; cursor: default; font-size: 13px; padding: 2px 4px 2px 8px; }
 .link-edit .lchip button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 0 3px; }
@@ -238,6 +251,21 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .graph-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .graph-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; pointer-events: none; }
 .graph-empty[hidden] { display: none; }
+.g-sel { position: absolute; top: 10px; left: 10px; z-index: 3; width: min(320px, calc(100% - 20px)); background: var(--surface); border: 1px solid var(--panel-line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.35); padding: 10px 12px; display: grid; gap: 8px; font-size: 13px; }
+.g-sel[hidden] { display: none; }
+.g-sel .g-head { display: flex; align-items: center; gap: 8px; }
+.g-sel .g-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.g-sel .g-head .btn { padding: 3px 10px; font-size: 12.5px; }
+.g-sel .g-tip { color: var(--muted); font-size: 12px; }
+.g-sel .g-msg { color: var(--accent); font-size: 12px; min-height: 0; }
+.g-sel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-height: 140px; overflow-y: auto; }
+.g-sel li { display: flex; align-items: center; gap: 6px; }
+.g-sel li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-sel .g-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.g-sel .g-actions .btn { padding: 3px 10px; font-size: 12.5px; }
+.new-menu { width: 240px; display: grid; gap: 6px; }
+.new-menu .btn { width: 100%; text-align: left; }
+.is-public .new-any, .is-public #gSelBox { display: none !important; }
 .graph-empty strong { display: block; color: var(--ink); font-size: 16px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; margin-right: 10px; }
 .ghint { color: var(--muted); font-size: 13px; }
@@ -336,6 +364,18 @@ td .title-cell { align-items: flex-start; }
 .att-list .ax { border: 0; background: none; cursor: pointer; font-size: 16px; color: var(--muted); padding: 0 4px; }
 .att-list .ax:hover { color: var(--text); }
 .att-empty { font-size: 12px; color: var(--muted); }
+.att-list .att-emb { padding: 2px 8px; font-size: 11.5px; flex: 0 0 auto; }
+.att-list .att-emb[aria-pressed="true"] { border-color: var(--forest); color: var(--accent); }
+.att-embeds { display: grid; gap: 12px; }
+.att-embeds:empty { display: none; }
+.emb { margin: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.emb figcaption { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 10px; font-size: 12.5px; border-bottom: 1px solid var(--line); }
+.emb figcaption span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.emb figcaption a { flex: 0 0 auto; color: var(--accent); }
+.emb-frame { resize: vertical; overflow: hidden; min-height: 200px; max-height: 1400px; background: #fff; }
+.emb-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.emb-note { font-size: 11px; color: var(--muted); padding: 4px 10px 6px; }
+.is-public .emb-note { display: none; }
 .md { min-height: 120px; padding: 4px 2px; line-height: 1.65; cursor: text; overflow-wrap: anywhere; }
 .md:empty::before, .md .placeholder { color: var(--muted); }
 .md > :first-child { margin-top: 0; }
@@ -767,6 +807,19 @@ td .tags { flex-wrap: nowrap; overflow: hidden; }
 .db-date:focus, .db-inline:focus { color: var(--ink); border-color: var(--accent); }
 .db-type .db-inline { padding-left: 2px; }
 .db-pop { width: 300px; }
+[data-qe] { cursor: pointer; }
+.qe-live { position: relative; display: inline-flex; align-items: center; max-width: 100%; cursor: pointer; }
+.qe-live .qe-native, .prop-live .pl-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; border: 0; padding: 0; margin: 0; }
+.qe-live:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 4px; }
+.prop-live { position: relative; cursor: pointer; }
+.prop-live:hover { border-color: var(--panel-line); }
+.prop-live input[type=date].pl-native::-webkit-calendar-picker-indicator, .qe-live input[type=date].qe-native::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+td[data-qe]:hover, .card-prop[data-qe]:hover, .post-props [data-qe]:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 4px; }
+.qe-colors { display: flex; flex-wrap: wrap; gap: 6px; }
+.qe-sel { width: 100%; padding: 6px 8px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); color: var(--ink); font-size: 13px; }
+.qe-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.qe-links li { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.qe-links li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .db-text { width: 100%; color: var(--muted); }
 .db-text:focus { color: var(--ink); }
 .db-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
@@ -781,13 +834,71 @@ td .tags { flex-wrap: nowrap; overflow: hidden; }
 @media (max-width: 760px) { .db-layers { grid-template-columns: repeat(6, minmax(0, 1fr)); } .db-ltile { min-height: 92px; } .db-lnum { font-size: 18px; } }
 @media (max-width: 600px) { .db-table table { width: 100% !important; } .db-row td[data-label]:not(:first-child)::before { display: none; } .db-row td { display: flex !important; align-items: center; gap: 6px; } }
 #view-planner { max-width: 1240px; }
-.is-public #siteBtn, .is-public #siteBuild, .is-public #easyBtn, .is-public [data-r="add"], .is-public .tl-add, .is-public #deleteBtn, .is-public #archiveBtn, .is-public #editForm [type=submit], .is-public #bodyToggle, .is-public .att-tools, .is-public .att-link, .is-public #ntMeta, .is-public .nt-add, .is-public .md-hint, .is-public .pub-hint, .is-public #notice, .is-public .emo-auto { display: none !important; }
+.is-public #setBtn, .is-public #setPop, .is-public [data-r="add"], .is-public .tl-add, .is-public #deleteBtn, .is-public #archiveBtn, .is-public #editForm [type=submit], .is-public #bodyToggle, .is-public .att-tools, .is-public .att-link, .is-public #ntMeta, .is-public .nt-add, .is-public .md-hint, .is-public .pub-hint, .is-public #notice, .is-public .emo-auto { display: none !important; }
 .is-public .att-list .ax, .is-public #plSubs, .is-public .pl-add, .is-public .pl-rchip, .is-public .pl-note, .is-public [data-pk="public"], .is-public [data-propbtn="public"], .is-public #vNewNote, .is-public #vNewFolder, .is-public #vEdit, .is-public .ghint, .is-public [data-r="resetCols"] { display: none !important; }
 .is-public .db-selwrap, .is-public .sub-tasks input, .is-public .post-tasks input { pointer-events: none; }
 .is-public #edFields .pf, .is-public #edFields .prop-bar, .is-public #ed-emoji, .is-public #ed-task-blank { pointer-events: none; }
 .is-public .att:not(:has(.att-list a)) { display: none; }
 .is-public #bodyView { cursor: default; }
-#rtBody[hidden], #plBar[hidden], #plBody[hidden], #wkBody[hidden] { display: none !important; }
+#rtBody[hidden], #plBar[hidden], #plBody[hidden], #wkBody[hidden], #cdBody[hidden] { display: none !important; }
+.cd-wrap { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 820px) { .cd-wrap { grid-template-columns: 1fr; } }
+.cd-zone { border: 1px dashed var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); transition: border-color .12s, background .12s; }
+.cd-zone.over { border-color: var(--accent); border-style: solid; background: var(--accent-soft); }
+.cd-deck { position: sticky; top: 70px; padding: 10px; display: grid; gap: 8px; max-height: calc(100vh - 90px); overflow: hidden; grid-template-rows: auto auto minmax(0, 1fr); }
+@media (max-width: 820px) { .cd-deck { position: static; max-height: 360px; } }
+.cd-dhead { display: flex; justify-content: space-between; align-items: baseline; }
+.cd-dhead span { font-size: 12px; color: var(--muted); }
+.cd-q { width: 100%; padding: 6px 9px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); color: var(--ink); font-size: 13px; }
+.cd-dlist { overflow-y: auto; display: grid; gap: 6px; align-content: start; padding-right: 2px; }
+.cd-dlabel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 4px; }
+.cd-card { background: var(--bg); border: 1px solid var(--line); border-left: 4px solid var(--ec, var(--line)); border-radius: 8px; padding: 7px 9px; display: grid; gap: 4px; cursor: grab; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.2); min-width: 0; }
+.cd-card.ec-white { border-left-color: #fff; }
+.cd-card:hover { border-color: var(--panel-line); }
+.cd-card.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cd-card.dragging { opacity: .45; }
+.cd-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cd-t { flex: 0 1 auto; min-width: 0; font-weight: 650; overflow-wrap: break-word; word-break: normal; hyphens: auto; }
+.cd-day .cd-card { padding: 5px 6px; font-size: 12px; gap: 3px; }
+.cd-day .cd-top { align-items: flex-start; }
+.cd-day .cd-top .emo { display: none; }
+.cd-day .cd-when, .cd-day .cd-sub, .cd-day .sub-tasks { display: none; }
+#plSubs { overflow-x: auto; scrollbar-width: none; }
+#plSubs button { white-space: nowrap; flex: 0 0 auto; }
+.cd-open { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 2px; }
+.cd-open:hover { color: var(--accent); }
+.cd-t .cd-open { display: inline; vertical-align: baseline; padding: 0 1px; }
+.cd-back { margin-left: auto; }
+.cd-sub { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.cd-kind { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.cd-card.cd-area { background: color-mix(in srgb, var(--area) 7%, var(--bg)); }
+.cd-areas { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.cd-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11.5px; }
+.cd-meta .pill { font-size: 11px; padding: 1px 7px; }
+.cd-when { color: var(--muted); }
+.cd-plan { display: grid; gap: 14px; min-width: 0; }
+.cd-this { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--surface); }
+.cd-wh { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.cd-wh b { font-size: 14px; }
+.cd-wh span { font-size: 12.5px; color: var(--muted); }
+.cd-zl { font-size: 12px; color: var(--muted); }
+.cd-zl b { color: var(--ink); font-size: 13px; }
+.cd-any { padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; min-height: 52px; }
+.cd-any .cd-zl { width: 100%; }
+.cd-any .cd-card { width: 200px; }
+.cd-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 820px) { .cd-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cd-day { padding: 6px; display: grid; gap: 6px; align-content: start; min-height: 120px; }
+.cd-day.is-today { border-color: var(--accent); }
+.cd-day.past { opacity: .7; }
+.cd-weeks { display: grid; gap: 6px; }
+.cd-qhead { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-top: 6px; }
+.cd-wrow { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 10px; padding: 8px 10px; align-items: start; }
+@media (max-width: 820px) { .cd-wrow { grid-template-columns: 1fr; } }
+.cd-wrow .cd-wh { flex-direction: column; gap: 1px; }
+.cd-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; align-items: flex-start; }
+.cd-cards .cd-card { width: 210px; }
+.cd-hint { font-size: 12px; color: var(--muted); opacity: .6; align-self: center; }
 .pl-chip.has-note, .pl-rchip.has-note { flex-wrap: wrap; border-radius: 8px; }
 .pl-note { flex: 1 0 100%; font-size: 11.5px; font-style: italic; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; color: var(--muted); padding-left: 2px; }
 .pl-notein { width: 100%; padding: 6px 9px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); font-size: 13px; font-family: inherit; color: var(--ink); }
@@ -891,7 +1002,105 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .rt-foot { display: flex; justify-content: flex-end; }
 .rt-foot .btn { padding: 3px 8px; font-size: 12.5px; }
 @media (max-width: 480px) { .rt-head { flex-wrap: wrap; } }
-#view-planner[hidden] { display: none; }
+#view-planner[hidden], #view-home[hidden], #view-inventory[hidden], #view-meals[hidden] { display: none; }
+#view-meals { max-width: 1180px; }
+.hm-back { font-size: 13px; color: var(--muted); text-decoration: none; width: fit-content; }
+.hm-back:hover { color: var(--accent); }
+.area-colors.in-props { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+.board[hidden] { display: none; }
+.bd-wrap { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x proximity; }
+.bd-col { flex: 0 0 280px; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 8px; align-content: start; max-height: calc(100vh - 220px); grid-template-rows: auto auto minmax(0, 1fr); }
+.bd-col.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.bd-head { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.bd-name { flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: text; padding: 3px 4px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-name:hover { background: var(--bg); }
+.bd-name.fixed { cursor: default; color: var(--muted); }
+.bd-name.fixed:hover { background: none; }
+.bd-rename { flex: 1; min-width: 0; font: inherit; font-weight: 700; font-size: 14px; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.bd-n { font-size: 12px; color: var(--muted); }
+.bd-x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; white-space: nowrap; }
+.bd-x:hover { color: var(--danger, #e5484d); }
+.bd-here { border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 6px; font-weight: 600; cursor: pointer; }
+.bd-list { display: grid; gap: 8px; overflow-y: auto; min-height: 40px; align-content: start; }
+.bd-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 12px 4px; border: 1px dashed var(--line); border-radius: 8px; }
+.bd-card { background: var(--bg); border: 1px solid var(--line); border-left: 4px solid var(--ec, var(--line)); border-radius: 8px; padding: 7px 9px; display: grid; gap: 5px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.bd-card.ec-white { border-left-color: #fff; }
+.bd-card.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bd-card.dragging { opacity: .45; }
+.bd-card.ins { box-shadow: 0 -3px 0 var(--accent); }
+.bd-card.done .t-main { text-decoration: line-through; opacity: .7; }
+.bd-top { display: flex; gap: 6px; align-items: flex-start; }
+.bd-grip { border: 0; background: none; color: var(--muted); cursor: grab; font-size: 14px; padding: 0 2px; line-height: 1.3; }
+.bd-title { flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; cursor: pointer; padding: 0; overflow-wrap: break-word; }
+.bd-title:hover .t-main { text-decoration: underline; }
+.bd-sub { font-size: 12px; color: var(--muted); }
+.bd-props { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; font-size: 12px; }
+.bd-addcol { flex: 0 0 200px; border: 1px dashed var(--panel-line); background: none; color: var(--muted); border-radius: 12px; padding: 14px; cursor: pointer; font-weight: 600; }
+.bd-addcol:hover { color: var(--ink); border-style: solid; }
+.ml-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ml-tools .search { max-width: 280px; }
+.ml-gl { font-size: 12px; color: var(--muted); margin-right: 2px; align-self: center; }
+.ml-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.ml-filt { border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; background: var(--surface); max-width: 100%; }
+.ml-filt summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.ml-filt[open] { flex-basis: 100%; }
+.ml-filt .chips { margin: 6px 0 4px; flex-wrap: wrap; gap: 5px; }
+.ml-group h2 { font-size: 15px; margin: 10px 0 8px; display: flex; gap: 8px; align-items: baseline; }
+.ml-group h2 span { font-size: 12px; color: var(--muted); font-weight: 500; }
+.ml-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.ml-card { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--ink); font: inherit; }
+.ml-card:hover { border-color: var(--panel-line); }
+.ml-emo { font-size: 22px; line-height: 1.1; }
+.ml-body { display: grid; gap: 4px; min-width: 0; }
+.ml-body b { font-size: 14px; }
+.ml-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ml-chip { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.ml-meta { font-size: 11.5px; color: var(--muted); }
+.ml-dialog { width: min(760px, 100%); }
+.ml-dbody { display: grid; gap: 14px; padding: 16px 20px 22px; overflow-y: auto; }
+.ml-titlerow { display: flex; gap: 10px; align-items: center; }
+.ml-emobtn { font-size: 26px; width: 52px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; flex: 0 0 52px; }
+.ml-title { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; padding: 8px 12px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.ml-h { margin: 0; font-size: 24px; }
+.ml-f { display: grid; gap: 5px; }
+.ml-f .chips { flex-wrap: wrap; gap: 5px; align-items: center; }
+.ml-addopt { width: 90px; padding: 3px 8px; border: 1px dashed var(--panel-line); border-radius: 999px; background: none; color: var(--ink); font-size: 12px; }
+.ml-row { display: flex; flex-wrap: wrap; gap: 16px; }
+.ml-row label, .ml-row > span { display: grid; gap: 4px; font-size: 14px; }
+.ml-row select, .ml-row input, .ml-linkrow input { padding: 6px 9px; border: 1px solid var(--panel-line); border-radius: 6px; background: var(--bg); color: var(--ink); font-size: 14px; }
+.ml-linkrow { display: flex; gap: 8px; }
+.ml-linkrow input { flex: 1; min-width: 0; }
+.ml-f textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; resize: vertical; }
+.ml-text { white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+#view-home { max-width: 860px; }
+.hm-page { padding: 24px 8px 40px; display: grid; gap: 10px; }
+.hm-icon { font-size: 56px; line-height: 1; }
+.hm-title { font-size: 40px; margin: 4px 0 0; }
+.hm-sub { color: var(--muted); margin: 0 0 14px; font-size: 14.5px; }
+.hm-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.hm-links { display: grid; gap: 2px; }
+.hm-link { display: flex; align-items: center; gap: 10px; border-radius: 8px; padding: 2px 4px; }
+.hm-link:hover { background: var(--surface); }
+.hm-go { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 9px 6px; color: var(--ink); text-decoration: none; }
+.hm-emo { font-size: 22px; width: 30px; text-align: center; flex: 0 0 30px; }
+.hm-txt { display: grid; min-width: 0; }
+.hm-txt b { font-size: 15.5px; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--muted) 45%, transparent); text-underline-offset: 3px; }
+.hm-txt span { font-size: 12.5px; color: var(--muted); }
+.hm-web { flex: 0 0 auto; }
+.hm-foot { font-size: 12px; color: var(--muted); margin-top: 12px; }
+#view-inventory { max-width: 980px; }
+.inv-add { display: flex; flex-wrap: wrap; gap: 8px; }
+.inv-add input { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; }
+.inv-add select, .inv-table select { padding: 8px 10px; border: 1px solid var(--panel-line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; }
+.inv-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.inv-tools .search { max-width: 260px; }
+.inv-table { width: 100%; }
+.inv-table .inv-name { width: 100%; font-size: 14px; }
+.inv-table th button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit; }
+.inv-table th button.on { color: var(--accent); }
+.inv-x { width: 1%; white-space: nowrap; }
+.inv-rooms .chips { gap: 6px; }
+.inv-roomchip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 13px; background: var(--bg); }
 #view-planner > * { min-width: 0; }
 #plBody { min-width: 0; overflow: hidden; }
 .pl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; color: var(--muted); }
@@ -1027,8 +1236,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS</div><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true" title="Show or hide the how-to tips throughout the page"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><button type="button" class="easy-btn site-btn" id="siteBtn" aria-pressed="false" title="When on, every new entry you add is shown on your website"><span class="easy-dot" aria-hidden="true"></span>🌐 Add to website</button><button type="button" class="site-build" id="siteBuild" title="Build your website file">⬇ Website</button></div>
-  <div class="site-pop" id="sitePop" role="dialog" aria-label="Your website" hidden></div>
+  <div class="brand-wrap"><div class="brand">LifeOS</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button></div>
+  <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
+    <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
+    <div class="set-row"><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><span class="set-desc">Shows the how-to tips throughout LifeOS.</span></div>
+    <div class="set-row"><button type="button" class="easy-btn site-btn" id="siteBtn" aria-pressed="false"><span class="easy-dot" aria-hidden="true"></span>🌐 Add to website</button><span class="set-desc">While on, every new entry you add is shown on your website.</span></div>
+    <div class="site-pop in-set" id="sitePop" aria-label="Your website"></div>
+  </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
 </header>
 <div class="notice-wrap"><div class="notice" id="notice" hidden></div></div>
@@ -1073,7 +1287,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbShowPanel" aria-label="Layers columns" hidden>
@@ -1085,13 +1299,31 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div id="dbBody"></div>
   <div class="ghint">Click a title to open the note. Click any other property to change it right there. Drag a column header to move it, or drag its right edge to resize it. <button type="button" class="btn ghost db-clear" id="dbResetCols">Reset columns</button></div>
   <div class="pl-menu db-pop" id="dbPop" role="dialog" aria-label="Edit property" hidden></div>
+  <div class="pl-menu new-menu" id="newMenu" role="dialog" aria-label="New entry" hidden></div>
 </main>
+
+<main id="view-home" hidden>
+  <div id="homeBody"></div>
+</main>
+
+<main id="view-inventory" hidden>
+  <a class="hm-back" href="#home">← Home</a>
+  <div class="view-head"><div><h1>📦 Inventory</h1><div class="count" id="invCount"></div></div></div>
+  <div id="invBody"></div>
+</main>
+
+<main id="view-meals" hidden>
+  <a class="hm-back" href="#home">← Home</a>
+  <div class="view-head"><div><h1>🍽️ Meals</h1><div class="count" id="mlCount"></div></div></div>
+  <div id="mlBody"></div>
+</main>
+<div class="overlay" id="mlOverlay" hidden><div class="dialog ml-dialog" id="mlDialog" role="dialog" aria-modal="true" aria-label="Meal"></div></div>
 
 <main id="view-planner" hidden>
   <div class="view-head">
     <div><h1>Planner</h1><div class="count" id="plCount"></div></div>
   </div>
-  <div class="layout-tabs" role="tablist" aria-label="Planner views" id="plSubs"><button type="button" role="tab" data-plsub="calendar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>Calendar</button><button type="button" role="tab" data-plsub="routines"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>Routines</button><button type="button" role="tab" data-plsub="week"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4 2.5h8M4 6h8M4 9.5h5M4 13h3"/><path d="m10.5 12 1.3 1.3L14.5 10.5"/></svg>Plan my week</button></div>
+  <div class="layout-tabs" role="tablist" aria-label="Planner views" id="plSubs"><button type="button" role="tab" data-plsub="cards"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="4" width="9" height="9" rx="1.2"/><path d="M5 2.5h8.5a.5.5 0 0 1 .5.5v8"/></svg>Cards</button><button type="button" role="tab" data-plsub="calendar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>Calendar</button><button type="button" role="tab" data-plsub="routines"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>Routines</button><button type="button" role="tab" data-plsub="week"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4 2.5h8M4 6h8M4 9.5h5M4 13h3"/><path d="m10.5 12 1.3 1.3L14.5 10.5"/></svg>Plan my week</button></div>
   <div class="pl-bar" id="plBar">
     <span class="chips" role="group" aria-label="Calendar view"><button type="button" class="chip" data-plview="day">Day</button><button type="button" class="chip" data-plview="week">Week</button><button type="button" class="chip" data-plview="month">Month</button></span>
     <span class="tl-nav"><button type="button" class="btn ghost" data-plstep="-1" aria-label="Earlier">‹</button><button type="button" class="btn ghost" data-pltoday>Today</button><button type="button" class="btn ghost" data-plstep="1" aria-label="Later">›</button></span>
@@ -1100,6 +1332,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div id="plBody"></div>
   <div id="rtBody" hidden></div>
   <div id="wkBody" hidden></div>
+  <div id="cdBody" hidden></div>
   <div class="ghint" id="plHint"></div>
   <div class="pl-menu" id="plMenu" role="dialog" aria-label="Time block" hidden></div>
   <div class="emoji-pop float" id="floatPicker" role="dialog" aria-label="Choose an emoji" hidden>
@@ -1118,6 +1351,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <div class="head-actions">
       <button class="btn toggle" id="toggleGraphOpts" type="button" aria-expanded="false" aria-controls="graphPanel">Display</button>
       <button class="btn" id="fitGraph" type="button">Fit to screen</button>
+      <button class="btn primary new-any" type="button" data-newany="graph">+ New</button>
     </div>
   </div>
   <section class="panel" id="graphPanel" aria-label="Graph display" hidden>
@@ -1135,8 +1369,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="graph-wrap" id="graphWrap">
     <canvas id="graph" aria-label="Graph of linked projects and pages"></canvas>
     <div class="graph-empty" id="graphEmpty" hidden></div>
+    <div class="g-sel" id="gSelBox" hidden></div>
   </div>
-  <div class="ghint">Drag the background to pan, pinch or scroll to zoom, drag a shape to move it, and tap one to open it. Circles are projects, diamonds are areas, and squares are resources.</div>
+  <div class="ghint">Drag the background to pan, pinch or scroll to zoom, drag a shape to move it, and tap one to select it: then tap other shapes to link or unlink them, or use the box at the top. Circles are projects, diamonds are areas, and squares are resources.</div>
 </main>
 
 <div class="overlay" id="overlay" hidden>
@@ -1165,11 +1400,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <div class="body-head"><div class="nt-bar" id="ntBar" role="tablist" aria-label="Note tabs"></div><button type="button" class="btn" id="bodyToggle">Edit</button></div>
       <div class="nt-meta" id="ntMeta" hidden><input id="ntName" aria-label="Tab name" placeholder="Tab name" maxlength="60"><button type="button" class="btn" id="ntDel">Delete tab</button></div>
       <div class="att" id="attBox">
-        <div class="att-tools"><button type="button" class="btn" id="attFileBtn" hidden>📎 Attach files</button><button type="button" class="btn" id="attLinkBtn">🔗 Add link</button><span class="att-status" id="attStatus" role="status"></span></div>
+        <div class="att-tools"><button type="button" class="btn" id="attFileBtn" hidden>📎 Attach files</button><button type="button" class="btn" id="attLinkBtn">🔗 Add link</button><button type="button" class="btn" id="attEmbedBtn">🖥 Embed website</button><span class="att-status" id="attStatus" role="status"></span></div>
         <input type="file" id="attFile" multiple hidden>
         <div class="att-link" id="attLinkRow" hidden><textarea id="attLinkIn" rows="1" placeholder="Paste a link (or several, one per line)" aria-label="Links to add"></textarea><button type="button" class="btn" id="attLinkAdd">Add</button></div>
         <ul class="att-list" id="attList"></ul>
       </div>
+      <div class="att-embeds" id="attEmbeds"></div>
       <div class="md" id="bodyView" tabindex="0"></div>
       <div class="body-edit" id="bodyEditWrap" hidden>
         <div class="suggest" id="suggest" role="listbox" hidden></div>
@@ -1627,6 +1863,44 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     quickToggle(b.dataset.qttype, b.dataset.qtid, b.dataset.qt);
   }, true);
 
+  // ---------- Edit a property right where it's shown (tables, cards, feed) ----------
+  const QE_KIND = (P) => P.kind === "tags" ? "tags" : P.key === "layers" ? "layer" : P.kind === "daterange" ? "focus" : P.kind === "color" ? "color" : P.kind === "date" ? "created" : P.kind === "links" ? "links" : P.kind === "status" ? "status" : P.kind === "dbmove" ? "type" : "";
+  // Status, Database, Color, Layer and Created date change straight from a dropdown or date picker right where they're shown
+  const QE_NATIVE = (P, type) => P.kind === "status" || P.kind === "dbmove" || P.kind === "color" || P.kind === "date" || (P.key === "layers" && !FIXED_LAYER[type]);
+  function qeControl(e, P, type, cls) {
+    const a = `class="${cls}" data-qn="${esc(P.key)}" data-qnt="${esc(type)}" data-qne="${esc(e.id)}" aria-label="${esc(P.label)} for ${esc(e.title || "Untitled")}"`;
+    if (P.kind === "status") return `<select ${a}>${STATUSES.map(st => `<option${st.v === (e.status || "Not started") ? " selected" : ""}>${st.v}</option>`).join("")}</select>`;
+    if (P.kind === "dbmove") return `<select ${a}>${dbOptions(type, isSched(e, type))}</select>`;
+    if (P.kind === "color") { const own = ownColor(e), ac = areaColorFor(e); return `<select ${a}><option value=""${own ? "" : " selected"}>${ac ? "From area (" + ac + ")" : "White"}</option>${COLORS.map(c => `<option value="${c}"${own === c ? " selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("")}</select>`; }
+    if (P.kind === "date") return `<input type="date" ${a} value="${esc(String(e[P.field] || e.created || e.createdTime || "").slice(0, 10))}">`;
+    if (P.key === "layers") { const cur = (Array.isArray(e.layers) ? e.layers : []).map(String)[0] || ""; return `<select ${a}><option value=""${cur ? "" : " selected"}>No layer</option>${["0","1","2","3","4","5","6","7","8","9"].map(l => `<option value="${l}"${cur === l ? " selected" : ""}>Layer ${l}</option>`).join("")}</select>`; }
+    return "";
+  }
+  const qeWrap = (e, P, type, inner) => (PUBLIC || !e || e._pub || !QE_NATIVE(P, type) || /<select/.test(inner)) ? inner : `<span class="qe-live">${inner}${qeControl(e, P, type, "qe-native")}</span>`;
+  document.addEventListener("change", async ev => {
+    const c = ev.target.closest && ev.target.closest(".qe-native"); if (!c) return;
+    ev.stopPropagation();
+    const type = c.dataset.qnt, id = c.dataset.qne, key = c.dataset.qn, P = TYPE[type] && TYPE[type].props.find(x => x.key === key), it = data[type] && data[type].find(x => x.id === id); if (!P || !it) return;
+    const v = c.value, now = new Date().toISOString();
+    try {
+      if (P.kind === "dbmove") { await moveEntryTo(type, id, v); return; }
+      let patch = null;
+      if (P.kind === "status") patch = { status: v };
+      if (P.kind === "color") patch = { color: v };
+      if (P.kind === "date") { if (!v) { renderAll(); return; } const old = it[P.field] || ""; patch = { [P.field]: old.slice(0, 10) === v ? old : v + old.slice(10) }; }
+      if (P.key === "layers") patch = { layers: v ? [v] : [] };
+      if (patch) await saveEntry(type, { ...it, ...patch, updatedAt: now });
+    } catch (err) { notice(err.message || "Couldn't change it."); renderAll(); }
+  }, true);
+  const qeAttrs = (e, P, type) => { const k = !PUBLIC && e && !e._pub && !QE_NATIVE(P, type) && QE_KIND(P); return k ? ` data-qe="1" data-dbpop="${k}" data-dbt="${esc(type)}" data-dbe="${esc(e.id)}" title="Click to change ${esc(P.label.toLowerCase())}"` : ""; };
+  document.addEventListener("click", ev => {
+    const c = ev.target.closest && ev.target.closest("[data-qe][data-dbpop]"); if (!c) return;
+    if (ev.target.closest("select, input, a, textarea, [data-open], [data-qt], .lchip, .st-item, .qe-live")) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (dbPopFor && dbPopFor.el === c) { dbClosePop(); return; }
+    dbOpenPop(c.dataset.dbpop, c.dataset.dbt, c.dataset.dbe, c);
+  }, true);
+
   // ---------- Property kinds ----------
   // "Scheduled" is a kind of project: it lives in Projects with a Scheduled tag
   const isSched = (e, type) => type === "projects" && !!(e && e.scheduled);
@@ -1875,7 +2149,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           <button class="btn primary" type="button" data-r="add">+ New ${T.singular}</button>
         </div>
       </div>
-      <div class="layout-tabs" role="tablist" aria-label="${T.label} views" data-r="layouts"><button type="button" role="tab" data-layout="table"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M2 10h12M6 6.5V13"/></svg>Table</button><button type="button" role="tab" data-layout="timeline"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 4h7M5 8h8M3 12h6"/></svg>Timeline</button><button type="button" role="tab" data-layout="feed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="2" width="10" height="5" rx="1"/><rect x="3" y="9" width="10" height="5" rx="1"/></svg>Feed</button></div>
+      <div class="layout-tabs" role="tablist" aria-label="${T.label} views" data-r="layouts"><button type="button" role="tab" data-layout="table"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M2 10h12M6 6.5V13"/></svg>Table</button><button type="button" role="tab" data-layout="timeline"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 4h7M5 8h8M3 12h6"/></svg>Timeline</button><button type="button" role="tab" data-layout="feed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="2" width="10" height="5" rx="1"/><rect x="3" y="9" width="10" height="5" rx="1"/></svg>Feed</button><button type="button" role="tab" data-layout="cards"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2.5" width="3.5" height="11" rx="1"/><rect x="6.5" y="2.5" width="3.5" height="7" rx="1"/><rect x="11" y="2.5" width="3.5" height="9" rx="1"/></svg>Cards</button></div>
       <section class="panel" data-r="ctl" aria-label="Filter ${T.label}" hidden>
         <div class="panel-head"><span class="panel-name">Filter</span><span class="panel-tools"><button class="btn ghost" type="button" data-r="clear">Clear all</button><button class="x" type="button" data-r="ctlX" aria-label="Close filter">×</button></span></div>
         <input class="search" data-r="q" type="search" placeholder="Search ${T.label.toLowerCase()}…" aria-label="Search ${T.label.toLowerCase()}">
@@ -1892,12 +2166,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="gsize" data-r="gsize" hidden></div>
         <div class="hint" data-r="colsHint">Tick the columns to show and use the arrows to reorder them. On a computer you can also drag a column header to move it, or drag its right edge to resize it.</div>
         <div class="col-list" data-r="colList"></div>
+        <div class="area-colors in-props" data-r="areaColors" hidden></div>
         <div><button class="btn ghost" type="button" data-r="resetCols" style="padding:2px 6px;font-size:12px">Reset columns</button></div>
       </section>
       <div class="gallery" data-r="gallery" hidden></div>
       <div class="timeline" data-r="timeline" hidden></div>
       <div class="feed" data-r="feed" hidden></div>
-      <div class="area-colors" data-r="areaColors" hidden></div>
+      <div class="board" data-r="board" hidden></div>
       <div class="table-wrap" data-r="tableWrap"><table data-r="table"><colgroup data-r="colgroup"></colgroup><thead><tr data-r="head"></tr></thead><tbody data-r="rows"></tbody></table></div>`;
     $("views").appendChild(main);
     const R = (k) => main.querySelector(`[data-r="${k}"]`);
@@ -1913,9 +2188,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (saved) {
       if (Array.isArray(saved.sorts)) ui.sorts = saved.sorts.filter(s => s && PROP[s.key] && !PROP[s.key].noSort).map(s => ({ key: s.key, dir: s.dir === "asc" ? "asc" : "desc" }));
       else if (PROP[saved.sortKey]) ui.sorts = [{ key: saved.sortKey, dir: saved.sortDir === "asc" ? "asc" : "desc" }];
-      if (["table", "timeline", "feed"].includes(saved.layout)) ui.layout = saved.layout;
+      if (["table", "timeline", "feed", "cards"].includes(saved.layout)) ui.layout = saved.layout;
       if (saved.tl) { if (TL_PROPS.some(P => P.key === saved.tl.by)) ui.tl.by = saved.tl.by; if (TL_ZOOM[saved.tl.zoom]) ui.tl.zoom = saved.tl.zoom; }
       if (["s", "m", "l"].includes(saved.gsize)) ui.gsize = saved.gsize;
+      if (typeof saved.linksOpen === "boolean") ui.linksOpen = saved.linksOpen;
       if (Array.isArray(saved.hideColors)) ui.hideColors = saved.hideColors.filter(c => COLORS.includes(c));
       if (saved.f) T.props.forEach(P => { if (saved.f[P.key]) ui.f[P.key] = { ...K[P.kind].empty(), ...saved.f[P.key] }; });
     }
@@ -1959,7 +2235,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     R("q").addEventListener("input", e => { ui.q = e.target.value; renderRows(); renderBadge(); });
     const setSort = (key) => { ui.sorts = cycleSort(ui.sorts, key, ["date", "daterange"].includes(PROP[key].kind) ? "desc" : "asc"); saveUi(); render(); };
     R("sort").addEventListener("click", e => { const b = e.target.closest("[data-sort]"); if (b) setSort(b.dataset.sort); });
-    R("head").addEventListener("click", e => { const b = e.target.closest("[data-sort]"); if (b) setSort(b.dataset.sort); });
+    R("head").addEventListener("click", e => {
+      if (e.target.closest("[data-linkstog]")) { e.stopPropagation(); ui.linksOpen = !ui.linksOpen; saveUi(); main.classList.toggle("links-open", ui.linksOpen); renderHead(); return; }
+      const b = e.target.closest("[data-sort]"); if (b) setSort(b.dataset.sort);
+    });
+    main.classList.toggle("links-open", !!ui.linksOpen);
     R("sortClear").addEventListener("click", () => { ui.sorts = []; saveUi(); render(); });
     R("clear").addEventListener("click", () => { ui.f = freshFilters(); ui.q = ""; R("q").value = ""; saveUi(); render(); });
     const onFilterInput = (e) => {
@@ -2054,7 +2334,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       R("table").style.width = vis.reduce((s, c) => s + c.width, 0) + "px";
       R("head").innerHTML = vis.map(c => {
         const si = ui.sorts.findIndex(s => s.key === c.key), on = si >= 0;
-        return `<th scope="col" draggable="true" data-col="${c.key}">${PROP[c.key].noSort ? `<span>${PROP[c.key].label}</span>` : `<button type="button" class="${on ? "on" : ""}" data-sort="${c.key}">${PROP[c.key].label}${on ? `${ui.sorts.length > 1 ? `<sup>${si + 1}</sup>` : ""}${ui.sorts[si].dir === "asc" ? " ↑" : " ↓"}` : ""}</button>`}<span class="resizer" data-resize="${c.key}" title="Drag to resize"></span></th>`;
+        return `<th scope="col" draggable="true" data-col="${c.key}">${PROP[c.key].noSort ? `<span>${PROP[c.key].label}</span>` : `<button type="button" class="${on ? "on" : ""}" data-sort="${c.key}">${PROP[c.key].label}${on ? `${ui.sorts.length > 1 ? `<sup>${si + 1}</sup>` : ""}${ui.sorts[si].dir === "asc" ? " ↑" : " ↓"}` : ""}</button>`}${c.key === "links" ? `<button type="button" class="lk-tog" data-linkstog aria-pressed="${!!ui.linksOpen}" title="${ui.linksOpen ? "Fit links on one line" : "Show every link in full"}">${ui.linksOpen ? "Collapse" : "Show all"}</button>` : ""}<span class="resizer" data-resize="${c.key}" title="Drag to resize"></span></th>`;
       }).join("");
     }
     let resizing = null, dragKey = null;
@@ -2111,16 +2391,16 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       return [...list.filter(isPinned), ...list.filter(e => !isPinned(e))];
     }
     const viewColorClass = (e) => { const c = colorOf(e); return c && !(groupByArea && (ui.hideColors || []).includes(c)) ? " ec-" + c : " ec-white"; };
-    const rowHtml = (e) => `<tr class="row${hasStatus(T) && e.status === "Done" ? " done" : ""}${viewColorClass(e)}" data-id="${esc(e.id)}" tabindex="0">${shown().map(c => { const P = PROP[c.key]; return `<td data-label="${esc(P.label)}">${K[P.kind].cell(e, P, T)}</td>`; }).join("")}</tr>`;
+    const rowHtml = (e) => `<tr class="row${hasStatus(T) && e.status === "Done" ? " done" : ""}${viewColorClass(e)}" data-id="${esc(e.id)}" tabindex="0">${shown().map(c => { const P = PROP[c.key]; return `<td data-label="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, K[P.kind].cell(e, P, T))}</td>`; }).join("")}</tr>`;
     const hasVal = (e, P) => P.kind === "status" ? true : P.kind === "date" ? !!e[P.field] : P.kind === "daterange" ? !!(e[P.start] || e[P.end]) : P.kind === "links" ? !!(adj.get(e.id) || new Set()).size : P.kind === "tasks" ? taskList(e).length > 0 : P.kind === "tags" ? tagsOf(e).length > 0 : P.kind === "check" ? K.check.on(e, P) : P.kind === "multi" ? K.multi.vals(e, P).length > 0 : P.kind === "color" ? !!colorOf(e) : false;
-    const cardCell = (e, P) => P.kind === "status" ? `<span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>` : K[P.kind].cell(e, P, T);
+    const cardCell = (e, P) => P.kind === "status" ? `<span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>` : P.kind === "dbmove" ? `<span class="db-sellabel">${esc(T.label)}${isSched(e, T.key) ? SCHED_TAG : ""}<span class="db-caret" aria-hidden="true">▾</span></span>` : K[P.kind].cell(e, P, T);
     const cardHtml = (e) => {
       const done = hasStatus(T) && e.status === "Done", vis = shown().map(c => c.key);
       const initial = esc(((e.title || "?").trim()[0] || "?").toUpperCase());
       const props = shown().map(c => PROP[c.key]).filter(P => !["title", "text", "image", "check", "color"].includes(P.kind) && hasVal(e, P));
       return `<article class="card${done ? " done" : ""}${ecClass(e)}" data-id="${esc(e.id)}" tabindex="0" aria-label="${esc(e.title || "Untitled")}">
         <div class="card-cover">${e.cover ? `<img src="${esc(e.cover)}" alt="" loading="lazy">` : `<span class="card-initial" aria-hidden="true">${initial}</span>`}</div>
-        <div class="card-body"><div class="card-title">${K.title.cell(e, PROP.title, T)}</div>${props.map(P => `<div class="card-prop" title="${esc(P.label)}">${cardCell(e, P)}</div>`).join("")}${qtHtml(e, T.key) ? `<div class="card-prop card-qt">${qtHtml(e, T.key)}</div>` : ""}</div>
+        <div class="card-body"><div class="card-title">${K.title.cell(e, PROP.title, T)}</div>${props.map(P => `<div class="card-prop" title="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, cardCell(e, P))}</div>`).join("")}${qtHtml(e, T.key) ? `<div class="card-prop card-qt">${qtHtml(e, T.key)}</div>` : ""}</div>
       </article>`;
     };
     function groupedKeys(list) {
@@ -2159,7 +2439,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="post-inner">
           <div class="post-meta"><i class="tdot t-${T.key}" aria-hidden="true"></i>${esc(T.singular[0].toUpperCase() + T.singular.slice(1))}${postDate(e) ? ` · ${esc(postDate(e))}` : ""}${qtHtml(e, T.key)}</div>
           <button type="button" class="post-title" data-post="${esc(e.id)}">${isPinned(e) ? `<span class="pinned" title="Pinned: tagged Now">${PIN_SVG}</span> ` : ""}${done ? '<span class="check" aria-label="Done">✓</span> ' : ""}${emo(e, T.key)} <span class="t-main">${esc(e.title || "Untitled")}</span>${e.subtitle ? `<span class="t-sub">${esc(e.subtitle)}</span>` : ""}${done && T.archive ? ' <span class="done-badge">Done</span>' : ""}${isSched(e, T.key) ? " " + SCHED_TAG : ""}</button>
-          ${props.length ? `<div class="post-props">${props.map(P => `<span title="${esc(P.label)}">${cardCell(e, P)}</span>`).join("")}</div>` : ""}
+          ${props.length ? `<div class="post-props">${props.map(P => `<span title="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, cardCell(e, P))}</span>`).join("")}</div>` : ""}
           ${showTasks ? `<ul class="tasklist post-tasks">${taskList(e).map(t => taskRowHtml(t, { entry: e.id, type: T.key, disabled: !!e._pub })).join("")}</ul>` : ""}
           <div class="post-body md">${(e.body || "").trim() ? renderMd(e.body) : '<p class="placeholder">No notes yet.</p>'}</div>
         </div>
@@ -2176,12 +2456,78 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       el.querySelectorAll('.post-body a[href]:not(.wikilink)').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
       el.querySelectorAll('.post-body input[type="checkbox"]').forEach(c => { c.disabled = true; });
     }
+    // ----- Cards layout: index cards I sort into my own named categories -----
+    let board = (() => { const b = recall(`chevy.board.${T.key}`); return b && Array.isArray(b.cols) ? b : { cols: [] }; })();
+    let bdDrag = null, bdSel = null, bdRename = null, bdDelArm = null;
+    const bdId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    async function saveBoard() {
+      board = { cols: board.cols.map(c => ({ id: c.id, name: c.name, ids: [...new Set(c.ids || [])] })) };
+      store(`chevy.board.${T.key}`, board);
+      if (local || !db) return;
+      try { await db.doc(`settings/board_${T.key}`).set({ cols: board.cols, updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the cards layout."); }
+    }
+    function applyBoard(b) { if (bdDrag || bdRename) return; if (b && Array.isArray(b.cols)) { board = { cols: b.cols.map(c => ({ id: String(c.id), name: String(c.name || "Category"), ids: Array.isArray(c.ids) ? c.ids.map(String) : [] })) }; store(`chevy.board.${T.key}`, board); if (ui.layout === "cards") renderRows(); } }
+    const bdCard = (e) => {
+      const props = shown().map(c => PROP[c.key]).filter(P => P.kind !== "title" && P.kind !== "subtitle");
+      const done = hasStatus(T) && e.status === "Done", sel = bdSel === e.id;
+      return `<article class="bd-card${done ? " done" : ""}${ecClass(e)}${sel ? " sel" : ""}" draggable="${PUBLIC || e._pub ? "false" : "true"}" data-bdid="${esc(e.id)}">
+        <div class="bd-top">${PUBLIC ? "" : `<button type="button" class="bd-grip" data-bdgrip="${esc(e.id)}" title="Drag to move, or tap and then tap a category" aria-label="Move ${esc(e.title || "Untitled")}">⠿</button>`}<button type="button" class="bd-title" data-open="${esc(e.id)}">${isPinned(e) ? `<span class="pinned">${PIN_SVG}</span> ` : ""}${done ? '<span class="check" aria-label="Done">✓</span> ' : ""}${emo(e, T.key)} <span class="t-main">${esc(e.title || "Untitled")}</span></button></div>
+        ${e.subtitle && !taskList(e).length ? `<div class="bd-sub">${esc(e.subtitle)}</div>` : ""}${subTasksHtml(e, T.key)}
+        ${(() => { const ps = props.map(P => { const inner = cardCell(e, P); const txt = inner.replace(/<[^>]+>/g, "").trim(); return (txt === "" || txt === "—") && P.kind !== "status" ? "" : `<span title="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, inner)}</span>`; }).join(""); return ps ? `<div class="bd-props">${ps}</div>` : ""; })()}
+      </article>`;
+    };
+    function renderBoard(list, total) {
+      const el = R("board");
+      if (!total) { el.innerHTML = loaded[T.key] ? `<div class="empty"><strong>No ${T.label.toLowerCase()} yet</strong>Add your first one with “+ New ${T.singular}”.</div>` : ""; return; }
+      const byIdMap = new Map(list.map(e => [e.id, e])), placed = new Set();
+      const cols = board.cols.map(c => { const items = (c.ids || []).map(id => byIdMap.get(id)).filter(Boolean); items.forEach(e => placed.add(e.id)); return { ...c, items }; });
+      const unsorted = list.filter(e => !placed.has(e.id));
+      const colHtml = (c, fixed) => `<section class="bd-col${bdSel ? " can-drop" : ""}" data-bdcol="${esc(c.id)}">
+        <header class="bd-head">${fixed ? `<span class="bd-name fixed">${esc(c.name)}</span>` : bdRename === c.id ? `<input class="bd-rename" data-bdrename="${esc(c.id)}" value="${esc(c.name)}" maxlength="60" aria-label="Category name">` : `<button type="button" class="bd-name" data-bdname="${esc(c.id)}" title="Click to rename">${esc(c.name)}</button>`}<span class="bd-n">${c.items.length}</span>${fixed || PUBLIC ? "" : `<button type="button" class="bd-x" data-bddel="${esc(c.id)}" title="${bdDelArm === c.id ? "Tap again: cards go back to Unsorted" : "Remove this category"}">${bdDelArm === c.id ? "Remove?" : "×"}</button>`}</header>
+        ${bdSel ? `<button type="button" class="bd-here" data-bdhere="${esc(c.id)}">Move here</button>` : ""}
+        <div class="bd-list" data-bdlist="${esc(c.id)}">${c.items.map(bdCard).join("") || `<div class="bd-empty">${fixed ? "Everything is sorted." : "Drag cards here"}</div>`}</div>
+      </section>`;
+      el.innerHTML = `<div class="bd-wrap">${colHtml({ id: "_unsorted", name: "Unsorted", items: unsorted }, true)}${cols.map(c => colHtml(c, false)).join("")}${PUBLIC ? "" : `<button type="button" class="bd-addcol" data-bdadd>+ Add category</button>`}</div>`;
+      if (bdRename) { const i = el.querySelector(".bd-rename"); if (i) { i.focus(); i.select(); } }
+    }
+    function bdMove(id, colId, beforeId) {
+      board.cols.forEach(c => { c.ids = (c.ids || []).filter(x => x !== id); });
+      if (colId !== "_unsorted") { const c = board.cols.find(x => x.id === colId); if (!c) return; const i = beforeId ? c.ids.indexOf(beforeId) : -1; if (i >= 0) c.ids.splice(i, 0, id); else c.ids.push(id); }
+      bdSel = null; saveBoard(); renderRows();
+    }
+    R("board").addEventListener("click", e => {
+      if (e.target.closest("[data-bdadd]")) { const c = { id: bdId(), name: "New category", ids: [] }; board.cols.push(c); bdRename = c.id; saveBoard(); renderRows(); return; }
+      const nm = e.target.closest("[data-bdname]"); if (nm) { bdRename = nm.dataset.bdname; renderRows(); return; }
+      const dl = e.target.closest("[data-bddel]"); if (dl) { const id = dl.dataset.bddel; if (bdDelArm !== id) { bdDelArm = id; renderRows(); setTimeout(() => { if (bdDelArm === id) { bdDelArm = null; renderRows(); } }, 3000); return; } bdDelArm = null; board.cols = board.cols.filter(c => c.id !== id); saveBoard(); renderRows(); return; }
+      const hr = e.target.closest("[data-bdhere]"); if (hr && bdSel) { bdMove(bdSel, hr.dataset.bdhere, null); return; }
+      const gp = e.target.closest("[data-bdgrip]"); if (gp) { bdSel = bdSel === gp.dataset.bdgrip ? null : gp.dataset.bdgrip; renderRows(); return; }
+      const op = e.target.closest("[data-open]"); if (op) { openEditor(T.key, op.dataset.open); return; }
+    });
+    const bdFinishRename = (inp, save) => { const c = board.cols.find(x => x.id === inp.dataset.bdrename); const v = inp.value.trim().slice(0, 60); bdRename = null; if (c && save && v && v !== c.name) { c.name = v; saveBoard(); } renderRows(); };
+    R("board").addEventListener("keydown", e => { const i = e.target.closest("[data-bdrename]"); if (!i) return; if (e.key === "Enter") { e.preventDefault(); bdFinishRename(i, true); } if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); bdFinishRename(i, false); } });
+    R("board").addEventListener("focusout", e => { const i = e.target.closest("[data-bdrename]"); if (i && bdRename) setTimeout(() => { if (bdRename === i.dataset.bdrename) bdFinishRename(i, true); }, 0); });
+    R("board").addEventListener("change", e => { const tk = e.target.closest("input[data-task][data-entry]"); if (tk) toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); });
+    R("board").addEventListener("dragstart", e => { const c = e.target.closest(".bd-card"); if (!c || c.getAttribute("draggable") !== "true") return; bdDrag = c.dataset.bdid; c.classList.add("dragging"); try { e.dataTransfer.setData("text/plain", bdDrag); e.dataTransfer.effectAllowed = "move"; } catch (err) {} });
+    R("board").addEventListener("dragend", () => { bdDrag = null; R("board").querySelectorAll(".dragging, .over, .ins").forEach(x => x.classList.remove("dragging", "over", "ins")); });
+    R("board").addEventListener("dragover", e => {
+      const col = e.target.closest("[data-bdcol]"); if (!col || !bdDrag) return; e.preventDefault();
+      R("board").querySelectorAll(".over, .ins").forEach(x => x.classList.remove("over", "ins")); col.classList.add("over");
+      const card = e.target.closest(".bd-card"); if (card && card.dataset.bdid !== bdDrag) card.classList.add("ins");
+    });
+    R("board").addEventListener("drop", e => {
+      const col = e.target.closest("[data-bdcol]"); if (!col || !bdDrag) return; e.preventDefault();
+      const card = e.target.closest(".bd-card"); const id = bdDrag; bdDrag = null;
+      let before = card && card.dataset.bdid !== id ? card.dataset.bdid : null;
+      if (card && before) { const r = card.getBoundingClientRect(); if (e.clientY > r.top + r.height / 2) { const next = card.nextElementSibling && card.nextElementSibling.dataset ? card.nextElementSibling.dataset.bdid : null; before = next && next !== id ? next : null; } }
+      bdMove(id, col.dataset.bdcol, before);
+    });
     function renderRows() {
       const list = visible(), total = data[T.key].length, span = shown().length, noun = (n) => n === 1 ? T.singular : T.label.toLowerCase();
       R("count").textContent = !loaded[T.key] && !total ? "Loading…" : (list.length === total ? `${total} ${noun(total)}` : `Showing ${list.length} of ${total} ${noun(total)}`);
-      const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline";
-      R("areaColors").hidden = !groupByArea || tline || feed; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("tableWrap").hidden = feed || tline;
+      const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline", cards = ui.layout === "cards";
+      R("areaColors").hidden = !groupByArea || tline || feed || cards; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("board").hidden = !cards; R("tableWrap").hidden = feed || tline || cards;
       if (tline) { renderTimeline(list, total); return; }
+      if (cards) { renderBoard(list, total); return; }
       if (feed) { renderFeed(list, total); return; }
       const tb = R("rows");
       R("areaColors").hidden = !groupByArea || tline || feed;
@@ -2227,7 +2573,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (e.target.closest("[data-agall]")) { ui.hideColors = ui.hideColors.length ? [] : [...COLORS]; saveUi(); renderRows(); }
     });
     R("rows").addEventListener("click", e => {
-      if (e.target.closest("select") || e.target.closest(".st-item")) return;
+      if (e.target.closest("select") || e.target.closest("input") || e.target.closest(".st-item") || e.target.closest(".qe-live")) return;
       const lk = e.target.closest("[data-open]"); if (lk) { const t = byId.get(lk.dataset.open); if (t) openEditor(t.type, t.e.id); return; }
       const tr = e.target.closest("tr.row"); if (tr) openEditor(T.key, tr.dataset.id);
     });
@@ -2384,13 +2730,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const g = false, fd = ui.layout === "feed", tl = ui.layout === "timeline";
       R("layouts").querySelectorAll("[data-layout]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.layout === ui.layout)));
       R("colsLabel").textContent = R("colsName").textContent = "Show Properties";
-      R("colsHint").textContent = tl ? "The timeline shows each title with a bar for its dates. Switch to Table to choose and reorder columns." : fd ? "Tap a property to show or hide it on each post. Hold and drag one to change the order. Posts always show the cover, title, date and full notes." : g ? "Tick the properties to show on each card and use the arrows to reorder them. Cards always show the cover and title." : "Tap a property to show or hide its column. Hold and drag one to change the order, left to right. You can also drag a column header to move it, or drag its right edge to resize it.";
+      R("colsHint").textContent = ui.layout === "cards" ? "Tap a property to show or hide it on each card. Hold and drag one to change the order. Cards always show the title and its tasks." : tl ? "The timeline shows each title with a bar for its dates. Switch to Table to choose and reorder columns." : fd ? "Tap a property to show or hide it on each post. Hold and drag one to change the order. Posts always show the cover, title, date and full notes." : g ? "Tick the properties to show on each card and use the arrows to reorder them. Cards always show the cover and title." : "Tap a property to show or hide its column. Hold and drag one to change the order, left to right. You can also drag a column header to move it, or drag its right edge to resize it.";
       R("gsize").hidden = !g;
       R("gsize").innerHTML = `<span class="ctl-title">Card size</span><span class="chips">${[["s", "Small"], ["m", "Medium"], ["l", "Large"]].map(([k, l]) => `<button type="button" class="chip" aria-pressed="${ui.gsize === k}" data-gsize="${k}">${l}</button>`).join("")}</span>`;
     }
     function render() { renderLayout(); renderControls(); renderColPanel(); renderHead(); renderRows(); renderBadge(); }
     function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols2`, cols[T.key]); render(); }
-    return { T, main, render, applyRemoteCols };
+    return { T, main, render, applyRemoteCols, applyBoard };
   }
 
   // ---------- Editor ----------
@@ -2520,6 +2866,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }
   $("edFields").addEventListener("keydown", e => { if (e.target.id === "ed-newlink-t") { if (e.key === "Enter") { e.preventDefault(); createLinked(); } if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); $("ed-newlink").hidden = true; } } });
   $("edFields").addEventListener("click", e => {
+    if (e.target.closest("[data-proplive]")) return; // a live dropdown or date picker is opening; don't redraw under it
     const pb = e.target.closest("[data-propbtn]");
     if (pb && pb.dataset.propqt) {
       const key = pb.dataset.propbtn, exists = data[editing.type].some(x => x.id === editing.id);
@@ -2618,8 +2965,40 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const href = f.kind === "link" ? f.url : "/_blob/" + f.id;
       const safe = /^(https?:|mailto:|\/_blob\/)/i.test(href) ? href : "#";
       const thumb = f.kind !== "link" && /^image\//.test(f.type || "") ? `<img class="ai" src="${esc(safe)}" alt="">` : `<span class="ai" aria-hidden="true">${fileIcon(f)}</span>`;
-      return `<li>${thumb}<a href="${esc(safe)}" target="_blank" rel="noopener" title="${esc(f.kind === "link" ? f.url : f.name)}">${esc(f.kind === "link" ? (f.name || linkLabel(f.url)) : (f.name || "File"))}</a><span class="as">${esc(f.kind === "link" ? "link" : fmtSize(f.size))}</span><button type="button" class="ax" data-attx="${i}" title="Remove from this tab" aria-label="Remove ${esc(f.name || f.url || "item")}">×</button></li>`;
+      return `<li>${thumb}<a href="${esc(safe)}" target="_blank" rel="noopener" title="${esc(f.kind === "link" ? f.url : f.name)}">${esc(f.kind === "link" ? (f.name || linkLabel(f.url)) : (f.name || "File"))}</a><span class="as">${esc(f.kind === "link" ? (f.embed ? "embedded" : "link") : fmtSize(f.size))}</span>${f.kind === "link" && !PUBLIC ? `<button type="button" class="btn att-emb" data-attemb="${i}" aria-pressed="${!!f.embed}" title="${f.embed ? "Stop showing this website inside the note" : "Show this website inside the note"}">${f.embed ? "Hide embed" : "🖥 Embed"}</button>` : ""}<button type="button" class="ax" data-attx="${i}" title="Remove from this tab" aria-label="Remove ${esc(f.name || f.url || "item")}">×</button></li>`;
     }).join("") : `<li class="att-empty" style="border:0;background:none;padding:0">${assetsApi ? "No files or links yet. Attach as many as you like." : "No links yet. Paste as many as you like."}</li>`;
+    renderEmbeds();
+  }
+  function renderEmbeds() {
+    const box = $("attEmbeds"); if (!box || !editing) return;
+    const t = draft.tabs[draft.ti] || draft.tabs[0];
+    const list = t.files.map((f, i) => ({ f, i })).filter(x => x.f.kind === "link" && x.f.embed && /^https?:/i.test(x.f.url || ""));
+    const have = [...box.querySelectorAll("[data-embkey]")].map(n => n.dataset.embkey).join("|"), want = list.map(x => x.i + "~" + x.f.url).join("|");
+    if (have === want && box.childElementCount === list.length) return; // keep loaded frames as they are
+    box.innerHTML = list.map(({ f, i }) => {
+      const src = embedUrl(f.url);
+      return `<figure class="emb" data-embkey="${esc(i + "~" + f.url)}"><figcaption><span>🖥 ${esc(f.name || linkLabel(f.url))}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">Open in new tab ↗</a></figcaption>
+        <div class="emb-frame" data-embi="${i}" style="height:${Math.max(200, Math.min(1400, Number(f.h) || 480))}px"><iframe src="${esc(src)}" title="${esc(f.name || linkLabel(f.url))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; clipboard-write; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"></iframe></div>
+        <div class="emb-note">Blank? Some websites don't allow being shown inside other pages. Use "Open in new tab" for those. Drag the bottom-right corner to resize.</div></figure>`;
+    }).join("");
+    if (!PUBLIC && window.ResizeObserver) box.querySelectorAll(".emb-frame").forEach(el => {
+      new ResizeObserver(() => { const i = +el.dataset.embi, f = t.files[i]; if (f && el.offsetHeight > 0 && Math.abs((f.h || 480) - el.offsetHeight) > 4) f.h = Math.round(el.offsetHeight); }).observe(el);
+    });
+  }
+  // Turn common share links into their embeddable form
+  function embedUrl(u) {
+    try {
+      const x = new URL(u), h = x.hostname.replace(/^www\./, "");
+      if (h === "youtube.com" || h === "m.youtube.com") { const v = x.searchParams.get("v"); if (v) return "https://www.youtube.com/embed/" + encodeURIComponent(v); const m = x.pathname.match(/^\/(?:shorts|live)\/([\w-]+)/); if (m) return "https://www.youtube.com/embed/" + m[1]; }
+      if (h === "youtu.be") return "https://www.youtube.com/embed/" + encodeURIComponent(x.pathname.slice(1));
+      if (h === "vimeo.com" && /^\/\d+/.test(x.pathname)) return "https://player.vimeo.com/video/" + x.pathname.slice(1).split("/")[0];
+      if (h === "loom.com" && x.pathname.startsWith("/share/")) return "https://www.loom.com/embed/" + x.pathname.slice(7);
+      if (h === "docs.google.com" && /\/(edit|view)$/.test(x.pathname)) { x.pathname = x.pathname.replace(/\/(edit|view)$/, "/preview"); x.search = ""; x.hash = ""; return x.href; }
+      if (h === "drive.google.com" && /\/file\/d\/[^/]+\/view/.test(x.pathname)) return x.href.replace(/\/view.*$/, "/preview");
+      if (h === "google.com" && x.pathname.startsWith("/maps") && !x.searchParams.has("output")) { x.searchParams.set("output", "embed"); return x.href; }
+      if (h === "open.spotify.com" && !x.pathname.startsWith("/embed")) return "https://open.spotify.com/embed" + x.pathname;
+      return x.href;
+    } catch (e) { return u; }
   }
   function attMsg(m, bad) { const el = $("attStatus"); if (!el) return; el.textContent = m || ""; el.classList.toggle("bad", !!bad); }
   const UPLOAD_ERR = { too_large: "is too big (20 MB max, SVG 2 MB)", unsupported_type: "is a type that can't be stored here (images, video, PDF, text, CSV and JSON work; Word and Excel don't, so attach a PDF or paste a link instead)", quota_or_state: "couldn't be stored: storage is full right now", rate_limited: "was blocked for uploading too fast; try again in a moment", upstream_auth: "couldn't upload: please reload and sign in again" };
@@ -2643,13 +3022,17 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     draft.tabs.splice(draft.ti, 1); draft.ti = Math.max(0, draft.ti - 1); bodyMode = draft.body.trim() ? "view" : "edit"; renderBody();
   });
   $("attList").addEventListener("click", e => { const x = e.target.closest("[data-attx]"); if (!x) return; e.preventDefault(); (draft.tabs[draft.ti] || draft.tabs[0]).files.splice(+x.dataset.attx, 1); renderNoteTabs(); renderAttach(); attMsg("Removed. Save to keep the change."); });
-  $("attLinkBtn").addEventListener("click", () => { const r = $("attLinkRow"); r.hidden = !r.hidden; if (!r.hidden) $("attLinkIn").focus(); });
+  let attEmbedMode = false;
+  const openLinkRow = (embed) => { const r = $("attLinkRow"); const same = attEmbedMode === embed; attEmbedMode = embed; r.hidden = !r.hidden && same; $("attLinkIn").placeholder = embed ? "Paste the website address to show inside this note" : "Paste a link (or several, one per line)"; $("attLinkAdd").textContent = embed ? "Embed" : "Add"; if (!r.hidden) $("attLinkIn").focus(); };
+  $("attLinkBtn").addEventListener("click", () => openLinkRow(false));
+  $("attEmbedBtn").addEventListener("click", () => openLinkRow(true));
+  $("attList").addEventListener("click", e => { const b = e.target.closest("[data-attemb]"); if (!b) return; e.preventDefault(); e.stopPropagation(); const f = (draft.tabs[draft.ti] || draft.tabs[0]).files[+b.dataset.attemb]; if (!f) return; f.embed = !f.embed; renderAttach(); attMsg(f.embed ? "Embedded below. Press Save to keep it." : "Embed hidden. Press Save to keep the change."); }, true);
   function addLinks() {
     const raw = $("attLinkIn").value.trim(); if (!raw) return;
     const t = draft.tabs[draft.ti] || draft.tabs[0]; let n = 0, bad = 0;
     raw.split(/[\s,]+/).filter(Boolean).forEach(u => {
       let url = u; if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) url = "https://" + url;
-      try { const x = new URL(url); if (!/^(https?|mailto):$/.test(x.protocol) || (x.protocol !== "mailto:" && !x.hostname.includes("."))) throw 0; t.files.push({ kind: "link", url: x.href, name: "", addedAt: new Date().toISOString() }); n++; } catch (e) { bad++; }
+      try { const x = new URL(url); if (!/^(https?|mailto):$/.test(x.protocol) || (x.protocol !== "mailto:" && !x.hostname.includes("."))) throw 0; t.files.push({ kind: "link", url: x.href, name: "", addedAt: new Date().toISOString(), ...(attEmbedMode ? { embed: true } : {}) }); n++; } catch (e) { bad++; }
     });
     $("attLinkIn").value = ""; $("attLinkIn").focus();
     renderNoteTabs(); renderAttach();
@@ -2771,13 +3154,31 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     }
   }
   const propColor = (P) => { if (P.kind !== "color") return ""; const s = propSummary(P).toLowerCase().split(" ")[0]; return COLORS.includes(s) ? s : "white"; };
+  // The entry window's live property chips read and write the same form fields the full editor uses
+  function propLiveControl(P) {
+    const id = "ed-" + P.key, el = $(id);
+    if (P.kind === "status" || P.kind === "dbmove") return el ? `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}">${el.innerHTML}</select>` : "";
+    if (P.kind === "date") return el ? `<input type="date" class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}" value="${esc(el.value.slice(0, 10))}">` : "";
+    if (P.kind === "color") { const cur = ($("edFields").querySelector('[data-colorpick][aria-pressed="true"]') || {}).dataset?.colorpick || ""; const opts = [...$("edFields").querySelectorAll("[data-colorpick]")].map(b => b.dataset.colorpick); return `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}">${[...new Set(["", ...opts])].map(c => `<option value="${c}"${c === cur ? " selected" : ""}>${c ? c[0].toUpperCase() + c.slice(1) : "None (white / from area)"}</option>`).join("")}</select>`; }
+    if (P.key === "layers") { const on = [...$("edFields").querySelectorAll('[data-multi="layers"][aria-pressed="true"]')].map(b => b.dataset.val); return `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}"><option value="">${on.length ? "No layer" : "Automatic"}</option>${["0","1","2","3","4","5","6","7","8","9"].map(l => `<option value="${l}"${on[0] === l ? " selected" : ""}>Layer ${l}</option>`).join("")}</select>`; }
+    return "";
+  }
+  $("edFields").addEventListener("change", e => {
+    const c = e.target.closest("[data-plive]"); if (!c) return;
+    const key = c.dataset.plive, P = TYPE[editing.type].props.find(x => x.key === key); if (!P) return;
+    if (P.kind === "status" || P.kind === "dbmove" || P.kind === "date") { const el = $("ed-" + key); if (el) { el.value = c.value; el.dispatchEvent(new Event("change", { bubbles: true })); el.dispatchEvent(new Event("input", { bubbles: true })); } }
+    if (P.kind === "color") $("edFields").querySelectorAll("[data-colorpick]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.colorpick === c.value && c.value !== "")));
+    if (P.key === "layers") { $("edFields").querySelectorAll('[data-multi="layers"]').forEach(b => b.setAttribute("aria-pressed", String(b.dataset.val === c.value))); }
+    setTimeout(renderPropBar, 0);
+  });
   function renderPropBar() {
     const bar = $("propBar"); if (!bar || !editing) return; const T = TYPE[editing.type];
     bar.innerHTML = T.props.filter(P => P.kind !== "title").map(P => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
+      if (!editing.ro && !PUBLIC && QE_NATIVE(P, editing.type)) return `<label class="prop-btn prop-live" data-proplive="${P.key}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))} <span class="db-caret" aria-hidden="true">▾</span></span>${propLiveControl(P)}</label>`;
       return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; }).join("");
   }
   var propBarTimer = null;
-  function refreshPropBar() { clearTimeout(propBarTimer); propBarTimer = setTimeout(renderPropBar, 60); }
+  function refreshPropBar() { clearTimeout(propBarTimer); propBarTimer = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches(".pl-native") && a.closest("#propBar")) { a.addEventListener("blur", () => refreshPropBar(), { once: true }); return; } renderPropBar(); }, 60); }
   // ----- Emoji button + picker in the entry window -----
   function renderEmojiBtn() {
     const b = $("ed-emoji"); if (!b || !editing) return;
@@ -2914,7 +3315,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
   // ---------- Graph ----------
   
-  let settledFit = false, graphVisible = false, gNodes = [], gLinks = [], sim = null, hoverId = null, fitted = false;
+  let settledFit = false, graphVisible = false, gNodes = [], gLinks = [], sim = null, hoverId = null, fitted = false, gSel = null, gMsg = "";
   let transform = { x: 0, y: 0, k: 1 };
   const gOpts = { projects: true, areas: true, pages: true, orphans: true, done: true, labels: true };
   try { Object.assign(gOpts, JSON.parse(localStorage.getItem("chevy.graph.opts") || "{}")); } catch (e) {}
@@ -2972,6 +3373,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     else if (!gNodes.length) setEmpty("<div><strong>Nothing to show</strong>Change what's shown under Display, or link some projects, areas and resources.</div>");
     else if (!gLinks.length) setEmpty("<div style='align-self:end'>Open a project, area or resource and use Links to draw your first connection.</div>");
     else setEmpty("");
+    if (typeof renderGSel === "function") renderGSel();
     if (!graphVisible) return;
     if (!sim) {
       sim = d3.forceSimulation()
@@ -3001,10 +3403,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
     const lineC = cssVar("--muted"), accent = cssVar("--accent"), ink = cssVar("--ink"), muted = cssVar("--muted"), bg = cssVar("--graph-bg");
-    const hi = hoverId ? neighborsOf(hoverId) : null;
+    const focusId = gSel && gNodes.some(n => n.id === gSel) ? gSel : hoverId;
+    const hi = focusId ? neighborsOf(focusId) : null;
     gLinks.forEach(l => {
       if (typeof l.source !== "object") return;
-      const on = hi && (l.source.id === hoverId || l.target.id === hoverId);
+      const on = hi && (l.source.id === focusId || l.target.id === focusId);
       ctx.strokeStyle = on ? accent : lineC;
       ctx.globalAlpha = hi ? (on ? 0.95 : 0.1) : 0.35;
       ctx.lineWidth = (on ? 2.2 : 1.3) / Math.sqrt(transform.k);
@@ -3019,7 +3422,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       else ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
       ctx.fillStyle = cssVar(n.type === "pages" ? "--page" : n.type === "areas" ? "--area" : statusOf(n.status).color); ctx.fill();
       if (n.color) { ctx.lineWidth = 3 / transform.k; ctx.strokeStyle = cssVar("--c-" + n.color); ctx.stroke(); }
-      if (n.id === hoverId) { ctx.lineWidth = 2.5 / transform.k; ctx.strokeStyle = ink; ctx.stroke(); }
+      if (n.id === hoverId || n.id === gSel) { ctx.lineWidth = (n.id === gSel ? 4 : 2.5) / transform.k; ctx.strokeStyle = n.id === gSel ? accent : ink; ctx.stroke(); }
     });
     const showAll = gOpts.labels && transform.k > 0.5;
     ctx.textAlign = "center"; ctx.textBaseline = "top";
@@ -3061,12 +3464,15 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         const touch = e.sourceEvent && e.sourceEvent.pointerType && e.sourceEvent.pointerType !== "mouse";
         if (touch) hoverId = null;
         draw();
-        if (!dragMoved) openEditor(e.subject.type, e.subject.id);
+        if (!dragMoved) graphTap(e.subject);
       }));
     zoom = d3.zoom().scaleExtent([0.2, 4])
       .filter(e => e.type === "wheel" || !nodeAt(...d3.pointer(e.touches ? e.touches[0] : e, canvas)))
       .on("zoom", e => { transform = { x: e.transform.x, y: e.transform.y, k: e.transform.k }; draw(); });
     sel.call(zoom).on("dblclick.zoom", null);
+    let downAt = null;
+    sel.on("pointerdown.gsel", e => { downAt = nodeAt(...d3.pointer(e, canvas)) ? null : [e.clientX, e.clientY]; });
+    sel.on("pointerup.gsel", e => { if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5 && gSel) { gSel = null; gMsg = ""; renderGSel(); draw(); } downAt = null; });
     sel.on("pointermove.hover", e => {
       if (e.pointerType !== "mouse") return;
       const n = nodeAt(...d3.pointer(e, canvas)), id = n ? n.id : null;
@@ -3075,6 +3481,77 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     });
     sel.on("pointerleave.hover", () => { if (hoverId) { hoverId = null; draw(); } });
   }
+  // ----- Select a shape, then tap others to link or unlink them -----
+  const isLinked = (a, b) => (adj.get(a) || new Set()).has(b);
+  async function toggleLink(aId, bId) {
+    const A = byId.get(aId), B = byId.get(bId); if (!A || !B || aId === bId) return;
+    if (A.e._pub || B.e._pub) return;
+    const now = new Date().toISOString();
+    try {
+      if (isLinked(aId, bId)) {
+        if (Array.isArray(A.e.links) && A.e.links.includes(bId)) await saveEntry(A.type, { ...A.e, links: A.e.links.filter(x => x !== bId), updatedAt: now });
+        const B2 = byId.get(bId); if (B2 && Array.isArray(B2.e.links) && B2.e.links.includes(aId)) await saveEntry(B2.type, { ...B2.e, links: B2.e.links.filter(x => x !== aId), updatedAt: now });
+        gMsg = `Unlinked ${B.e.title || "Untitled"}.`;
+      } else {
+        await saveEntry(A.type, { ...A.e, links: [...new Set([...(Array.isArray(A.e.links) ? A.e.links : []), bId])], updatedAt: now });
+        gMsg = `Linked to ${B.e.title || "Untitled"}.`;
+      }
+    } catch (err) { notice(err.message || "Couldn't change the link."); }
+    buildAdj(); renderGraph(); renderGSel();
+  }
+  function graphTap(n) {
+    if (PUBLIC) { openEditor(n.type, n.id); return; }
+    if (!gSel || gSel === n.id) { gSel = gSel === n.id ? null : n.id; gMsg = ""; renderGSel(); draw(); return; }
+    toggleLink(gSel, n.id);
+  }
+  function renderGSel() {
+    const box = $("gSelBox"); if (!box) return;
+    const x = gSel && byId.get(gSel); if (!x) { gSel = null; box.hidden = true; box.innerHTML = ""; return; }
+    const ls = linksOf(x.e.id), have = new Set(ls.map(y => y.e.id));
+    const opts = LIVE.map(k => { const items = data[k].filter(o => o.id !== x.e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
+    box.innerHTML = `<div class="g-head"><i class="tdot t-${x.type}" aria-hidden="true"></i><b title="${esc(x.e.title || "Untitled")}">${esc(x.e.title || "Untitled")}</b><button type="button" class="btn" data-gopen>Open</button><button type="button" class="x" data-gdone aria-label="Done linking">×</button></div>
+      <div class="g-tip">Tap another shape to link it. Tap a linked one to unlink it.</div>
+      ${gMsg ? `<div class="g-msg" role="status">${esc(gMsg)}</div>` : ""}
+      ${ls.length ? `<ul>${ls.map(y => `<li><i class="tdot t-${y.type}" aria-hidden="true"></i><span>${esc(y.e.title || "Untitled")}</span><button type="button" class="tdel" data-gunlink="${esc(y.e.id)}" aria-label="Unlink ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="g-tip">No links yet.</div>'}
+      <select class="qe-sel" id="gLinkAdd" aria-label="Link to"><option value="">+ Link to…</option>${opts}</select>
+      <div class="g-actions"><button type="button" class="btn" data-gnew>+ New linked entry</button></div>`;
+    box.hidden = false;
+  }
+  $("gSelBox").addEventListener("click", e => {
+    if (e.target.closest("[data-gdone]")) { gSel = null; gMsg = ""; renderGSel(); draw(); return; }
+    if (e.target.closest("[data-gopen]")) { const x = byId.get(gSel); if (x) openEditor(x.type, x.e.id); return; }
+    const u = e.target.closest("[data-gunlink]"); if (u) { toggleLink(gSel, u.dataset.gunlink); return; }
+    if (e.target.closest("[data-gnew]")) { openNewMenu(e.target.closest("[data-gnew]"), { linkTo: gSel }); return; }
+  });
+  $("gSelBox").addEventListener("change", e => { if (e.target.id === "gLinkAdd" && e.target.value) toggleLink(gSel, e.target.value); });
+  ["pointerdown", "wheel", "touchstart"].forEach(t => $("gSelBox").addEventListener(t, e => e.stopPropagation(), { passive: true }));
+
+  // ----- "+ New" from Layers and Graph -----
+  let newMenuOpts = null;
+  function openNewMenu(anchor, opts = {}) {
+    newMenuOpts = opts; const m = $("newMenu");
+    const lay = opts.layer && opts.layer !== "none" ? opts.layer : "";
+    m.innerHTML = `<div class="pl-mh2"><b>${opts.linkTo ? "New linked entry" : "New entry"}</b><button type="button" class="x" data-nmx aria-label="Close">×</button></div>
+      ${LIVE.map(k => `<button type="button" class="btn" data-nmtype="${k}"><i class="tdot t-${k}" aria-hidden="true"></i> New ${esc(TYPE[k].singular)}${k === "pages" && lay ? ` (Layer ${lay})` : ""}</button>`).join("")}
+      ${opts.linkTo && byId.get(opts.linkTo) ? `<div class="pl-msub">It will be linked to ${esc(byId.get(opts.linkTo).e.title || "Untitled")}.</div>` : ""}`;
+    plPlace(m, anchor);
+  }
+  const closeNewMenu = () => { const m = $("newMenu"); m.hidden = true; m.innerHTML = ""; newMenuOpts = null; };
+  document.body.appendChild($("newMenu"));
+  $("newMenu").addEventListener("click", e => {
+    if (e.target.closest("[data-nmx]")) { closeNewMenu(); return; }
+    const b = e.target.closest("[data-nmtype]"); if (!b) return;
+    const o = newMenuOpts || {}, k = b.dataset.nmtype; closeNewMenu();
+    const lay = o.layer && o.layer !== "none" ? o.layer : "";
+    openEditor(k, null, { linkTo: o.linkTo, preset: k === "pages" && lay ? { layers: [lay] } : undefined });
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-newany]");
+    if (b) { e.preventDefault(); openNewMenu(b, b.dataset.newany === "layers" ? { layer: dbs.layer } : (gSel ? { linkTo: gSel } : {})); return; }
+    if (!$("newMenu").hidden && !e.target.closest("#newMenu") && !e.target.closest("[data-gnew]")) closeNewMenu();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { if (!$("newMenu").hidden) closeNewMenu(); else if (gSel && !$("view-graph").hidden && $("overlay").hidden) { gSel = null; gMsg = ""; renderGSel(); draw(); } } });
+
   function fitGraph() {
     if (!zoom || !gNodes.length || !W) return;
     const xs = gNodes.map(n => n.x), ys = gNodes.map(n => n.y);
@@ -3404,7 +3881,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const SLOT = Object.fromEntries(SLOTS.map(s => [s.k, s]));
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const pl = Object.assign({ view: "week", anchor: "", types: ["projects", "areas", "pages"], sub: "calendar" }, recall("chevy.planner") || {});
-  if (!["calendar", "routines", "week"].includes(pl.sub)) pl.sub = "calendar";
+  if (!["calendar", "routines", "week", "cards"].includes(pl.sub)) pl.sub = "calendar";
   // ----- Block notes: a short note on one placement. Kept only with the planner, never in the entry or its notes -----
   let plNotes = new Map();
   const noteKey = (date, slot, ref) => (date + "_" + slot + "_" + ref).replace(/[^A-Za-z0-9_\-.~:@+]/g, "-");
@@ -3501,10 +3978,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!$("plBody") || $("view-planner").hidden) return;
     document.querySelectorAll("[data-plsub]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.plsub === pl.sub)));
     if (PUBLIC) pl.sub = "calendar";
-    const isRt = pl.sub === "routines", isWk = pl.sub === "week";
-    $("plBar").hidden = isRt || isWk; $("plBody").hidden = isRt || isWk; $("rtBody").hidden = !isRt; $("wkBody").hidden = !isWk;
+    const isRt = pl.sub === "routines", isWk = pl.sub === "week", isCd = pl.sub === "cards";
+    $("plBar").hidden = isRt || isWk || isCd; $("plBody").hidden = isRt || isWk || isCd; $("rtBody").hidden = !isRt; $("wkBody").hidden = !isWk; $("cdBody").hidden = !isCd;
     if (isRt) { renderRoutines(); return; }
     if (isWk) { renderWeekPlan(); return; }
+    if (isCd) { renderCards(); return; }
     const t = today(), anchor = pl.anchor || t, pool = plPool();
     document.querySelectorAll("[data-plview]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.plview === pl.view)));
     if (pl.view === "week" || pl.view === "day") {
@@ -3795,6 +4273,107 @@ Don't invent appointments or facts that aren't listed.`);
     const dy = e.target.closest("[data-wkday]"); if (dy) { wk.day = dy.dataset.wkday; keep(); return; }
     if (e.target.closest("[data-wkai]")) { await wkAskClaude(mon); return; }
   });
+  // ----- Cards: project index cards to drag onto a day this week or one of the next 12 weeks -----
+  const CD_WEEKS = 12;
+  const cd = { q: "", sel: null, drag: null };
+  // ISO week number and quarter (the week belongs to the year/quarter of its Thursday)
+  function isoWeekInfo(iso) {
+    const d = dn(iso), wd = (new Date(d * 864e5).getUTCDay() + 6) % 7, thu = d - wd + 3;
+    const td = new Date(thu * 864e5), y = td.getUTCFullYear();
+    const jan4 = dn(y + "-01-04"), w1 = jan4 - ((new Date(jan4 * 864e5).getUTCDay() + 6) % 7);
+    return { week: Math.floor((thu - w1) / 7) + 1, q: Math.floor(td.getUTCMonth() / 3) + 1, year: y };
+  }
+  const cdRange = (mon) => `${fmt(mon, false)} – ${fmt(dIso(dn(mon) + 6), dIso(dn(mon) + 6).slice(0, 4) !== today().slice(0, 4))}`;
+  const cdWeekLabel = (mon) => { const w = isoWeekInfo(mon); return `Q${w.q} · Week ${w.week}`; };
+  function cdPlace(e, thisMon, lastSun) {
+    const s = e.focusStart || e.focusEnd, en = e.focusEnd || e.focusStart, thisSun = dIso(dn(thisMon) + 6);
+    if (!s) return { zone: "deck", why: "none" };
+    if (s >= thisMon && s <= thisSun) return s === thisMon && en === thisSun ? { zone: "w:" + thisMon } : { zone: "d:" + s };
+    if (s < thisMon) return en >= thisMon ? { zone: "w:" + thisMon } : { zone: "deck", why: "earlier" };
+    if (s <= lastSun) return { zone: "w:" + mondayOf(s) };
+    return { zone: "deck", why: "later" };
+  }
+  function cdCard(x) {
+    const e = x.e, wt = whenText(e), sel = cd.sel === e.id, isArea = x.type === "areas";
+    return `<div class="cd-card${isArea ? " cd-area" : ""}${ecClass(e)}${sel ? " sel" : ""}" draggable="true" data-cdid="${esc(e.id)}" data-cdtype="${x.type}" tabindex="0" role="button" aria-pressed="${sel}" aria-label="${esc(e.title || "Untitled")}: drag to a day or week, or tap then tap a spot">
+      <div class="cd-top"><span class="emo" aria-hidden="true">${esc(emojiOf(e, x.type))}</span><span class="cd-t">${esc(e.title || "Untitled")} <button type="button" class="cd-open" data-cdopen="${esc(e.id)}" data-cdtype="${x.type}" title="Open" aria-label="Open ${esc(e.title || "Untitled")}">↗</button></span>${isArea ? `<button type="button" class="cd-open cd-back" data-cdback="${esc(e.id)}" title="Put back in the area list (clears its dates)" aria-label="Put ${esc(e.title || "Untitled")} back in the area list">↩</button>` : ""}</div>
+      ${isArea ? '<div class="cd-kind"><i class="tdot t-areas" aria-hidden="true"></i>Area</div>' : ""}${e.subtitle ? `<div class="cd-sub">${esc(e.subtitle)}</div>` : ""}${subTasksHtml(e, x.type)}
+      <div class="cd-meta"><span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>${wt ? `<span class="cd-when">${esc(wt)}</span>` : ""}</div></div>`;
+  }
+  function renderCards() {
+    const t = today(), thisMon = mondayOf(t), lastSun = dIso(dn(thisMon) + 7 * (CD_WEEKS + 1) - 1);
+    const q = cd.q.trim().toLowerCase();
+    const projList = (data.projects || []).filter(e => (e.status || "") !== "Done").map(e => ({ type: "projects", e })).sort(titleSort);
+    const areaCards = (data.areas || []).filter(e => e.cardOn === true).map(e => ({ type: "areas", e })).sort(titleSort);
+    const areaRest = (data.areas || []).filter(e => e.cardOn !== true).sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    const list = [...projList, ...areaCards];
+    const areaDeck = [];
+    const zones = new Map(), deck = { none: [], earlier: [], later: [] };
+    list.forEach(x => { const p = cdPlace(x.e, thisMon, lastSun); if (p.zone === "deck") (x.type === "areas" ? areaDeck : deck[p.why]).push(x); else { if (!zones.has(p.zone)) zones.set(p.zone, []); zones.get(p.zone).push(x); } });
+    const match = (x) => !q || (x.e.title || "").toLowerCase().includes(q) || (x.e.subtitle || "").toLowerCase().includes(q);
+    const cardsIn = (z) => (zones.get(z) || []).map(cdCard).join("");
+    const deckSec = (label, arr) => { const a = arr.filter(match); return a.length ? `<div class="cd-dlabel">${label} · ${a.length}</div>${a.map(cdCard).join("")}` : ""; };
+    const deckCount = deck.none.length + deck.earlier.length + deck.later.length;
+    const areaSec = `<div class="cd-areas"><div class="cd-dlabel">Area cards${areaDeck.length ? " · " + areaDeck.length : ""}</div>
+      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an area into a card"><option value="">+ Add an area card…</option>${areaRest.map(a => `<option value="${esc(a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</select>
+      ${areaDeck.filter(match).map(cdCard).join("")}${!areaDeck.length && !areaCards.length ? '<div class="pl-none">Pick an area above to make it a card you can place.</div>' : ""}</div>`;
+    const days = [0, 1, 2, 3, 4, 5, 6].map(i => dIso(dn(thisMon) + i));
+    const wi = isoWeekInfo(thisMon);
+    const weeks = Array.from({ length: CD_WEEKS }, (_, i) => dIso(dn(thisMon) + 7 * (i + 1)));
+    let lastQ = wi.q;
+    $("cdBody").innerHTML = `<div class="cd-wrap">
+      <aside class="cd-deck cd-zone" data-cdzone="deck" aria-label="Project cards not planned yet">
+        <div class="cd-dhead"><b>Project cards</b><span>${deckCount} to plan</span></div>
+        <input type="search" id="cdQ" class="cd-q" placeholder="Find a card…" value="${esc(cd.q)}" aria-label="Find a project card">
+        <div class="cd-dlist">${deckSec("Not planned yet", deck.none)}${deckSec("Earlier dates", deck.earlier)}${deckSec("More than 12 weeks out", deck.later)}${deckCount ? "" : '<div class="pl-none">Every project has a week. Drag a card back here to clear its dates.</div>'}${areaSec}</div>
+      </aside>
+      <section class="cd-plan">
+        <div class="cd-this">
+          <div class="cd-wh"><b>This week · Q${wi.q} · Week ${wi.week}</b><span>${esc(cdRange(thisMon))}</span></div>
+          <div class="cd-zone cd-any" data-cdzone="w:${thisMon}"><div class="cd-zl">Anytime this week</div>${cardsIn("w:" + thisMon) || '<div class="cd-hint">Drop here</div>'}</div>
+          <div class="cd-days">${days.map(d => `<div class="cd-zone cd-day${d === t ? " is-today" : ""}${d < t ? " past" : ""}" data-cdzone="d:${d}"><div class="cd-zl">${dayName(d)} <b>${Number(d.slice(8))}</b>${d === t ? " · today" : ""}</div>${cardsIn("d:" + d)}</div>`).join("")}</div>
+        </div>
+        <div class="cd-weeks">${weeks.map(m => { const w = isoWeekInfo(m), qHead = w.q !== lastQ ? `<div class="cd-qhead">Q${w.q} ${w.year}</div>` : ""; lastQ = w.q; return `${qHead}<div class="cd-zone cd-wrow" data-cdzone="w:${m}"><div class="cd-wh"><b>Q${w.q} · Week ${w.week}</b><span>${esc(cdRange(m))}</span></div><div class="cd-cards">${cardsIn("w:" + m) || '<span class="cd-hint">Drop here</span>'}</div></div>`; }).join("")}</div>
+      </section></div>`;
+    const planned = list.length - deckCount - areaDeck.length;
+    $("plCount").textContent = `${list.length} project card${list.length === 1 ? "" : "s"} · ${planned} planned in the next ${CD_WEEKS + 1} weeks`;
+    $("plHint").textContent = "Drag a card onto a day this week, \"Anytime this week\", or a week. On a phone, tap a card, then tap where it goes. Dropping on a day sets its When to that day; on a week, to Monday–Sunday of that week. Drag it back to the deck to clear its dates.";
+  }
+  async function cdMove(id, zone) {
+    const type = (data.areas || []).some(x => x.id === id) ? "areas" : "projects";
+    const e = (data[type] || []).find(x => x.id === id); if (!e) return;
+    let patch;
+    if (zone === "deck") patch = { focusStart: "", focusEnd: "", timeStart: "", timeEnd: "" };
+    else if (zone.startsWith("d:")) patch = { focusStart: zone.slice(2), focusEnd: zone.slice(2) };
+    else if (zone.startsWith("w:")) { const m = zone.slice(2); patch = { focusStart: m, focusEnd: dIso(dn(m) + 6) }; }
+    if (!patch || (patch.focusStart === (e.focusStart || "") && patch.focusEnd === (e.focusEnd || ""))) return;
+    cd.sel = null;
+    try { await saveEntry(type, { ...e, ...patch, updatedAt: new Date().toISOString() }); }
+    catch (err) { notice(err.message || "Couldn't move the card."); }
+    renderPlanner();
+  }
+  $("cdBody").addEventListener("dragstart", e => { const c = e.target.closest(".cd-card"); if (!c) return; cd.drag = c.dataset.cdid; c.classList.add("dragging"); try { e.dataTransfer.setData("text/plain", cd.drag); e.dataTransfer.effectAllowed = "move"; } catch (err) {} });
+  $("cdBody").addEventListener("dragend", () => { cd.drag = null; document.querySelectorAll(".cd-zone.over, .cd-card.dragging").forEach(x => x.classList.remove("over", "dragging")); });
+  $("cdBody").addEventListener("dragover", e => { const z = e.target.closest("[data-cdzone]"); if (!z || !cd.drag) return; e.preventDefault(); e.stopPropagation(); document.querySelectorAll(".cd-zone.over").forEach(x => x !== z && x.classList.remove("over")); z.classList.add("over"); });
+  $("cdBody").addEventListener("dragleave", e => { const z = e.target.closest("[data-cdzone]"); if (z && !z.contains(e.relatedTarget)) z.classList.remove("over"); });
+  $("cdBody").addEventListener("drop", async e => { const z = e.target.closest("[data-cdzone]"); if (!z || !cd.drag) return; e.preventDefault(); e.stopPropagation(); const id = cd.drag; cd.drag = null; z.classList.remove("over"); await cdMove(id, z.dataset.cdzone); });
+  $("cdBody").addEventListener("click", async e => {
+    const op = e.target.closest("[data-cdopen]"); if (op) { e.stopPropagation(); openEditor(op.dataset.cdtype || "projects", op.dataset.cdopen); return; }
+    const bk = e.target.closest("[data-cdback]");
+    if (bk) { e.stopPropagation(); const a = (data.areas || []).find(x => x.id === bk.dataset.cdback); if (!a) return; if (cd.sel === a.id) cd.sel = null; try { await saveEntry("areas", { ...a, cardOn: false, focusStart: "", focusEnd: "", timeStart: "", timeEnd: "", updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't put it back."); } renderPlanner(); return; }
+    if (e.target.closest("select")) return;
+    if (e.target.closest(".st-item") || e.target.closest("input")) return;
+    const c = e.target.closest(".cd-card");
+    if (c) { cd.sel = cd.sel === c.dataset.cdid ? null : c.dataset.cdid; const y = window.scrollY; renderPlanner(); window.scrollTo(0, y); return; }
+    const z = e.target.closest("[data-cdzone]"); if (z && cd.sel) { const id = cd.sel, y = window.scrollY; await cdMove(id, z.dataset.cdzone); window.scrollTo(0, y); }
+  });
+  $("cdBody").addEventListener("dblclick", e => { const c = e.target.closest(".cd-card"); if (c) openEditor(c.dataset.cdtype || "projects", c.dataset.cdid); });
+  $("cdBody").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches(".cd-card")) openEditor(e.target.dataset.cdtype || "projects", e.target.dataset.cdid); });
+  $("cdBody").addEventListener("input", e => { if (e.target.id === "cdQ") { cd.q = e.target.value; const pos = e.target.selectionStart; renderPlanner(); const q = $("cdQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
+  $("cdBody").addEventListener("change", async e => {
+    if (e.target.id === "cdAreaAdd" && e.target.value) { const a = (data.areas || []).find(x => x.id === e.target.value); if (!a) return; try { await saveEntry("areas", { ...a, cardOn: true, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't add the card."); } cd.sel = a.id; renderPlanner(); return; }
+  });
+  $("cdBody").addEventListener("change", e => { const tk = e.target.closest("input[data-task][data-entry]"); if (tk) toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); });
   let rtConfirm = null;
   // Collapse / expand: the main button sets every card; a card you change yourself stays that way until the main button is pressed again
   const rtView = Object.assign({ all: "expanded", over: {} }, recall("chevy.routines.view") || {});
@@ -3989,6 +4568,7 @@ Don't invent appointments or facts that aren't listed.`);
   const dbs = Object.assign({ layer: "", types: [], status: [], sort: "title", dir: "asc" }, recall("chevy.database") || {});
   if (!Array.isArray(dbs.sorts)) dbs.sorts = [{ key: dbs.sort || "title", dir: dbs.dir || "asc" }];
   dbs.group = false;
+  dbs.types = []; dbs.status = []; // the database and status filter chips were removed, so nothing stays filtered
   // [key, label, width, shown by default]
   const DB_COLS = [["title", "Title", 300, true], ["focus", "When", 240, true], ["links", "Links", 220, true], ["status", "Status", 140, true], ["type", "Database", 140, false], ["tags", "Tags", 180, false], ["layer", "Layer", 130, false], ["color", "Color", 130, false], ["created", "Created", 150, false], ["public", "Show on website", 150, false], ["updated", "Last edited", 150, false]];
   const DB_COL = Object.fromEntries(DB_COLS.map(c => [c[0], c]));
@@ -4019,10 +4599,7 @@ Don't invent appointments or facts that aren't listed.`);
     const max = Math.max(1, ...Object.values(counts));
     $("dbLayers").innerHTML = `<button type="button" class="db-ltile all" aria-pressed="${!dbs.layer}" data-dblayer=""><span class="db-lnum">All</span><span class="db-lcount">${base.length}</span></button>` +
       [...LAYERS, "none"].map(l => `<button type="button" class="db-ltile${counts[l] ? "" : " empty"}" aria-pressed="${dbs.layer === l}" data-dblayer="${l}" aria-label="${l === "none" ? "No layer" : "Layer " + l}: ${counts[l]}"><span class="db-lnum">${l === "none" ? "—" : "L" + l}</span><span class="db-lbar"><i style="height:${Math.round(counts[l] / max * 100)}%"></i></span><span class="db-lcount">${counts[l]}</span></button>`).join("");
-    $("dbBar").innerHTML = `<span class="chips" role="group" aria-label="Databases">${TYPES.map(T => `<button type="button" class="chip" aria-pressed="${dbs.types.includes(T.key)}" data-dbtype="${T.key}"><i class="tdot t-${T.key}" aria-hidden="true"></i>${T.label}</button>`).join("")}<button type="button" class="chip" aria-pressed="${dbs.types.includes("routine")}" data-dbtype="routine">🔁 Routines</button></span>
-      <span class="chips" role="group" aria-label="Status">${STATUSES.map(s => `<button type="button" class="chip" aria-pressed="${dbs.status.includes(s.v)}" data-dbstatus="${esc(s.v)}">${s.v === "Done" ? "✓ " : ""}${s.v}</button>`).join("")}</span>
-      <span class="db-sorts"><span class="db-sl">Sort</span><span class="chips">${DB_SORTS.map(([k, l]) => sortChipHtml(dbs.sorts, k, l, "data-dbsort")).join("")}</span>${dbs.sorts.length ? '<button type="button" class="btn ghost db-clear" data-dbsortclear>Clear sorts</button>' : ""}</span>
-      ${dbs.types.length || dbs.status.length || dbs.layer || q ? '<button type="button" class="btn ghost db-clear" data-dbclear>Clear all</button>' : ""}`;
+    $("dbBar").innerHTML = ""; $("dbBar").hidden = true;
     const inLayer = (x, l) => l === "none" ? !layersOf(x.e).length : layersOf(x.e).includes(l);
     const rows = base.filter(x => !dbs.layer || inLayer(x, dbs.layer));
     rows.sort((a, b) => multiCmp(dbs.sorts, dbVal)(a, b) || titleSort(a, b));
@@ -4085,6 +4662,7 @@ Don't invent appointments or facts that aren't listed.`);
     try { await saveEntry(type, { ...e, ...patch, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); renderAll(); }
   }
   let dbPopFor = null;
+  document.body.appendChild($("dbPop"));
   function dbClosePop() { const m = $("dbPop"); if (m) { m.hidden = true; m.innerHTML = ""; } dbPopFor = null; }
   function dbRenderPop() {
     const f = dbPopFor; if (!f) return; const e = dbEntry(f.type, f.id); if (!e) { dbClosePop(); return; }
@@ -4092,6 +4670,15 @@ Don't invent appointments or facts that aren't listed.`);
     let body = "";
     if (f.kind === "layer") body = FIXED_LAYER[f.type] ? `<div class="pl-msub">${esc(TYPE[f.type].label)} are always Layer ${FIXED_LAYER[f.type]}. Change its Database to give it another layer.</div>` : `<div class="pl-msub">Layer</div><div class="layer-pick">${LAYERS.map(l => `<button type="button" class="layer-toggle" aria-pressed="${layersOf(e).includes(l)}" data-dblt="${l}">${l}</button>`).join("")}</div>`;
     if (f.kind === "focus") body = `<div class="pl-msub">When</div><div class="db-drange"><label>Start date<input type="date" id="dbFs" value="${esc(e.focusStart || "")}"></label><label>End date<input type="date" id="dbFe" value="${esc(e.focusEnd || "")}"></label><label>Start time<select id="dbTs">${hourOpts(e.timeStart || "", "—")}</select></label><label>End time<select id="dbTe">${hourOpts(e.timeEnd || "", "—")}</select></label></div><div class="pl-macts"><button type="button" class="btn primary" data-dbfsave>Save</button> <button type="button" class="btn" data-dbfclear>Clear</button></div><div class="err" id="dbFerr"></div>`;
+    if (f.kind === "color") { const own = ownColor(e), ac = areaColorFor(e); body = `<div class="pl-msub">Color</div><div class="qe-colors"><button type="button" class="chip" data-dbcolor="" aria-pressed="${!own}"><i class="swatch sw-${ac || "white"}" aria-hidden="true"></i>${ac ? "From area (" + ac + ")" : "White"}</button>${COLORS.map(c => `<button type="button" class="chip" data-dbcolor="${c}" aria-pressed="${own === c}"><i class="swatch sw-${c}" aria-hidden="true"></i>${c[0].toUpperCase() + c.slice(1)}</button>`).join("")}</div>`; }
+    if (f.kind === "status") body = `<div class="pl-msub">Status</div><div class="qe-colors">${STATUSES.map(st => `<button type="button" class="chip" data-dbstat="${esc(st.v)}" aria-pressed="${(e.status || "Not started") === st.v}">${esc(st.v)}</button>`).join("")}</div>`;
+    if (f.kind === "type") body = `<div class="pl-msub">Database</div><select class="qe-sel" id="dbTypeSel">${dbOptions(f.type, isSched(e, f.type))}</select>`;
+    if (f.kind === "created") { const P = TYPE[f.type].props.find(x => x.kind === "date"); body = `<div class="pl-msub">Created date</div><div class="task-add"><input type="date" id="dbCr" value="${esc(String(e[P.field] || e.created || e.createdTime || "").slice(0, 10))}"><button type="button" class="btn primary" data-dbcrsave>Save</button></div>`; }
+    if (f.kind === "links") {
+      const ls = linksOf(e.id), have = new Set(ls.map(y => y.e.id));
+      const opts = LIVE.map(k => { const items = data[k].filter(o => o.id !== e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(k + "|" + o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
+      body = `<div class="pl-msub">Links</div>${ls.length ? `<ul class="qe-links">${ls.map(y => `<li><i class="tdot t-${y.type}" aria-hidden="true"></i><span>${esc(y.e.title || "Untitled")}</span><button type="button" class="tdel" data-dblinkx="${esc(y.type + "|" + y.e.id)}" aria-label="Remove link to ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="pl-none">No links yet.</div>'}<select class="qe-sel" id="dbLinkAdd"><option value="">+ Link a project, area or resource…</option>${opts}</select>`;
+    }
     if (f.kind === "tags") { const lower = tagsOf(e).map(t => t.toLowerCase()); body = `<div class="pl-msub">Tags</div><div class="tag-pick">${allTags().map(t => `<button type="button" class="tag-toggle ${tagColor(t)}" aria-pressed="${lower.includes(t.toLowerCase())}" data-dbtag="${esc(t)}">${t.toLowerCase() === "now" ? PIN_SVG : ""}${esc(t)}</button>`).join("")}</div><div class="task-add"><input id="dbTagNew" type="text" placeholder="New tag…" autocomplete="off"><button type="button" class="btn" data-dbtagadd>Add</button></div>`; }
     $("dbPop").innerHTML = head + body;
   }
@@ -4109,6 +4696,21 @@ Don't invent appointments or facts that aren't listed.`);
     const tg = e.target.closest("[data-dbtag]");
     if (tg) { const t = tg.dataset.dbtag, k = t.toLowerCase(), cur = tagsOf(it), on = cur.some(x => x.toLowerCase() === k); tg.setAttribute("aria-pressed", String(!on)); await dbSave(f.type, f.id, { tags: on ? cur.filter(x => x.toLowerCase() !== k) : [...cur, t] }); return; }
     if (e.target.closest("[data-dbtagadd]")) { dbAddTag(); return; }
+    const co = e.target.closest("[data-dbcolor]"); if (co) { await dbSave(f.type, f.id, { color: co.dataset.dbcolor }); dbClosePop(); return; }
+    const st = e.target.closest("[data-dbstat]"); if (st) { await dbSave(f.type, f.id, { status: st.dataset.dbstat }); dbClosePop(); return; }
+    if (e.target.closest("[data-dbcrsave]")) { const v = $("dbCr").value; if (!v) return; const P = TYPE[f.type].props.find(x => x.kind === "date"), old = it[P.field] || ""; await dbSave(f.type, f.id, { [P.field]: old.slice(0, 10) === v ? old : v + old.slice(10) }); dbClosePop(); return; }
+    const lx = e.target.closest("[data-dblinkx]");
+    if (lx) {
+      const [ot, oid] = lx.dataset.dblinkx.split("|"), o = dbEntry(ot, oid);
+      if (Array.isArray(it.links) && it.links.includes(oid)) await dbSave(f.type, f.id, { links: it.links.filter(x => x !== oid) });
+      if (o && Array.isArray(o.links) && o.links.includes(f.id)) await dbSave(ot, oid, { links: o.links.filter(x => x !== f.id) });
+      buildAdj(); dbRenderPop(); return;
+    }
+  });
+  $("dbPop").addEventListener("change", async e => {
+    const f = dbPopFor; if (!f) return; const it = dbEntry(f.type, f.id); if (!it) return;
+    if (e.target.id === "dbTypeSel") { const v = e.target.value; dbClosePop(); try { await moveEntryTo(f.type, f.id, v); } catch (err) { notice(err.message || "Couldn't move it."); renderAll(); } return; }
+    if (e.target.id === "dbLinkAdd" && e.target.value) { const [, oid] = e.target.value.split("|"); const cur = Array.isArray(it.links) ? it.links : []; if (!cur.includes(oid)) await dbSave(f.type, f.id, { links: [...cur, oid] }); buildAdj(); dbRenderPop(); return; }
   });
   async function dbAddTag() {
     const f = dbPopFor, inp = $("dbTagNew"); if (!f || !inp) return; const it = dbEntry(f.type, f.id); if (!it) return;
@@ -4118,7 +4720,7 @@ Don't invent appointments or facts that aren't listed.`);
   }
   $("dbPop").addEventListener("keydown", e => { if (e.target.id === "dbTagNew" && e.key === "Enter") { e.preventDefault(); dbAddTag(); } if ((e.target.id === "dbFs" || e.target.id === "dbFe") && e.key === "Enter") { e.preventDefault(); $("dbPop").querySelector("[data-dbfsave]").click(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && dbPopFor) dbClosePop(); });
-  document.addEventListener("click", e => { if (dbPopFor && !e.target.closest("#dbPop") && !e.target.closest("[data-dbpop]")) dbClosePop(); });
+  document.addEventListener("click", e => { if (!dbPopFor) return; const path = e.composedPath ? e.composedPath() : []; if (path.includes($("dbPop")) || e.target.closest("#dbPop") || e.target.closest("[data-dbpop]")) return; dbClosePop(); });
   window.addEventListener("scroll", () => { if (!dbPopFor) return; if (dbPopFor.el && document.contains(dbPopFor.el)) plPlace($("dbPop"), dbPopFor.el); else dbClosePop(); }, { passive: true });
   // ----- Resize and reorder columns -----
   let dbResizing = null, dbDragKey = null;
@@ -4244,7 +4846,7 @@ Don't invent appointments or facts that aren't listed.`);
   }
   function renderSitePop() {
     const list = sitePublic().sort((a, b) => (a.e.title || "").localeCompare(b.e.title || ""));
-    $("sitePop").innerHTML = `<h3>🌐 Your website<button type="button" class="x" data-spclose aria-label="Close">×</button></h3>
+    $("sitePop").innerHTML = `<h3>🌐 Your website</h3>
       <div><b>${list.length}</b> ${list.length === 1 ? "entry is" : "entries are"} marked Show on website.${list.length ? "" : " Open an entry and switch on Show on website, or turn on 🌐 Add to website before adding new ones."}</div>
       ${list.length ? `<ul class="sp-list">${list.slice(0, 40).map(x => `<li>${esc(x.e.title || "Untitled")}</li>`).join("")}${list.length > 40 ? `<li>…and ${list.length - 40} more</li>` : ""}</ul>` : ""}
       <label class="flabel" for="spTitle">Website title</label>
@@ -4256,11 +4858,13 @@ Don't invent appointments or facts that aren't listed.`);
       ${siteMsg ? `<div class="sp-msg${siteBad ? " bad" : ""}">${esc(siteMsg)}</div>` : ""}
       <div class="sp-msg"><b>Backup, if the automatic update ever stops (free):</b><ol><li>Download the file (it's called index.html) and put it in a new folder, e.g. "my-website".</li><li>Go to <b>app.netlify.com/drop</b> and sign up free (or the site expires).</li><li>Drag the folder onto the page. Netlify gives you a public link.</li><li>After changes, download again, replace the file in the folder, and drag the folder onto your site's <b>Deploys</b> page.</li></ol></div>`;
   }
-  $("siteBuild").addEventListener("click", e => { e.stopPropagation(); const p = $("sitePop"); if (!p.hidden) { p.hidden = true; return; } siteMsg = ""; renderSitePop(); p.hidden = false; const r = $("siteBuild").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; });
-  document.addEventListener("pointerdown", e => { const p = $("sitePop"); if (p && !p.hidden && !e.target.closest("#sitePop") && !e.target.closest("#siteBuild")) p.hidden = true; });
+  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; renderSitePop(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
+  $("setBtn").addEventListener("click", e => { e.stopPropagation(); setOpen($("setPop").hidden); });
+  $("setPop").addEventListener("click", e => { if (e.target.closest("[data-setclose]")) setOpen(false); });
+  document.addEventListener("pointerdown", e => { const p = $("setPop"); if (p && !p.hidden && !e.target.closest("#setPop") && !e.target.closest("#setBtn")) setOpen(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("setPop").hidden) setOpen(false); });
   $("sitePop").addEventListener("input", e => { if (e.target.id === "spTitle") { siteTitle = e.target.value; clearTimeout(renderSitePop.t); renderSitePop.t = setTimeout(saveSiteSettings, 600); } });
   $("sitePop").addEventListener("click", async e => {
-    if (e.target.closest("[data-spclose]")) { $("sitePop").hidden = true; return; }
     if (e.target.closest("[data-sppush]")) { await pushSiteNow(); return; }
     if (!e.target.closest("[data-spbuild]")) return;
     const html = buildSiteHtml();
@@ -4333,24 +4937,238 @@ Don't invent appointments or facts that aren't listed.`);
 
   // ---------- Tabs ----------
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
+  // ---------- Home (a Notion-style page of links) and Inventory ----------
+  // Each Home link has its own "On website" switch; the public website only shows the tabs switched on.
+  const HOME_LINKS = [
+    { key: "inventory", icon: "📦", label: "Inventory", desc: "My things, and which room they're in" },
+    { key: "meals", icon: "🍽️", label: "Meals", desc: "Recipes by category, menu, cuisine and method" },
+    { key: "planner", icon: "🗓️", label: "Planner", desc: "Cards, calendar, routines and weekly planning" },
+    { key: "projects", icon: "📌", label: "Projects", desc: "Everything I'm working on" },
+    { key: "areas", icon: "🧭", label: "Areas", desc: "The parts of my life I look after" },
+    { key: "pages", icon: "📚", label: "Resources", desc: "Notes, references and things to keep" },
+    { key: "archive", icon: "🗄️", label: "Archive", desc: "Done and set-aside entries" },
+    { key: "obsidian", icon: "🪨", label: "Obsidian", desc: "All notes as files and folders" },
+    { key: "database", icon: "🧱", label: "Layers", desc: "Every entry by layer, L0–L9" },
+    { key: "graph", icon: "🕸️", label: "Graph", desc: "How everything links together" },
+  ];
+  const HOME_WEB_DEFAULT = { planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
+  let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
+  let inventory = [], rooms = recall("chevy.rooms") || [];
+  const inv = { q: "", room: "", sort: "title", roomsOpen: false };
+  const webOn = (k) => k === "home" || !!homeWeb[k];
+  async function saveHomeWeb() {
+    store("chevy.homeWeb", homeWeb);
+    if (local || !db) return;
+    try { await db.doc("settings/home").set({ web: { ...homeWeb }, updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the Home setting."); }
+  }
+  const countFor = (k) => k === "inventory" ? inventory.length : k === "meals" ? (typeof meals !== "undefined" ? meals.filter(m => !isArchivedMeal(m)).length : 0) : TYPE[k] ? data[k].length : k === "planner" ? (routines || []).length : null;
+  function renderHome() {
+    const el = $("homeBody"); if (!el) return;
+    const links = HOME_LINKS.filter(l => !PUBLIC || webOn(l.key)).filter(l => !(PUBLIC && l.key === "archive"));
+    el.innerHTML = `<div class="hm-page">
+      <div class="hm-icon" aria-hidden="true">🏠</div>
+      <h1 class="hm-title">${esc(PUBLIC && String(PUBLIC.title || "").trim() ? PUBLIC.title : "Home")}</h1>
+      <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : "Jump to any part of LifeOS. The switch on each link decides whether it appears on your public website."}</p>
+      <div class="hm-label">Databases &amp; tools</div>
+      <div class="hm-links">${links.map(l => { const n = countFor(l.key), on = webOn(l.key); return `<div class="hm-link">
+        <a href="#${l.key}" class="hm-go" data-hmgo="${l.key}"><span class="hm-emo" aria-hidden="true">${l.icon}</span><span class="hm-txt"><b>${esc(l.label)}</b><span>${esc(PUBLIC && l.key === "planner" ? "What's coming up, by day, week and month" : l.desc)}${n != null && !(l.key === "planner") ? ` · ${n}` : ""}</span></span></a>
+        ${PUBLIC ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On website" : "Not on website"}</span></button>`}
+      </div>`; }).join("")}</div>
+      ${PUBLIC ? "" : `<p class="hm-foot">On the website, only the links switched on appear (as tabs and here). Projects, Areas and Resources still show only entries marked "Show on website"; Inventory shows all its items when it's on.</p>`}
+    </div>`;
+  }
+  $("homeBody").addEventListener("click", async e => {
+    const w = e.target.closest("[data-hmweb]"); if (w) { e.preventDefault(); const k = w.dataset.hmweb; homeWeb = { ...homeWeb, [k]: !homeWeb[k] }; renderHome(); await saveHomeWeb(); return; }
+  });
+
+  // ----- Inventory: name + room; rooms are a list I manage myself -----
+  const invId = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  async function saveItem(it) {
+    const { id, ...body } = it;
+    const i = inventory.findIndex(x => x.id === id); if (i >= 0) inventory[i] = it; else inventory.push(it);
+    if (local || !db) { renderInventory(); renderHome(); return; }
+    try { await db.collection("inventory").doc(id).set(body); } catch (err) { notice("Couldn't save the item (" + (err.code || "error") + ")."); }
+  }
+  async function deleteItem(id) {
+    inventory = inventory.filter(x => x.id !== id);
+    if (local || !db) { renderInventory(); renderHome(); return; }
+    try { await db.collection("inventory").doc(id).delete(); } catch (err) { notice("Couldn't delete the item."); }
+  }
+  async function saveRooms(next) {
+    rooms = [...new Set(next.map(r => String(r).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    store("chevy.rooms", rooms); renderInventory();
+    if (local || !db) return;
+    try { await db.doc("settings/rooms").set({ rooms, updatedAt: new Date().toISOString() }); } catch (err) { notice("Couldn't save the rooms."); }
+  }
+  const roomOpts = (cur) => `<option value=""${cur ? "" : " selected"}>— No room —</option>${rooms.map(r => `<option value="${esc(r)}"${r === cur ? " selected" : ""}>${esc(r)}</option>`).join("")}${cur && !rooms.includes(cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : ""}<option value="__new">+ Add a room…</option>`;
+  let invDel = null;
+  function renderInventory() {
+    const el = $("invBody"); if (!el) return;
+    const ro = !!PUBLIC, q = inv.q.trim().toLowerCase();
+    let list = inventory.filter(x => (!inv.room || (inv.room === "__none" ? !x.room : x.room === inv.room)) && (!q || (x.title || "").toLowerCase().includes(q) || (x.room || "").toLowerCase().includes(q)));
+    list.sort((a, b) => inv.sort === "room" ? ((a.room || "~").localeCompare(b.room || "~") || (a.title || "").localeCompare(b.title || "")) : (a.title || "").localeCompare(b.title || ""));
+    const usedRooms = [...new Set([...rooms, ...inventory.map(x => x.room).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+    $("invCount").textContent = `${inventory.length} item${inventory.length === 1 ? "" : "s"} · ${rooms.length} room${rooms.length === 1 ? "" : "s"}`;
+    el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button></div>`}
+      <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
+        <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
+        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button>`}</div>
+      ${!ro && inv.roomsOpen ? `<section class="panel inv-rooms"><div class="panel-head"><span class="panel-name">Rooms</span><button class="x" type="button" data-invrooms aria-label="Close rooms">×</button></div>
+        <div class="chips">${rooms.length ? rooms.map(r => `<span class="inv-roomchip"><span>${esc(r)}</span><button type="button" class="tdel" data-invroomx="${esc(r)}" aria-label="Remove room ${esc(r)}">×</button></span>`).join("") : '<span class="pl-none">No rooms yet. Add your first one.</span>'}</div>
+        <div class="task-add"><input id="invRoomNew" type="text" placeholder="New room, like Garage" autocomplete="off" aria-label="New room name"><button type="button" class="btn" data-invroomadd>Add room</button></div>
+        <div class="hint">Removing a room keeps the items; they just show "No room" until you pick another.</div></section>` : ""}
+      ${list.length ? `<div class="table-wrap"><table class="inv-table"><thead><tr><th><button type="button" data-invsort="title" class="${inv.sort === "title" ? "on" : ""}">Item${inv.sort === "title" ? " ↑" : ""}</button></th><th><button type="button" data-invsort="room" class="${inv.sort === "room" ? "on" : ""}">Room${inv.sort === "room" ? " ↑" : ""}</button></th>${ro ? "" : "<th></th>"}</tr></thead><tbody>
+        ${list.map(x => `<tr><td data-label="Item">${ro ? esc(x.title || "Untitled") : `<input type="text" class="db-inline inv-name" data-invname="${esc(x.id)}" value="${esc(x.title || "")}" aria-label="Item name">`}</td>
+          <td data-label="Room">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room for ${esc(x.title || "item")}">${roomOpts(x.room || "")}</select>`}</td>
+          ${ro ? "" : `<td class="inv-x"><button type="button" class="btn ghost danger" data-invdel="${esc(x.id)}">${invDel === x.id ? "Tap again to delete" : "Delete"}</button></td>`}</tr>`).join("")}
+      </tbody></table></div>` : `<div class="empty"><strong>${inventory.length ? "Nothing matches" : "No items yet"}</strong>${inventory.length ? "Try another room or clear the search." : ro ? "" : "Type an item above, pick its room, and press Add."}</div>`}`;
+  }
+  $("invBody").addEventListener("click", async e => {
+    if (e.target.closest("[data-invadd]")) {
+      const t = ($("invNew").value || "").trim().slice(0, 120); if (!t) { $("invNew").focus(); return; }
+      let room = $("invNewRoom").value; if (room === "__new") room = "";
+      await saveItem({ id: invId(), title: t, room, createdAt: new Date().toISOString() });
+      renderInventory(); const n = $("invNew"); if (n) { n.value = ""; n.focus(); } const r = $("invNewRoom"); if (r) r.value = room;
+      return;
+    }
+    const rf = e.target.closest("[data-invroom]"); if (rf) { inv.room = rf.dataset.invroom; renderInventory(); return; }
+    const so = e.target.closest("[data-invsort]"); if (so) { inv.sort = so.dataset.invsort; renderInventory(); return; }
+    if (e.target.closest("[data-invrooms]")) { inv.roomsOpen = !inv.roomsOpen; renderInventory(); if (inv.roomsOpen) { const n = $("invRoomNew"); if (n) n.focus(); } return; }
+    if (e.target.closest("[data-invroomadd]")) { const v = ($("invRoomNew").value || "").trim().slice(0, 60); if (!v) return; await saveRooms([...rooms, v]); const pend = inv.pendingFor; inv.pendingFor = null; if (pend) { const it = inventory.find(x => x.id === pend); if (it) await saveItem({ ...it, room: v }); } else if ($("invNewRoom")) $("invNewRoom").value = v; const n = $("invRoomNew"); if (n) n.focus(); return; }
+    const rx = e.target.closest("[data-invroomx]"); if (rx) { await saveRooms(rooms.filter(r => r !== rx.dataset.invroomx)); return; }
+    const d = e.target.closest("[data-invdel]");
+    if (d) { const id = d.dataset.invdel; if (invDel !== id) { invDel = id; renderInventory(); setTimeout(() => { if (invDel === id) { invDel = null; renderInventory(); } }, 3000); return; } invDel = null; await deleteItem(id); return; }
+  });
+  $("invBody").addEventListener("change", async e => {
+    const s = e.target.closest("[data-invsel]");
+    if (s) { const it = inventory.find(x => x.id === s.dataset.invsel); if (!it) return; if (s.value === "__new") { s.value = it.room || ""; inv.pendingFor = it.id; inv.roomsOpen = true; renderInventory(); const n = $("invRoomNew"); if (n) n.focus(); return; } await saveItem({ ...it, room: s.value, updatedAt: new Date().toISOString() }); return; }
+    if (e.target.id === "invNewRoom" && e.target.value === "__new") { e.target.value = ""; inv.pendingFor = null; inv.roomsOpen = true; renderInventory(); const n = $("invRoomNew"); if (n) n.focus(); return; }
+    const nm = e.target.closest("[data-invname]"); if (nm) { const it = inventory.find(x => x.id === nm.dataset.invname); const v = nm.value.trim().slice(0, 120); if (it && v && v !== it.title) await saveItem({ ...it, title: v, updatedAt: new Date().toISOString() }); else if (it && !v) nm.value = it.title || ""; }
+  });
+  $("invBody").addEventListener("input", e => { if (e.target.id === "invQ") { inv.q = e.target.value; const pos = e.target.selectionStart; renderInventory(); const q = $("invQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
+  $("invBody").addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    if (e.target.id === "invNew") { e.preventDefault(); $("invBody").querySelector("[data-invadd]").click(); }
+    if (e.target.id === "invRoomNew") { e.preventDefault(); $("invBody").querySelector("[data-invroomadd]").click(); }
+    if (e.target.matches("[data-invname]")) { e.preventDefault(); e.target.blur(); }
+  });
+  // ----- Meals: recipes imported from Notion, with Category, Menu, Cuisine and Method choices I can add to -----
+  const ML_FIELDS = [["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"]];
+  const ML_DEFAULT_OPTS = { category: ["Entree", "Meat", "Soups", "Side", "Dessert", "Sauce", "Kids", "Breakfast", "Vegan", "New", "Archived"], menu: ["Menu 1", "Menu 2", "Menu 3", "Menu 4", "Menu 5", "Other"], cuisine: ["Italian", "American", "European", "Mexican", "Korean & Chinese", "Indian & Thai", "Mediterranean", "Kids"], method: ["Assemble", "Air Fryer", "Food Processor", "Pressure Cook", "George Foreman", "Oven", "Pot", "Skillet"] };
+  let meals = [], mealOpts = { ...ML_DEFAULT_OPTS, ...(recall("chevy.mealOpts") || {}) };
+  const ml = Object.assign({ q: "", group: "category", archived: false, f: {} }, recall("chevy.meals.view") || {});
+  ml.open = null; ml.del = false;
+  const saveMlView = () => store("chevy.meals.view", { q: "", group: ml.group, archived: ml.archived, f: ml.f });
+  const mlArr = (v) => Array.isArray(v) ? v.filter(Boolean).map(String) : (v ? String(v).split(",").map(s => s.trim()).filter(Boolean) : []);
+  const mlOptsFor = (k) => [...new Set([...(mealOpts[k] || []), ...meals.flatMap(m => mlArr(m[k]))])];
+  const isArchivedMeal = (m) => mlArr(m.category).includes("Archived");
+  async function saveMeal(m) {
+    const { id, ...body } = m; const i = meals.findIndex(x => x.id === id); if (i >= 0) meals[i] = m; else meals.push(m);
+    if (local || !db) { renderMeals(); renderHome(); return; }
+    try { await db.collection("meals").doc(id).set(body); } catch (err) { notice("Couldn't save the meal (" + (err.code || "error") + ")."); }
+  }
+  async function deleteMeal(id) {
+    meals = meals.filter(x => x.id !== id);
+    if (local || !db) { renderMeals(); renderHome(); return; }
+    try { await db.collection("meals").doc(id).delete(); } catch (err) { notice("Couldn't delete the meal."); }
+  }
+  async function saveMealOpts() {
+    store("chevy.mealOpts", mealOpts);
+    if (local || !db) return;
+    try { await db.doc("settings/mealOptions").set({ ...mealOpts, updatedAt: new Date().toISOString() }); } catch (e) {}
+  }
+  const mlChip = (v) => `<span class="ml-chip">${esc(v)}</span>`;
+  function renderMeals() {
+    const el = $("mlBody"); if (!el) return;
+    const ro = !!PUBLIC, q = ml.q.trim().toLowerCase();
+    let list = meals.filter(m => (ml.archived || !isArchivedMeal(m)) && (!q || [m.title, m.ingredients, (m.ingList || []).join(" "), mlArr(m.cuisine).join(" "), mlArr(m.category).join(" ")].join(" ").toLowerCase().includes(q)));
+    ML_FIELDS.forEach(([k]) => { const sel = (ml.f[k] || []); if (sel.length) list = list.filter(m => mlArr(m[k]).some(v => sel.includes(v))); });
+    list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    $("mlCount").textContent = `${meals.filter(m => !isArchivedMeal(m)).length} meals${meals.some(isArchivedMeal) ? ` · ${meals.filter(isArchivedMeal).length} archived` : ""}`;
+    const card = (m) => `<button type="button" class="ml-card" data-mlopen="${esc(m.id)}"><span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
+    let groups;
+    if (ml.group === "none") groups = [["All meals", list]];
+    else { const key = ml.group, opts = mlOptsFor(key), g = new Map(opts.map(o => [o, []])); const none = []; list.forEach(m => { const vs = mlArr(m[key]); if (!vs.length) none.push(m); vs.forEach(v => { if (!g.has(v)) g.set(v, []); g.get(v).push(m); }); }); groups = [...g.entries()].filter(([, l]) => l.length); if (none.length) groups.push(["No " + ML_FIELDS.find(f => f[0] === key)[1].toLowerCase(), none]); }
+    const filt = ML_FIELDS.map(([k, label]) => `<details class="ml-filt"${(ml.f[k] || []).length ? " open" : ""}><summary>${label}${(ml.f[k] || []).length ? ` · ${(ml.f[k] || []).length}` : ""}</summary><span class="chips">${mlOptsFor(k).filter(o => k !== "category" || ml.archived || o !== "Archived").map(o => `<button type="button" class="chip" data-mlf="${k}|${esc(o)}" aria-pressed="${(ml.f[k] || []).includes(o)}">${esc(o)}</button>`).join("")}</span></details>`).join("");
+    el.innerHTML = `<div class="ml-tools">
+        <input type="search" id="mlQ" class="search" placeholder="Search meals or ingredients…" value="${esc(ml.q)}" aria-label="Search meals">
+        <span class="chips" role="group" aria-label="Group by"><span class="ml-gl">Group by</span>${[["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"], ["none", "None"]].map(([k, l]) => `<button type="button" class="chip" data-mlgroup="${k}" aria-pressed="${ml.group === k}">${l}</button>`).join("")}</span>
+        <label class="switch"><input type="checkbox" id="mlArch"${ml.archived ? " checked" : ""}> Show archived</label>
+        ${ro ? "" : `<button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+      <div class="ml-filters">${filt}${Object.values(ml.f).some(a => a && a.length) ? '<button type="button" class="btn ghost" data-mlclear>Clear filters</button>' : ""}</div>
+      ${list.length ? groups.map(([g, l]) => `<section class="ml-group"><h2>${esc(g)} <span>${l.length}</span></h2><div class="ml-grid">${l.map(card).join("")}</div></section>`).join("") : `<div class="empty"><strong>${meals.length ? "Nothing matches" : "No meals yet"}</strong>${meals.length ? "Try another search or clear the filters." : ""}</div>`}`;
+    if (ml.open) renderMealDialog();
+  }
+  function renderMealDialog() {
+    const m = meals.find(x => x.id === ml.open); const ov = $("mlOverlay");
+    if (!m) { ov.hidden = true; ml.open = null; return; }
+    const ro = !!PUBLIC;
+    const multi = (k, label) => { const cur = mlArr(m[k]); return `<div class="ml-f"><span class="flabel">${label}</span><span class="chips">${ro ? (cur.map(mlChip).join("") || '<span class="pl-none">—</span>') : mlOptsFor(k).map(o => `<button type="button" class="chip" data-mlset="${k}|${esc(o)}" aria-pressed="${cur.includes(o)}">${esc(o)}</button>`).join("") + `<input type="text" class="ml-addopt" data-mladdopt="${k}" placeholder="+ New" aria-label="Add a ${label.toLowerCase()} choice">`}</span></div>`; };
+    const link = m.link && /^https?:/i.test(m.link) ? m.link : "";
+    $("mlDialog").innerHTML = `<div class="dlg-head"><div class="dlg-top"><span class="dlg-kind">Meal</span></div><div class="dialog-actions">${ro ? "" : `<button type="button" class="btn danger" data-mldel>${ml.del ? "Tap again to delete" : "Delete"}</button>`}<div class="right"><button type="button" class="btn" data-mlclose>Close</button></div></div></div>
+      <div class="ml-dbody">
+        <div class="ml-titlerow"><button type="button" class="emoji-btn ml-emobtn" data-mlemoji${ro ? " disabled" : ""} aria-label="Change emoji">${esc(m.icon || "🍽️")}</button>${ro ? `<h2 class="ml-h">${esc(m.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-mltext="title" value="${esc(m.title || "")}" placeholder="Meal name" aria-label="Meal name">`}</div>
+        ${multi("category", "Category")}${multi("menu", "Menu")}${multi("cuisine", "Cuisine")}${multi("method", "Method")}
+        <div class="ml-f ml-row"><label><span class="flabel">Status</span>${ro ? esc(m.status || "—") : `<select data-mltext="status"><option value="">—</option>${["Not started", "In progress", "Done"].map(s => `<option${m.status === s ? " selected" : ""}>${s}</option>`).join("")}</select>`}</label>
+          <label><span class="flabel">Date</span>${ro ? esc(m.date ? fmt(m.date) : "—") : `<input type="date" data-mltext="date" value="${esc(m.date || "")}">`}</label>
+          <span><span class="flabel">Added</span>${esc(m.created ? fmt(m.created) : "—")}</span></div>
+        <div class="ml-f"><span class="flabel">Recipe link</span>${ro ? (link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\/(www\.)?/, "").slice(0, 70))}</a>` : "—") : `<div class="ml-linkrow"><input type="url" data-mltext="link" value="${esc(m.link || "")}" placeholder="https://…" aria-label="Recipe link">${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Open ↗</a>` : ""}</div>`}</div>
+        ${(m.ingList || []).length ? `<div class="ml-f"><span class="flabel">Main ingredients</span><span class="chips">${m.ingList.map(mlChip).join("")}</span></div>` : ""}
+        <div class="ml-f"><span class="flabel">Ingredients</span>${ro ? `<div class="ml-text">${esc(m.ingredients || "—")}</div>` : `<textarea data-mltext="ingredients" rows="8" placeholder="One per line">${esc(m.ingredients || "")}</textarea>`}</div>
+        <div class="ml-f"><span class="flabel">Directions</span>${ro ? `<div class="ml-text">${esc(m.directions || "—")}</div>` : `<textarea data-mltext="directions" rows="8" placeholder="Steps">${esc(m.directions || "")}</textarea>`}</div>
+        ${m.notionPage ? `<div class="ml-f pub-hint">This recipe also has notes or photos inside its Notion page, which weren't copied over.</div>` : ""}
+      </div>`;
+    ov.hidden = false;
+  }
+  const mlNewId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  $("mlBody").addEventListener("click", async e => {
+    const o = e.target.closest("[data-mlopen]"); if (o) { ml.open = o.dataset.mlopen; ml.del = false; renderMealDialog(); return; }
+    const g = e.target.closest("[data-mlgroup]"); if (g) { ml.group = g.dataset.mlgroup; saveMlView(); renderMeals(); return; }
+    const f = e.target.closest("[data-mlf]"); if (f) { const [k, v] = f.dataset.mlf.split("|"); const cur = ml.f[k] || []; ml.f = { ...ml.f, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }; saveMlView(); renderMeals(); return; }
+    if (e.target.closest("[data-mlclear]")) { ml.f = {}; saveMlView(); renderMeals(); return; }
+    if (e.target.closest("[data-mlnew]")) { const m = { id: mlNewId(), title: "", icon: "🍽️", category: [], menu: [], cuisine: [], method: [], created: today(), createdAt: new Date().toISOString() }; await saveMeal(m); ml.open = m.id; renderMealDialog(); setTimeout(() => { const t = $("mlDialog").querySelector(".ml-title"); if (t) t.focus(); }, 0); }
+  });
+  $("mlBody").addEventListener("change", e => { if (e.target.id === "mlArch") { ml.archived = e.target.checked; saveMlView(); renderMeals(); } });
+  $("mlBody").addEventListener("input", e => { if (e.target.id === "mlQ") { ml.q = e.target.value; const pos = e.target.selectionStart; renderMeals(); const q = $("mlQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
+  const mlClose = () => { $("mlOverlay").hidden = true; ml.open = null; ml.del = false; renderMeals(); };
+  $("mlOverlay").addEventListener("click", async e => {
+    if (e.target.id === "mlOverlay" || e.target.closest("[data-mlclose]")) { mlClose(); return; }
+    const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
+    const s = e.target.closest("[data-mlset]"); if (s) { const [k, v] = s.dataset.mlset.split("|"); const cur = mlArr(m[k]); await saveMeal({ ...m, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v], updatedAt: new Date().toISOString() }); renderMealDialog(); return; }
+    if (e.target.closest("[data-mldel]")) { if (!ml.del) { ml.del = true; renderMealDialog(); setTimeout(() => { if (ml.del) { ml.del = false; if (ml.open) renderMealDialog(); } }, 3000); return; } const id = m.id; ml.open = null; ml.del = false; $("mlOverlay").hidden = true; await deleteMeal(id); return; }
+    const em = e.target.closest("[data-mlemoji]"); if (em) { openFloatPicker(em, m.icon || "", async (pick) => { const cur = meals.find(x => x.id === m.id); if (cur) { await saveMeal({ ...cur, icon: pick || "🍽️" }); renderMealDialog(); } }); return; }
+  });
+  $("mlOverlay").addEventListener("change", async e => {
+    const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
+    const t = e.target.closest("[data-mltext]"); if (t) { const k = t.dataset.mltext; const v = k === "title" ? t.value.trim() : t.value; if ((m[k] || "") !== v) await saveMeal({ ...m, [k]: v, updatedAt: new Date().toISOString() }); }
+  });
+  $("mlOverlay").addEventListener("keydown", async e => {
+    if (e.key === "Escape") { mlClose(); return; }
+    const a = e.target.closest("[data-mladdopt]");
+    if (a && e.key === "Enter") { e.preventDefault(); const k = a.dataset.mladdopt, v = a.value.trim().slice(0, 40); if (!v) return; const m = meals.find(x => x.id === ml.open); mealOpts = { ...mealOpts, [k]: [...new Set([...(mealOpts[k] || []), v])] }; saveMealOpts(); if (m) await saveMeal({ ...m, [k]: [...new Set([...mlArr(m[k]), v])] }); renderMealDialog(); const n = $("mlDialog").querySelector(`[data-mladdopt="${k}"]`); if (n) n.focus(); }
+  });
   const TOOL_ICON = {
     planner: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>',
     graph: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="4" cy="4.5" r="2"/><circle cx="12" cy="4" r="1.6"/><circle cx="8.5" cy="12" r="2"/><path d="M5.6 5.6 7.4 10.4M10.6 5.2 9.3 10.2M5.9 4.4 10.4 4.1"/></svg>',
     obsidian: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5 13 5l-1.5 7L8 14.5 4.5 12 3 5z"/><path d="M8 1.5 6.5 8 8 14.5M3 5l3.5 3L13 5"/></svg>',
   };
+  TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" }))];
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, ...TYPES.filter(T => !T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive && !PUBLIC).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }].filter(t => !PUBLIC || webOn(t.key));
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
-    const home = "planner";
+    const home = "home";
     let v = (location.hash || "#" + home).slice(1);
-    if (!TABS.some(t => t.key === v)) v = home;
-    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v)));
+    const HOME_ONLY = ["inventory", "meals"]; // opened from the Home page only, never in the top bar
+    if (!TABS.some(t => t.key === v) && !(HOME_ONLY.includes(v) && (!PUBLIC || webOn(v)))) v = home;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v || (t.dataset.view === "home" && ["inventory", "meals"].includes(v)))));
     TYPES.forEach(T => { views[T.key].main.hidden = v !== T.key; });
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
     $("view-planner").hidden = v !== "planner";
+    $("view-home").hidden = v !== "home"; $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
+    if (v === "home") renderHome(); if (v === "inventory") renderInventory(); if (v === "meals") renderMeals();
     $("view-database").hidden = v !== "database";
     if (v === "database") renderDatabase();
     if (v === "planner") renderPlanner(); else plCloseMenu();
@@ -4361,7 +5179,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
-  function renderAll() { buildAdj(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
+  function renderAll() { buildAdj(); renderHome(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
 
   // ---------- Connect to saved data ----------
   (async () => {
@@ -4369,6 +5187,9 @@ Don't invent appointments or facts that aren't listed.`);
       clearTimeout(loadTimer); local = true; db = null;
       TYPES.forEach(T => { data[T.key] = (Array.isArray(PUBLIC[T.key]) ? PUBLIC[T.key] : []).filter(e => e && e.id).map(e => ({ ...e, layers: FIXED_LAYER[T.key] ? [FIXED_LAYER[T.key]] : (Array.isArray(e.layers) && e.layers.length ? e.layers : [autoLayer(e.title)]), _pub: true })); loaded[T.key] = true; });
       vault.foldersLoaded = true;
+      inventory = webOn("inventory") && Array.isArray(PUBLIC.inventory) ? PUBLIC.inventory.filter(x => x && x.id) : [];
+      rooms = Array.isArray(PUBLIC.rooms) ? PUBLIC.rooms : [];
+      meals = webOn("meals") && Array.isArray(PUBLIC.meals) ? PUBLIC.meals.filter(x => x && x.id) : [];
       vault.welcome = "# Welcome\n\nBrowse everything here by **Projects**, **Areas** and **Resources**, see how it fits together in **Layers**, and how it all connects in **Graph**.\n\nOpen any note from the **Files** list. Links inside notes take you to related notes.";
       const title = String(PUBLIC.title || "").trim();
       if (title) { document.querySelector(".brand").textContent = title; document.title = title; }
@@ -4395,6 +5216,18 @@ Don't invent appointments or facts that aren't listed.`);
     db.collection("folders").onSnapshot(snap => {
       vault.folders = snap.docs.map(d => ({ id: d.id, ...d.data() })); vault.foldersLoaded = true; renderVault();
     }, () => {});
+    db.collection("inventory").onSnapshot(snap => {
+      inventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const a = document.activeElement; if (!(a && a.closest && a.closest("#invBody") && a.matches("input[type=text], input[type=search]"))) renderInventory(); renderHome();
+    }, () => {});
+    db.collection("meals").onSnapshot(snap => {
+      meals = snap.docs.map(d => ({ id: d.id, ...JSON.parse(JSON.stringify(d.data())) }));
+      const a = document.activeElement; const typing = a && a.closest && (a.closest("#mlDialog") || a.id === "mlQ") && a.matches("input, textarea");
+      if (!typing) renderMeals(); renderHome();
+    }, () => {});
+    db.doc("settings/mealOptions").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { ML_FIELDS.forEach(([k]) => { if (Array.isArray(d[k])) mealOpts[k] = d[k]; }); store("chevy.mealOpts", mealOpts); } }, () => {});
+    db.doc("settings/rooms").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && Array.isArray(d.rooms)) { rooms = d.rooms; store("chevy.rooms", rooms); renderInventory(); } }, () => {});
+    db.doc("settings/home").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.web && typeof d.web === "object") { homeWeb = { ...HOME_WEB_DEFAULT, ...d.web }; store("chevy.homeWeb", homeWeb); renderHome(); } }, () => {});
     db.doc("settings/site").onSnapshot(snap => {
       const d = snap.exists ? snap.data() : null; if (!d) return;
       if (typeof d.addNew === "boolean") { siteAdd = d.addNew; store("chevy.siteAdd", siteAdd); }
@@ -4416,6 +5249,7 @@ Don't invent appointments or facts that aren't listed.`);
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
         renderAll();
       });
+      db.doc(`settings/board_${T.key}`).onSnapshot(snap => { if (snap.exists) views[T.key].applyBoard(snap.data()); }, () => {});
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
         if (snap.exists && Array.isArray(snap.data().columns) && snap.data().v === 2) views[T.key].applyRemoteCols(snap.data().columns);
