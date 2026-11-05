@@ -1392,7 +1392,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <body>
 <header class="appbar">
   <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button></div>
-  <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added.</p><div id="bdBody"></div></div></div>
+  <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
     <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
     <div class="set-row"><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><span class="set-desc">Shows the how-to tips throughout LifeOS.</span></div>
@@ -5294,7 +5294,7 @@ ${text}
     const n = bd.items.filter(x => x.on).length, miss = bd.items.length ? bdMissing() : [];
     el.innerHTML = `
       <textarea id="bdText" class="bd-text" placeholder="Dump everything here: to-dos, worries, ideas, dates, people, plans. One long messy paragraph is fine." ${bd.busy ? "disabled" : ""}>${esc(bd.text)}</textarea>
-      <div class="bd-row"><button type="button" class="btn bd-mic${bdRec ? " on" : ""}" data-bdmic aria-pressed="${!!bdRec}" title="${bdRec ? "Stop listening" : "Speak instead of typing"}" ${bd.busy ? "disabled" : ""}>${bdRec ? "⏹ Stop" : "🎤 Speak"}</button><button type="button" class="btn primary" data-bdsort ${bd.busy || bdRec ? "disabled" : ""}>✨ Turn into entries</button>${bd.items.length ? `<button type="button" class="btn" data-bdclear>Start over</button>` : ""}</div>
+      <div class="bd-row"><button type="button" class="btn bd-mic${bdRec ? " on" : ""}" data-bdmic aria-pressed="${!!bdRec}" title="${bdRec ? "Stop listening" : "Press one time, then begin speaking"}" ${bd.busy ? "disabled" : ""}>${bdRec ? "⏹ Stop" : "🎤 Speak"}</button><button type="button" class="btn primary" data-bdsort ${bd.busy || bdRec ? "disabled" : ""}>✨ Turn into entries</button>${bd.items.length ? `<button type="button" class="btn" data-bdclear>Start over</button>` : ""}</div>
       ${bd.msg ? `<p class="bd-msg${bd.bad ? " bad" : ""}" role="status">${esc(bd.msg)}</p>` : ""}
       ${bd.items.length ? `<div class="bd-list">${bd.items.map((x, i) => `<div class="bd-item${x.on ? "" : " off"}">
           <label class="bd-on"><input type="checkbox" data-bdon="${i}"${x.on ? " checked" : ""} aria-label="Add this entry"></label>
@@ -5325,7 +5325,7 @@ ${text}
     };
     rec.onerror = (ev) => { const c = ev.error; bd.bad = true; bd.msg = c === "not-allowed" || c === "service-not-allowed" ? "The microphone isn't allowed here. " + BD_DICTATE : c === "no-speech" ? "I didn't hear anything. Tap 🎤 Speak and try again." : c === "audio-capture" ? "No microphone was found. " + BD_DICTATE : "Listening stopped (" + c + "). " + BD_DICTATE; };
     rec.onend = () => { bdRec = null; const t = $("bdText"); if (t) bd.text = t.value; renderBd(); };
-    try { rec.start(); bdRec = rec; bd.msg = "Listening… speak as long as you like, then tap ⏹ Stop."; bd.bad = false; renderBd(); } catch (e) { bdRec = null; bd.msg = "The microphone couldn't start here. " + BD_DICTATE; bd.bad = true; renderBd(); }
+    try { rec.start(); bdRec = rec; bd.msg = "Begin speaking."; bd.bad = false; renderBd(); } catch (e) { bdRec = null; bd.msg = "The microphone couldn't start here. " + BD_DICTATE; bd.bad = true; renderBd(); }
   }
   const bdOpen = (v) => { if (!v && bdRec) { try { bdRec.stop(); } catch (e) {} } const p = $("bdPop"); p.hidden = !v; $("bdBtn").setAttribute("aria-expanded", String(v)); if (v) { renderBd(); setTimeout(() => { const t = $("bdText"); if (t) t.focus(); }, 0); } };
   $("bdBtn").addEventListener("click", e => { e.stopPropagation(); bdOpen($("bdPop").hidden); });
