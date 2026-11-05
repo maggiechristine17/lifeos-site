@@ -1311,6 +1311,8 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .rt-color .cdot.has { outline: 2px solid var(--rtc); outline-offset: 1px; }
 .rt-color select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; color: var(--ink); font: inherit; font-size: 12.5px; cursor: pointer; }
 .ec-white { --ec: #f2f2ec; }
+.ec-purple { --ec: var(--c-purple); }
+.rt-card.ec-purple { border-left: 4px solid var(--c-purple); background: color-mix(in srgb, var(--c-purple) 7%, var(--surface)); }
 .ec-red { --ec: var(--c-red); } .ec-orange { --ec: var(--c-orange); } .ec-yellow { --ec: var(--c-yellow); } .ec-green { --ec: var(--c-green); } .ec-blue { --ec: var(--c-blue); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .sw-white { background: #f2f2ec; }
@@ -3853,7 +3855,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     let html = `<button type="button" class="vnote vwelcome${vCurrent.kind === "welcome" ? " active" : ""}" style="--d:0" data-vwelcome="1"><svg class="vicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7.5 8 2.5l6 5V14H10v-4H6v4H2z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span>Welcome</span></button>`;
     html += childFolders("").map(f => renderFolder(f, 0, q)).join("");
     // Obsidian folders: Projects, Goals, Routines together; ideas and values file under Resources
-    const rtRows = () => { const rts = routines.filter(r => !q || (r.name || "").toLowerCase().includes(q)).sort((a, b) => (a.name || "").localeCompare(b.name || "")); return { n: rts.length, html: rts.map(r => `<button type="button" class="vnote${vCurrent.kind === "routine" && vCurrent.id === r.id ? " active" : ""}" style="--d:1" data-vroutine="${esc(r.id)}"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span>${esc(r.name || "Untitled routine")}</span></button>`).join("") }; };
+    const rtRows = () => { const rts = routines.filter(r => !q || (r.name || "").toLowerCase().includes(q)).sort((a, b) => (a.name || "").localeCompare(b.name || "")); return { n: rts.length, html: rts.map(r => `<button type="button" class="vnote ec-purple${vCurrent.kind === "routine" && vCurrent.id === r.id ? " active" : ""}" style="--d:1" data-vroutine="${esc(r.id)}"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span>${esc(r.name || "Untitled routine")}</span></button>`).join("") }; };
     html += VAULT_GROUPS.map(G => {
       const notes = G.types.flatMap(k => unfiled(k)).filter(x => (!q || (x.e.title || "").toLowerCase().includes(q)) && vPass(x)).sort(vCmp);
       const rt = G.routines ? rtRows() : { n: 0, html: "" };
@@ -4211,8 +4213,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const hist = s.done.slice().sort((a, b) => (b.doneAt || b.date).localeCompare(a.doneAt || a.date));
       const open = rtIsOpen(r.id);
       const head = `<div class="rt-head"><button type="button" class="rt-tog" data-rttoggle="${esc(r.id)}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(r.name)}"><svg class="vcaret${open ? " open" : ""}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" class="emoji-btn rt-emoji${r.emoji ? "" : " is-auto"}" data-rtemoji="${esc(r.id)}" aria-label="Choose an emoji for ${esc(r.name)}" title="Choose an emoji"><span class="emo">${esc(rtEmoji(r))}</span>${r.emoji ? "" : '<span class="emo-auto">auto</span>'}</button><input class="rt-name" value="${esc(r.name)}" data-rtname="${esc(r.id)}" aria-label="Routine name"${PUBLIC ? " readonly" : ""}>${rtColorCtl(r)}${rtWebBtn(r)}<button type="button" class="btn primary rt-today" data-rtlog="${esc(r.id)}">✓ Did it today</button></div>`;
-      if (!open) return `<article class="rt-card closed" data-rtcard="${esc(r.id)}">${head}<div class="rt-mini">${s.w} in the last 7 days · ${s.total} all time${s.streak ? ` · ${s.streak}-day streak` : ""} · ${s.last ? "last done " + esc(fmt(s.last.date, false)) : "not done yet"}</div></article>`;
-      return `<article class="rt-card" data-rtcard="${esc(r.id)}">
+      if (!open) return `<article class="rt-card closed ec-purple" data-rtcard="${esc(r.id)}">${head}<div class="rt-mini">${s.w} in the last 7 days · ${s.total} all time${s.streak ? ` · ${s.streak}-day streak` : ""} · ${s.last ? "last done " + esc(fmt(s.last.date, false)) : "not done yet"}</div></article>`;
+      return `<article class="rt-card ec-purple" data-rtcard="${esc(r.id)}">
         ${head}
         <div class="rt-stats">
           <div><b>${s.w}</b><span>last 7 days</span></div><div><b>${s.m}</b><span>last 30 days</span></div><div><b>${s.total}</b><span>all time</span></div>
@@ -4812,7 +4814,7 @@ Don't invent appointments or facts that aren't listed.`);
         : (tagsOf(e).length ? K.tags.cell(e) : dash);
       return `<td data-label="${DB_COL[k][1]}"><button type="button" class="db-cellbtn" data-dbpop="${k}" ${attrs}${ro ? " disabled" : ""} aria-label="Change ${DB_COL[k][1].toLowerCase()} for ${esc(e.title)}">${inner}</button></td>`;
     };
-    const tr = (x) => `<tr class="row db-row${(x.e.status || "") === "Done" ? " done" : ""}${ecClass(x.e)}">${dbShown().map(c => cellOf(x, c.key)).join("")}</tr>`;
+    const tr = (x) => `<tr class="row db-row${(x.e.status || "") === "Done" ? " done" : ""}${x.type === "routine" ? " ec-purple" : ecClass(x.e)}">${dbShown().map(c => cellOf(x, c.key)).join("")}</tr>`;
     const table = (list) => `<div class="table-wrap db-table"><table style="width:${totalW}px">${colgroup}${head}<tbody>${list.map(tr).join("")}</tbody></table></div>`;
     if (!rows.length) { $("dbBody").innerHTML = `<div class="empty"><strong>Nothing here</strong>${all.length ? "Try another layer or clear the filters." : "Add a project, area or resource to see it here."}</div>`; return; }
     if (!dbs.group || dbs.layer) { $("dbBody").innerHTML = (dbs.layer ? `<div class="db-lhead"><span class="db-big">${dbs.layer === "none" ? "—" : "L" + dbs.layer}</span><span>${dbs.layer === "none" ? "No layer yet" : "Layer " + dbs.layer} · ${rows.length}</span></div>` : "") + table(rows); return; }
