@@ -1490,9 +1490,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
+  <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
+    <div class="panel-head"><span class="panel-name">Sort</span><span class="panel-tools"><button class="btn ghost" type="button" data-dbsortclear>Clear</button><button class="x" type="button" id="dbSortX" aria-label="Close Sort">×</button></span></div>
+    <div class="hint">Tap sorts in order of importance. Tap one again to flip it, and a third time to remove it.</div>
+    <div class="chips" id="dbSortList"></div>
+  </section>
   <section class="panel" id="dbShowPanel" aria-label="Layers columns" hidden>
     <div class="panel-head"><span class="panel-name">Show Properties</span><span class="panel-tools"><button class="btn ghost" type="button" id="dbShowReset">Reset</button><button class="x" type="button" id="dbShowX" aria-label="Close Show Properties">×</button></span></div>
     <div class="hint">Tap a property to show or hide its column. Hold and drag one to change the order, left to right.</div>
@@ -4839,7 +4844,7 @@ Don't invent appointments or facts that aren't listed.`);
   function dbVal(k, x) {
     const e = x.e;
     return k === "title" ? (e.title || "").toLowerCase() : k === "type" ? TYPES.findIndex(T => T.key === x.type) : k === "status" ? statusIndex(e.status || "Not started")
-      : k === "layer" ? (layersOf(e)[0] ?? "") : k === "color" ? (colorOf(e) ? COLORS.indexOf(colorOf(e)) : "")
+      : k === "layer" ? (x.type === "routine" ? 7 : layersOf(e).length ? Math.min(...layersOf(e).map(Number)) : "") : k === "color" ? (colorOf(e) ? COLORS.indexOf(colorOf(e)) : "")
       : k === "focus" ? (e.focusStart || e.focusEnd || "") : k === "created" ? (e.created || e.createdTime || "") : (e.updatedAt || "");
   }
   // Projects tab has three sections: Projects, Goals and Routines
@@ -4869,8 +4874,14 @@ Don't invent appointments or facts that aren't listed.`);
     el.innerHTML = `<div class="view-head"><div><h1>Routines</h1><div class="count">${list.length} routine${list.length === 1 ? "" : "s"} · Layer 7 · always purple</div></div>${PUBLIC ? "" : `<div class="head-actions pr-rtadd"><input class="wf-in" id="prRtNew" placeholder="New routine, like Morning walk" maxlength="120" aria-label="New routine"><button type="button" class="btn primary" data-prrtadd>+ New routine</button></div>`}</div>
       ${list.length ? `<div class="table-wrap"><table class="tbl pr-rt"><thead><tr><th>Title</th><th>Color</th><th>Done</th><th>Show on website</th></tr></thead><tbody>${list.map(row).join("")}</tbody></table></div>` : `<div class="empty"><strong>No routines yet</strong>Add one here or in Planner → Routines.</div>`}`;
   }
+  const DB_SORT_CHIPS = [["layer", "Layer"], ["title", "Title"], ["focus", "When"], ["status", "Status"], ["type", "Database"], ["color", "Color"], ["created", "Created"], ["updated", "Last edited"]];
+  function renderDbSort() {
+    const l = $("dbSortList"); if (!l) return;
+    l.innerHTML = DB_SORT_CHIPS.map(([k, lab]) => sortChipHtml(dbs.sorts, k, lab, "data-dbsort")).join("");
+    const b = $("dbSortBadge"); if (b) { b.hidden = !dbs.sorts.length; b.textContent = dbs.sorts.length; }
+  }
   function renderDatabase() {
-    renderProjRoutines();
+    renderProjRoutines(); renderDbSort();
     if (!$("dbBody") || $("view-database").hidden) return;
     const rtRows = routines.map(r => ({ type: "routine", r, e: { id: r.id, title: r.name || "Untitled routine", emoji: rtEmoji(r), layers: ["7"], created: (r.createdAt || "").slice(0, 10), updatedAt: r.updatedAt || r.createdAt || "" } }));
     const all = [...TYPES.flatMap(T => data[T.key].map(e => ({ type: T.key, e }))), ...rtRows];
@@ -4934,7 +4945,7 @@ Don't invent appointments or facts that aren't listed.`);
     const l = e.target.closest("[data-dblayer]"); if (l) { dbs.layer = dbs.layer === l.dataset.dblayer ? "" : l.dataset.dblayer; saveDb(); renderDatabase(); return; }
     const t = e.target.closest("[data-dbtype]"); if (t) { const k = t.dataset.dbtype; dbs.types = dbs.types.includes(k) ? dbs.types.filter(x => x !== k) : [...dbs.types, k]; saveDb(); renderDatabase(); return; }
     const s = e.target.closest("[data-dbstatus]"); if (s) { const k = s.dataset.dbstatus; dbs.status = dbs.status.includes(k) ? dbs.status.filter(x => x !== k) : [...dbs.status, k]; saveDb(); renderDatabase(); return; }
-    const so = e.target.closest("[data-dbsort]"); if (so) { const k = so.dataset.dbsort; dbs.sorts = cycleSort(dbs.sorts, k, ["created", "updated", "focus"].includes(k) ? "desc" : "asc"); saveDb(); renderDatabase(); return; }
+    const so = e.target.closest("[data-dbsort]"); if (so) { const k = so.dataset.dbsort; if (k !== "title" && dbs.sorts.length === 1 && dbs.sorts[0].key === "title" && dbs.sorts[0].dir === "asc") dbs.sorts = []; dbs.sorts = cycleSort(dbs.sorts, k, ["created", "updated", "focus"].includes(k) ? "desc" : "asc"); saveDb(); renderDatabase(); return; }
     if (e.target.closest("[data-dbsortclear]")) { dbs.sorts = []; saveDb(); renderDatabase(); return; }
     if (e.target.closest("[data-dbclear]")) { Object.assign(dbs, { layer: "", types: [], status: [] }); dbQ = ""; $("dbQ").value = ""; saveDb(); renderDatabase(); return; }
     const ro2 = e.target.closest("[data-dbroutine]"); if (ro2) { pl.sub = "routines"; savePl(); const id = ro2.dataset.dbroutine; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
@@ -5073,6 +5084,7 @@ Don't invent appointments or facts that aren't listed.`);
     let open = recall("chevy.database.showOpen") === true;
     const apply = () => { $("dbShowPanel").hidden = !open; $("dbShowBtn").setAttribute("aria-expanded", String(open)); };
     $("dbShowBtn").addEventListener("click", () => { open = !open; store("chevy.database.showOpen", open); apply(); });
+    { const sp = $("dbSortPanel"), sb = $("dbSortBtn"); const setS = (v) => { sp.hidden = !v; sb.setAttribute("aria-expanded", String(v)); if (v) renderDbSort(); }; sb.addEventListener("click", () => setS(sp.hidden)); $("dbSortX").addEventListener("click", () => setS(false)); }
     $("dbShowX").addEventListener("click", () => { open = false; store("chevy.database.showOpen", open); apply(); });
     apply();
   })();
