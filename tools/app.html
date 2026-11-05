@@ -35,6 +35,9 @@
   --graph-bg: #090b09;
   --page: #b5e655;
   --area: #f2a7c3;
+  --idea: #7cc4f0;
+  --value: #f0c96b;
+  --goal: #ff9b71;
   --danger: #ff8a7a;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -301,6 +304,9 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 #views main[hidden] { display: none; }
 .tdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; background: var(--muted); }
 .tdot.t-pages { border-radius: 2px; background: var(--page); }
+.tdot.t-ideas { background: var(--idea); clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.tdot.t-values { background: var(--value); clip-path: polygon(0 0, 100% 0, 50% 100%); border-radius: 0; }
+.tdot.t-goals { background: var(--goal); box-shadow: inset 0 0 0 2px var(--surface); }
 .tdot.t-archive { border-radius: 2px; background: var(--muted); }
 .tdot.t-projects { background: var(--good); }
 .graph-legend i.sq { border-radius: 2px; }
@@ -1475,7 +1481,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <label class="switch"><input type="checkbox" id="gProjects" checked> Projects</label>
       <label class="switch"><input type="checkbox" id="gAreas" checked> Areas</label>
       <label class="switch"><input type="checkbox" id="gPages" checked> Resources</label>
-      <label class="switch"><input type="checkbox" id="gArchive" checked> Archive</label>
+      <label class="switch"><input type="checkbox" id="gArchive" checked> Archive</label><label class="switch"><input type="checkbox" id="gIdeas" checked> Ideas</label><label class="switch"><input type="checkbox" id="gValues" checked> Values</label><label class="switch"><input type="checkbox" id="gGoals" checked> Goals</label>
       <label class="switch"><input type="checkbox" id="gRoutines" checked> Routines</label>
       <label class="switch"><input type="checkbox" id="gOrphans" checked> Show unlinked items</label>
       <label class="switch"><input type="checkbox" id="gDone" checked> Show done projects</label>
@@ -1488,7 +1494,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <div class="graph-empty" id="graphEmpty" hidden></div>
     <div class="g-sel" id="gSelBox" hidden></div>
   </div>
-  <div class="ghint">Drag the background to pan, pinch or scroll to zoom, drag a shape to move it, and tap one to select it: then tap other shapes to link or unlink them, or use the box at the top. Circles are projects, diamonds are areas, and squares are resources.</div>
+  <div class="ghint">Drag the background to pan, pinch or scroll to zoom, drag a shape to move it, and tap one to select it: then tap other shapes to link or unlink them, or use the box at the top. Circles are projects, diamonds are areas, squares are resources, triangles are ideas, upside-down triangles are values, and rings are goals.</div>
 </main>
 
 <div class="overlay" id="overlay" hidden>
@@ -3440,8 +3446,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   let transform = { x: 0, y: 0, k: 1 };
   const gOpts = { projects: true, areas: true, pages: true, archive: true, routine: true, orphans: true, done: true, labels: true };
   try { Object.assign(gOpts, JSON.parse(localStorage.getItem("chevy.graph.opts") || "{}")); } catch (e) {}
-  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false;
-  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
+  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false; $("gIdeas").checked = gOpts.ideas !== false; $("gValues").checked = gOpts.values !== false; $("gGoals").checked = gOpts.goals !== false;
+  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gIdeas", "ideas"], ["gValues", "values"], ["gGoals", "goals"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
     gOpts[k] = e.target.checked;
     try { localStorage.setItem("chevy.graph.opts", JSON.stringify(gOpts)); } catch (err) {}
     if (k === "labels") draw(); else { fitted = false; renderGraph(); }
@@ -3473,7 +3479,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function setEmpty(html) { const el = $("graphEmpty"); el.hidden = !html; if (html) el.innerHTML = html; }
 
   function renderGraph() {
-    $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>`;
+    $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>` + `<span><i class="tdot t-ideas" style="width:11px;height:11px;margin:0"></i>Idea</span><span><i class="tdot t-values" style="width:11px;height:11px;margin:0"></i>Value</span><span><i class="tdot t-goals" style="width:11px;height:11px;margin:0"></i>Goal</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
     const prev = new Map(gNodes.map(n => [n.id, n]));
     let items = [...byId.values()].filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
@@ -3541,9 +3547,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       ctx.beginPath();
       if (n.type === "routine") { const d = r * 1.15; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; i ? ctx.lineTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)) : ctx.moveTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)); } ctx.closePath(); }
       else if (n.type === "areas") { const d = r * 1.2; ctx.moveTo(n.x, n.y - d); ctx.lineTo(n.x + d, n.y); ctx.lineTo(n.x, n.y + d); ctx.lineTo(n.x - d, n.y); ctx.closePath(); }
+      else if (n.type === "ideas") { const d = r * 1.25; ctx.moveTo(n.x, n.y - d); ctx.lineTo(n.x + d * 0.95, n.y + d * 0.7); ctx.lineTo(n.x - d * 0.95, n.y + d * 0.7); ctx.closePath(); }
+      else if (n.type === "values") { const d = r * 1.25; ctx.moveTo(n.x, n.y + d); ctx.lineTo(n.x + d * 0.95, n.y - d * 0.7); ctx.lineTo(n.x - d * 0.95, n.y - d * 0.7); ctx.closePath(); }
+      else if (n.type === "goals") { ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.moveTo(n.x + r * 0.45, n.y); ctx.arc(n.x, n.y, r * 0.45, 0, Math.PI * 2, true); }
       else if (n.type === "pages") { const s = r * 0.9; if (ctx.roundRect) ctx.roundRect(n.x - s, n.y - s, s * 2, s * 2, s * 0.35); else ctx.rect(n.x - s, n.y - s, s * 2, s * 2); }
       else ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = cssVar(n.type === "routine" ? "--hold" : n.type === "pages" ? "--page" : n.type === "areas" ? "--area" : n.type === "archive" ? "--muted" : statusOf(n.status).color); ctx.fill();
+      ctx.fillStyle = cssVar(n.type === "routine" ? "--hold" : n.type === "ideas" ? "--idea" : n.type === "values" ? "--value" : n.type === "goals" ? "--goal" : n.type === "pages" ? "--page" : n.type === "areas" ? "--area" : n.type === "archive" ? "--muted" : statusOf(n.status).color); ctx.fill();
       if (n.color) { ctx.lineWidth = 3 / transform.k; ctx.strokeStyle = cssVar("--c-" + n.color); ctx.stroke(); }
       if (n.id === hoverId || n.id === gSel) { ctx.lineWidth = (n.id === gSel ? 4 : 2.5) / transform.k; ctx.strokeStyle = n.id === gSel ? accent : ink; ctx.stroke(); }
     });
@@ -3632,7 +3641,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const box = $("gSelBox"); if (!box) return;
     const x = gSel && byId.get(gSel); if (!x) { gSel = null; box.hidden = true; box.innerHTML = ""; return; }
     const ls = linksOf(x.e.id), have = new Set(ls.map(y => y.e.id));
-    const opts = LIVE.map(k => { const items = data[k].filter(o => o.id !== x.e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
+    const opts = TYPES.filter(T => !T.archive).map(T => T.key).map(k => { const items = data[k].filter(o => o.id !== x.e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
     box.innerHTML = `<div class="g-head"><i class="tdot t-${x.type}" aria-hidden="true"></i><b title="${esc(x.e.title || "Untitled")}">${esc(x.e.title || "Untitled")}</b><button type="button" class="btn" data-gopen>Open</button><button type="button" class="x" data-gdone aria-label="Done linking">×</button></div>
       <div class="g-tip">Tap another shape to link it. Tap a linked one to unlink it.</div>
       ${gMsg ? `<div class="g-msg" role="status">${esc(gMsg)}</div>` : ""}
@@ -4823,7 +4832,7 @@ Don't invent appointments or facts that aren't listed.`);
     if (f.kind === "created") { const P = TYPE[f.type].props.find(x => x.kind === "date"); body = `<div class="pl-msub">Created date</div><div class="task-add"><input type="date" id="dbCr" value="${esc(String(e[P.field] || e.created || e.createdTime || "").slice(0, 10))}"><button type="button" class="btn primary" data-dbcrsave>Save</button></div>`; }
     if (f.kind === "links") {
       const ls = linksOf(e.id), have = new Set(ls.map(y => y.e.id));
-      const opts = LIVE.map(k => { const items = data[k].filter(o => o.id !== e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(k + "|" + o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
+      const opts = TYPES.filter(T => !T.archive).map(T => T.key).map(k => { const items = data[k].filter(o => o.id !== e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(k + "|" + o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
       body = `<div class="pl-msub">Links</div>${ls.length ? `<ul class="qe-links">${ls.map(y => `<li><i class="tdot t-${y.type}" aria-hidden="true"></i><span>${esc(y.e.title || "Untitled")}</span><button type="button" class="tdel" data-dblinkx="${esc(y.type + "|" + y.e.id)}" aria-label="Remove link to ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="pl-none">No links yet.</div>'}<select class="qe-sel" id="dbLinkAdd"><option value="">+ Link a project, area or resource…</option>${opts}</select>`;
     }
     if (f.kind === "tags") { const lower = tagsOf(e).map(t => t.toLowerCase()); body = `<div class="pl-msub">Tags</div><div class="tag-pick">${allTags().map(t => `<button type="button" class="tag-toggle ${tagColor(t)}" aria-pressed="${lower.includes(t.toLowerCase())}" data-dbtag="${esc(t)}">${t.toLowerCase() === "now" ? PIN_SVG : ""}${esc(t)}</button>`).join("")}</div><div class="task-add"><input id="dbTagNew" type="text" placeholder="New tag…" autocomplete="off"><button type="button" class="btn" data-dbtagadd>Add</button></div>`; }
@@ -5243,18 +5252,23 @@ Don't invent appointments or facts that aren't listed.`);
     const hit = byId.get(aId); if (!hit) return;
     await wfPatch(hit.type, aId, { links: [...new Set([...(Array.isArray(hit.e.links) ? hit.e.links : []), bId])] });
     for (const a of new Set([...wfAreasOf(aId), ...wfAreasOf(bId)])) await wfSyncArea(a);
+    wfRefreshAll();
   }
   async function wfUnlink(aId, bId) {
     const areas = new Set([...wfAreasOf(aId), ...wfAreasOf(bId)]);
     for (const [x, y] of [[aId, bId], [bId, aId]]) { const hit = byId.get(x); if (hit && Array.isArray(hit.e.links) && hit.e.links.includes(y)) await wfPatch(hit.type, x, { links: hit.e.links.filter(l => l !== y) }); }
     for (const a of areas) await wfSyncArea(a);
+    wfRefreshAll();
   }
+  // Links made here show at once in Graph, Layers, Obsidian, Planner and every Links property
+  const wfRefreshAll = () => { buildAdj(); TYPES.forEach(T => views[T.key] && views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); };
   async function wfNewChild(parentId, type, title) {
     const extra = { links: [parentId] };
     const ne = await wfCreate(type, title, extra);
     // A new project is also linked to its goal's areas, so it groups under the area on the Projects tab
     if (type === "projects") for (const a of wfLinked(parentId, "areas")) await wfLink(ne.id, a.id);
     for (const a of new Set([...wfAreasOf(parentId), ...wfAreasOf(ne.id)])) await wfSyncArea(a);
+    wfRefreshAll();
     return ne;
   }
   async function wfEdit(type, id, field, value) {
