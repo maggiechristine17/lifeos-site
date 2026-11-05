@@ -1099,6 +1099,9 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .wf-sel { width: 100%; background: var(--bg); border: 1px dashed var(--line); border-radius: 8px; padding: 7px 8px; color: var(--muted); font: inherit; font-size: 13.5px; cursor: pointer; }
 .wf-sel:hover, .wf-sel:focus { border-color: var(--accent); color: var(--ink); outline: none; }
 .wf-gtitle { font-size: 15.5px; font-weight: 600; line-height: 1.35; }
+.wf-ch .wf-gtitle { flex: 1; min-width: 0; }
+.wf-from { margin: -2px 0 2px 24px; }
+@media (max-width: 640px) { .wf-from { margin-left: 0; } }
 .wf-prow { display: grid; gap: 4px; padding: 6px 0; border-top: 1px solid var(--line); }
 .wf-prow .wf-when { padding-left: 32px; }
 .wf-newp { display: grid; gap: 6px; }
@@ -5120,9 +5123,8 @@ Don't invent appointments or facts that aren't listed.`);
       const pids = (wf.goalProjects[g.key] || []).filter(id => data.projects.some(p => p.id === id));
       const projs = pids.map(id => data.projects.find(p => p.id === id));
       const linked = wfLinked(g.area.id, "projects").filter(p => !pids.includes(p.id)), others = data.projects.filter(p => !pids.includes(p.id) && !linked.includes(p)).sort((a, b) => titleSort({ e: a }, { e: b }));
-      return card("goals", g.key, `<div class="wf-ch">${grip("goals", g.key)}<span class="wf-achip solo">${emo(g.area, "areas")} ${esc(g.area.title || "Untitled")}</span></div>
-        <div class="wf-gtitle">🎯 ${esc(g.text)}</div>
-        ${PUBLIC ? "" : vchips(valuesFor(g.area.id))}
+      return card("goals", g.key, `<div class="wf-ch">${grip("goals", g.key)}<div class="wf-gtitle">🎯 ${esc(g.text)}</div></div>
+        <div class="wf-chips wf-from"><span class="wf-achip solo" title="Area">${emo(g.area, "areas")} ${esc(g.area.title || "Untitled")}</span>${PUBLIC ? "" : valuesFor(g.area.id).map(v => `<span class="wf-vchip" title="Value">◆ ${esc(v.text)}</span>`).join("")}</div>
         <div class="wf-list">${projs.map(p => { const top = wf.topProjects.includes(p.id); return `<div class="wf-prow"><div class="wf-row">${star(top, "data-wfptop", p.id, "project")}${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${esc(p.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfpun="${esc(g.key)}" data-wfp="${esc(p.id)}" title="Take this project off the goal (the project stays)">×</button>`}</div><div class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></div></div>`; }).join("") || `<p class="wf-empty">No projects yet.</p>`}</div>
         ${PUBLIC ? "" : `<select class="wf-sel" data-wfpassign="${esc(g.key)}" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="${esc(g.area.title || "This area")}">${linked.map(p => `<option value="${esc(p.id)}">${esc(p.title || "Untitled")}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${esc(p.title || "Untitled")}</option>`).join("")}</optgroup>` : ""}</select>
         <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.key)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.key)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.key)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.key)}">Add</button></div></div>`}`);
