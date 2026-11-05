@@ -73,6 +73,8 @@ const inject = `<script>window.LIFEOS_PUBLIC=${json};</script>`;
 app = app.includes("</head>") ? app.replace("</head>", inject + "\n</head>") : inject + app;
 if (title) app = app.replace(/<title>[^<]*<\/title>/, `<title>${title.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}</title>`);
 
+// Keep the empty, account-free copy (template/index.html) in step with the latest LifeOS design
+try { (await import("node:child_process")).execFileSync(process.execPath, [path.join(here, "template.mjs"), appFile, path.join(here, "..", "template", "index.html")], { stdio: "inherit" }); } catch (e) { console.error("Template not rebuilt: " + e.message); }
 const prev = fs.existsSync(outFile) ? fs.readFileSync(outFile, "utf8") : "";
 if (prev === app) { console.log(`UNCHANGED: ${count} public entries`); process.exit(0); }
 fs.writeFileSync(outFile, app);

@@ -5382,7 +5382,7 @@ Don't invent appointments or facts that aren't listed.`);
     el.innerHTML = `<div class="hm-page">
       <div class="hm-icon" aria-hidden="true">🏠</div>
       <h1 class="hm-title">${esc(PUBLIC && String(PUBLIC.title || "").trim() ? PUBLIC.title : "Home")}</h1>
-      <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : "Jump to any part of LifeOS. Every tab is on your public website; each entry's own \"Show on website\" decides whether that entry appears. Inventory and Meals have one switch for the whole list."}</p>
+      <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : window.LIFEOS_MINE ? "Jump to any part of LifeOS." : "Jump to any part of LifeOS. Every tab is on your public website; each entry's own \"Show on website\" decides whether that entry appears. Inventory and Meals have one switch for the whole list."}</p>
       <div class="hm-label">Databases &amp; tools</div>
       <div class="hm-links">${links.map(l => { const n = countFor(l.key), on = webOn(l.key); return `<div class="hm-link">
         <a href="#${l.key}" class="hm-go" data-hmgo="${l.key}"><span class="hm-emo" aria-hidden="true">${l.icon}</span><span class="hm-txt"><b>${esc(l.label)}</b><span>${esc(PUBLIC && l.key === "planner" ? "What's coming up, by day, week and month" : l.desc)}${n != null && !(l.key === "planner") ? ` · ${n}` : ""}</span></span></a>
