@@ -2,7 +2,7 @@
 // "public" mode, fed with ONLY the entries marked "Show on website".
 // Usage: node tools/build.mjs <data-dir> [out-file]
 // <data-dir> holds JSON exports of the LifeOS artifact's database:
-//   <data-dir>/projects/*.json, areas/*.json, pages/*.json, and optionally settings/site.json
+//   <data-dir>/projects/*.json, areas/*.json, pages/*.json, archive/*.json, ideas/*.json, values/*.json, goals/*.json, and optionally settings/site.json
 // Entries without public === true are dropped here too, as a second safety check.
 // The data folder must never be committed.
 import fs from "node:fs";
@@ -35,7 +35,7 @@ const clean = (e) => {
 };
 const out = {};
 let count = 0; const titles = [];
-for (const type of ["projects", "areas", "pages", "archive"]) {
+for (const type of ["projects", "areas", "pages", "archive", "ideas", "values", "goals"]) {
   out[type] = readCol(type).filter(e => e.public === true).map(clean);
   count += out[type].length; out[type].forEach(e => titles.push(e.title || "Untitled"));
 }
