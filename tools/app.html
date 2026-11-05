@@ -1102,8 +1102,9 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .wf-flabel b { color: var(--ink); margin-right: 4px; }
 .wf-focus .qt { min-width: 58px; }
 .wf-note { margin: 0 0 2px; font-size: 12.5px; color: var(--accent); }
-.wf-shead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.wf-shead { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
 .wf-shead .hm-label { border: 0; padding: 0; margin: 0; }
+.wf-mtog { font-size: 12.5px; padding: 3px 10px 3px 4px; }
 .wf-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
 .wf-seg button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 12px; cursor: pointer; }
 .wf-seg button[aria-pressed="true"] { background: var(--forest); color: var(--accent); }
@@ -5171,7 +5172,7 @@ Don't invent appointments or facts that aren't listed.`);
     const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div>${type ? modeSeg(type) : ""}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
     const SEC_N = { ideas: 1, values: 2, areas: 3, goals: 4, projects: 5, pages: 6 };
     const focusNote = (type) => { if (wfMode(type) !== "starred") return ""; const above = wfPrev(type), n = (S.starred[above] || []).length, lab = TYPE[above].label.toLowerCase(); return n ? `<p class="wf-note">Showing only what comes from your ${n} starred ${n === 1 ? TYPE[above].singular : lab} in section ${SEC_N[above]}.</p>` : `<p class="wf-note">Nothing is starred in ${TYPE[above].label} (section ${SEC_N[above]}) yet. Star (☆) some there to fill this section.</p>`; };
-    const modeSeg = (type) => PUBLIC ? "" : `<span class="wf-seg" role="group" aria-label="What this section shows"><button type="button" data-wfmode="${type}" data-m="all" aria-pressed="${wfMode(type) === "all"}">All</button><button type="button" data-wfmode="${type}" data-m="starred" aria-pressed="${wfMode(type) === "starred"}">From starred</button></span>`;
+    const modeSeg = (type) => { if (PUBLIC) return ""; const on = wfMode(type) === "starred"; return `<button type="button" class="qt wf-mtog" data-wfmtog="${type}" aria-pressed="${on}" title="${on ? "Showing only what comes from starred cards above. Click to show all." : "Showing all. Click to show only what comes from starred cards above."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "From starred" : "All"}</span></button>`; };
     const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${type === "ideas" ? `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>` : ""}${above ? (() => { const st = wfMode(type) === "starred" ? S.starred[above] : null; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : ""}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
     const empty = (t) => `<p class="wf-empty">${t}</p>`;
 
@@ -5287,7 +5288,7 @@ Don't invent appointments or facts that aren't listed.`);
     const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
     if (PUBLIC) return;
     if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "ideas" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
-    const mo = t.closest("[data-wfmode]"); if (mo) { wf.mode[mo.dataset.wfmode] = mo.dataset.m === "starred" ? "starred" : "all"; saveWf(); renderWorkflow(); return; }
+    const mo = t.closest("[data-wfmtog]"); if (mo) { const k = mo.dataset.wfmtog; wf.mode[k] = wfMode(k) === "starred" ? "all" : "starred"; saveWf(); renderWorkflow(); return; }
     const st = t.closest("[data-wfstar]"); if (st) { const sc = st.dataset.wfstar, k = st.dataset.wfkey, l = wf.stars[sc] || []; wf.stars[sc] = l.includes(k) ? l.filter(x => x !== k) : [...l, k]; saveWf(); renderWorkflow(); return; }
     const gr = t.closest("[data-wfgrip]"); if (gr) { const k = { sec: gr.dataset.wfgrip, key: gr.dataset.wfkey }; wfMove = wfMove && wfMove.sec === k.sec && wfMove.key === k.key ? null : k; renderWorkflow(); return; }
     const hr = t.closest("[data-wfhere]"); if (hr && wfMove) { wfReorder(wfMove.sec, wfMove.key, hr.dataset.wfkey || null); return; }
