@@ -1178,6 +1178,28 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .pr-rtadd { display: flex; gap: 8px; flex-wrap: wrap; }
 .pr-rtadd .wf-in { min-width: 220px; }
 table.pr-rt { width: 100%; }
+.bd-pop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.55); display: grid; place-items: start center; padding: 40px 16px; overflow-y: auto; }
+.bd-pop[hidden] { display: none; }
+.bd-dialog { width: min(820px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+.bd-dialog h3 { margin: 0; display: flex; align-items: center; justify-content: space-between; font-size: 18px; }
+.bd-dialog h3 .x { border: 0; background: none; color: var(--muted); font-size: 22px; cursor: pointer; }
+.bd-text { width: 100%; min-height: 180px; resize: vertical; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: var(--ink); font: inherit; font-size: 15px; line-height: 1.5; box-sizing: border-box; }
+.bd-text:focus { outline: none; border-color: var(--accent); }
+.bd-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.bd-msg { margin: 0; font-size: 13.5px; color: var(--accent); }
+.bd-msg.bad, .bd-cover.bad { color: var(--warn, #f2a65a); }
+.bd-list { display: grid; gap: 8px; max-height: 50vh; overflow-y: auto; padding-right: 4px; }
+.bd-item { display: flex; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); }
+.bd-item.off { opacity: .5; }
+.bd-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.bd-line { display: flex; gap: 8px; flex-wrap: wrap; }
+.bd-line select { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: inherit; font-size: 13px; padding: 5px 8px; }
+.bd-line .wf-in { flex: 1 1 220px; }
+.bd-meta { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.bd-body { font-size: 13px; color: var(--muted); font-style: italic; white-space: pre-wrap; }
+.bd-cover { margin: 0; font-size: 13px; color: var(--good, #5ccf83); }
+.bd-keep { font-size: 13px; color: var(--ink); display: flex; gap: 8px; align-items: flex-start; }
+.is-public #bdBtn { display: none; }
 .wf-shead { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
 .wf-shead .hm-label { border: 0; padding: 0; margin: 0; }
 .wf-mtog { font-size: 12.5px; padding: 3px 10px 3px 4px; }
@@ -1429,7 +1451,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button></div>
+  <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
     <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
     <div class="set-row"><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><span class="set-desc">Shows the how-to tips throughout LifeOS.</span></div>
@@ -5212,6 +5235,156 @@ Don't invent appointments or facts that aren't listed.`);
 
   // ---------- Tabs ----------
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
+  // ---------- 🧠 Brain dump: paste a pile of text, Claude turns it into entries (nothing is left out) ----------
+  const BD_TYPES = [["projects", "Project"], ["areas", "Area"], ["pages", "Resource"], ["archive", "Archive"], ["ideas", "Idea"], ["values", "Value"], ["goals", "Goal"], ["routines", "Routine"]];
+  const BD_TYPE_KEYS = BD_TYPES.map(x => x[0]);
+  const bd = { text: "", items: [], busy: false, msg: "", bad: false, keepNote: true };
+  try { bd.text = localStorage.getItem("chevy.braindump.draft") || ""; } catch (e) {}
+  const bdWords = (s) => (String(s || "").toLowerCase().match(/[\p{L}\p{N}']+/gu) || []).map(w => w.replace(/^'+|'+$/g, "")).filter(Boolean);
+  function bdMissing() {
+    const used = new Set(bdWords(bd.items.filter(x => x.on).map(x => [x.title, x.subtitle, x.body, (x.tags || []).join(" ")].join(" ")).join(" ")));
+    return [...new Set(bdWords(bd.text).filter(w => !used.has(w)))];
+  }
+  function bdPrompt(text) {
+    const list = (k) => data[k].map(e => e.title).filter(Boolean).slice(0, 150).map(t => "- " + t).join("\n") || "(none)";
+    return `You turn a "brain dump" into entries for my LifeOS. Today is ${today()}.
+
+Entry kinds (type):
+- projects: anything to do, plan or schedule (Layer 6). Anything with a date or time is a project.
+- areas: ongoing parts of my life I keep up (Layer 9).
+- goals: outcomes I want for an area (Layer 9). Link each goal to its area.
+- values: what matters to me (Layer 9).
+- ideas: ideas, beliefs or influences I'm drawing from, from religion, politics, society or my past (Layer 9).
+- routines: anything that repeats, habits (Layer 7).
+- pages: resources, notes, references, facts, people's info.
+- archive: loose items that don't fit anywhere else, or a plain list of things.
+
+Layers for pages and archive (pick one): 0 system instructions, 1 narrative facts of my life, 2 evidence and artifacts made by others, 3 authority and academia, 4 my argumentation and meaning-making, 5 artifacts I created, 6 to-dos and projects, 7 routines, 8 therapy and emotional matters, 9 miscellaneous.
+Colors (only if clearly fitting, else ""): red = personal administration, assets, body and mind; orange = close family and friends; yellow = community, events, people I manage; green = money, work and vocation; blue = academia, the universe, anything else.
+
+My existing entries (link to these by exact title instead of making duplicates):
+Areas:
+${list("areas")}
+Projects:
+${list("projects")}
+Goals:
+${list("goals")}
+Values:
+${list("values")}
+Ideas:
+${list("ideas")}
+
+Rules:
+- Use EVERY word of the brain dump. Each entry's "body" holds the exact original words it came from (copy them, don't summarize). Together, the bodies must cover the whole text. Keep my wording in titles where possible.
+- Split separate things into separate entries; keep one thing together in one entry.
+- Short clear titles (under 70 characters). "subtitle" is optional; for an area it is its goals joined with " · ".
+- Dates as YYYY-MM-DD in focusStart and focusEnd (focusEnd only for a range). Times as whole hours 6-21 in timeStart and timeEnd, only if I gave a time.
+- "links": titles of related entries (existing ones above or ones you are creating now).
+- Reply with JSON only, shaped like:
+{"entries":[{"type":"projects","title":"","subtitle":"","body":"","layer":"","color":"","focusStart":"","focusEnd":"","timeStart":"","timeEnd":"","tags":[],"links":[]}]}
+
+The brain dump:
+"""
+${text}
+"""`;
+  }
+  // Without Claude: each line (and each sentence) becomes its own Archive entry
+  function bdSplitPlain(text) {
+    return String(text).split(/\n+/).flatMap(l => l.split(/(?<=[.!?])\s+(?=[A-Z0-9])/)).map(s => s.trim()).filter(Boolean)
+      .map(s => ({ on: true, type: "archive", title: s.replace(/^[-*•\d.)\s]+/, "").slice(0, 80) || s.slice(0, 80), subtitle: "", body: s, layer: "", color: "", focusStart: "", focusEnd: "", timeStart: "", timeEnd: "", tags: [], links: [] }));
+  }
+  function bdClean(x) {
+    const s = (v) => typeof v === "string" ? v.trim() : "";
+    const d = (v) => /^\d{4}-\d{2}-\d{2}$/.test(s(v)) ? s(v) : "";
+    const h = (v) => { const n = parseInt(v, 10); return n >= 6 && n <= 21 ? String(n) : ""; };
+    const type = BD_TYPE_KEYS.includes(s(x.type)) ? s(x.type) : "archive";
+    return { on: true, type, title: s(x.title).slice(0, 200) || s(x.body).slice(0, 80) || "Untitled", subtitle: s(x.subtitle).slice(0, 300), body: s(x.body), layer: /^[0-9]$/.test(s(x.layer)) ? s(x.layer) : "", color: COLORS.includes(s(x.color)) ? s(x.color) : "", focusStart: d(x.focusStart), focusEnd: d(x.focusEnd), timeStart: h(x.timeStart), timeEnd: h(x.timeEnd), tags: Array.isArray(x.tags) ? x.tags.map(String).map(t => t.trim()).filter(Boolean).slice(0, 8) : [], links: Array.isArray(x.links) ? x.links.map(String).map(t => t.trim()).filter(Boolean) : [] };
+  }
+  let bdSample; // undefined = not asked yet
+  async function bdSort() {
+    const text = ($("bdText").value || "").trim(); bd.text = text;
+    if (!text) { bd.msg = "Type or paste your brain dump first."; bd.bad = true; renderBd(); return; }
+    if (bdSample === undefined) { try { bdSample = await window.LIFEOS_USE("sample"); } catch (e) { bdSample = null; } }
+    if (!bdSample) { bd.items = bdSplitPlain(text); bd.msg = "Claude isn't available here, so each line and sentence became its own entry. Change their kinds and titles below before adding them."; bd.bad = false; renderBd(); return; }
+    bd.busy = true; bd.msg = "Claude is reading your brain dump…"; bd.bad = false; renderBd();
+    try {
+      const r = await bdSample.json(bdPrompt(text), { modelTier: "default", cache: false });
+      const list = Array.isArray(r) ? r : (r && Array.isArray(r.entries) ? r.entries : []);
+      bd.items = list.map(bdClean).filter(x => x.title);
+      bd.msg = bd.items.length ? `Claude found ${bd.items.length} entr${bd.items.length === 1 ? "y" : "ies"}. Check them, change anything, then add them.` : "Claude didn't find any entries. Try adding a little more detail.";
+    } catch (e) {
+      const c = e && e.code;
+      if (c === "not_granted") bdSample = null;
+      bd.items = bdSplitPlain(text); bd.bad = true;
+      bd.msg = (c === "rate_limited" ? "Claude is busy right now." : c === "not_granted" ? "Asking Claude wasn't allowed." : "Claude couldn't sort it this time.") + " Each line and sentence became its own entry instead; you can still change them below.";
+    }
+    bd.busy = false; renderBd();
+  }
+  async function bdAdd() {
+    const pick = bd.items.filter(x => x.on && x.title.trim()); if (!pick.length && !bd.keepNote) return;
+    bd.busy = true; bd.msg = "Adding entries…"; renderBd();
+    const made = [], titleMap = new Map();
+    byId.forEach(({ e }) => { if (e.title) titleMap.set(e.title.trim().toLowerCase(), e.id); });
+    for (const x of pick) {
+      if (x.type === "routines") { const r = await newRoutine(x.title); if (r) made.push({ x, id: r.id, routine: true }); continue; }
+      const extra = { subtitle: x.subtitle, body: x.body, color: x.color, tags: x.tags, focusStart: x.focusStart, focusEnd: x.focusEnd || "", timeStart: x.timeStart, timeEnd: x.timeEnd, layers: x.layer ? [x.layer] : [] };
+      if (x.focusStart || x.timeStart) extra.scheduled = x.type === "projects" && !!(x.focusStart && x.timeStart);
+      const ne = await wfCreate(x.type, x.title.trim(), extra);
+      made.push({ x, id: ne.id }); titleMap.set(x.title.trim().toLowerCase(), ne.id);
+    }
+    // Second pass: links by title, once every new entry exists
+    for (const m of made) {
+      if (m.routine || !m.x.links.length) continue;
+      const ids = [...new Set(m.x.links.map(t => titleMap.get(t.toLowerCase())).filter(id => id && id !== m.id))];
+      if (ids.length) { const hit = byId.get(m.id); const type = hit ? hit.type : m.x.type; await wfPatch(type, m.id, { links: ids }); }
+    }
+    // Areas list their goals in their subtitle
+    buildAdj(); for (const m of made) { const hit = byId.get(m.id); if (hit && (hit.type === "goals" || hit.type === "areas")) for (const a of wfAreasOf(m.id)) await wfSyncArea(a); }
+    // The whole brain dump is kept word for word as a Resource note, linked to everything made from it
+    if (bd.keepNote) {
+      const now = new Date(), stamp = fmt(today()) + " " + now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      await wfCreate("pages", "Brain dump " + stamp, { body: bd.text, layers: ["9"], links: made.filter(m => !m.routine).map(m => m.id) });
+    }
+    bd.busy = false; bd.items = []; bd.text = ""; try { localStorage.removeItem("chevy.braindump.draft"); } catch (e) {}
+    bd.msg = `Added ${made.length} entr${made.length === 1 ? "y" : "ies"}${bd.keepNote ? ", plus the full brain dump as a Resource note" : ""}.`; bd.bad = false;
+    buildAdj(); renderAll(); renderBd();
+  }
+  function renderBd() {
+    const el = $("bdBody"); if (!el) return;
+    const n = bd.items.filter(x => x.on).length, miss = bd.items.length ? bdMissing() : [];
+    el.innerHTML = `
+      <textarea id="bdText" class="bd-text" placeholder="Dump everything here: to-dos, worries, ideas, dates, people, plans. One long messy paragraph is fine." ${bd.busy ? "disabled" : ""}>${esc(bd.text)}</textarea>
+      <div class="bd-row"><button type="button" class="btn primary" data-bdsort ${bd.busy ? "disabled" : ""}>✨ Turn into entries</button>${bd.items.length ? `<button type="button" class="btn" data-bdclear>Start over</button>` : ""}</div>
+      ${bd.msg ? `<p class="bd-msg${bd.bad ? " bad" : ""}" role="status">${esc(bd.msg)}</p>` : ""}
+      ${bd.items.length ? `<div class="bd-list">${bd.items.map((x, i) => `<div class="bd-item${x.on ? "" : " off"}">
+          <label class="bd-on"><input type="checkbox" data-bdon="${i}"${x.on ? " checked" : ""} aria-label="Add this entry"></label>
+          <div class="bd-main"><div class="bd-line"><select data-bdtype="${i}" aria-label="Kind of entry">${BD_TYPES.map(([k, l]) => `<option value="${k}"${x.type === k ? " selected" : ""}>${l}</option>`).join("")}</select><input class="wf-in" data-bdtitle="${i}" value="${esc(x.title)}" aria-label="Title"></div>
+          <div class="bd-meta">${[x.subtitle && esc(x.subtitle), x.focusStart && "📅 " + esc(fmt(x.focusStart)) + (x.focusEnd && x.focusEnd !== x.focusStart ? " – " + esc(fmt(x.focusEnd)) : ""), x.timeStart && "⏱ " + esc(timeRange(x.timeStart, x.timeEnd)), x.layer && x.type !== "projects" && x.type !== "routines" ? "Layer " + x.layer : "", x.color && `<i class="swatch sw-${x.color}"></i>${x.color}`, x.links.length && "🔗 " + x.links.map(esc).join(", ")].filter(Boolean).join(" · ")}</div>
+          ${x.body && x.body !== x.title ? `<div class="bd-body">“${esc(x.body)}”</div>` : ""}</div></div>`).join("")}</div>
+        <p class="bd-cover${miss.length ? " bad" : ""}">${miss.length ? `Words not in any entry yet: <b>${miss.slice(0, 40).map(esc).join(", ")}${miss.length > 40 ? "…" : ""}</b>. They're still kept in the full brain dump note.` : "✓ Every word of your brain dump is in these entries."}</p>
+        <label class="bd-keep"><input type="checkbox" data-bdkeep${bd.keepNote ? " checked" : ""}> Also save the whole brain dump, word for word, as a Resource note linked to these entries</label>
+        <div class="bd-row"><button type="button" class="btn primary" data-bdadd ${bd.busy || !n ? "disabled" : ""}>Add ${n} entr${n === 1 ? "y" : "ies"}</button></div>` : ""}`;
+  }
+  const bdOpen = (v) => { const p = $("bdPop"); p.hidden = !v; $("bdBtn").setAttribute("aria-expanded", String(v)); if (v) { renderBd(); setTimeout(() => { const t = $("bdText"); if (t) t.focus(); }, 0); } };
+  $("bdBtn").addEventListener("click", e => { e.stopPropagation(); bdOpen($("bdPop").hidden); });
+  $("bdPop").addEventListener("click", async e => {
+    if (e.target.closest("[data-bdclose]") || e.target === $("bdPop")) { bdOpen(false); return; }
+    if (e.target.closest("[data-bdsort]")) { await bdSort(); return; }
+    if (e.target.closest("[data-bdadd]")) { await bdAdd(); return; }
+    if (e.target.closest("[data-bdclear]")) { bd.items = []; bd.msg = ""; renderBd(); return; }
+  });
+  $("bdPop").addEventListener("input", e => {
+    if (e.target.id === "bdText") { bd.text = e.target.value; try { localStorage.setItem("chevy.braindump.draft", bd.text); } catch (err) {} return; }
+    const ti = e.target.dataset.bdtitle; if (ti !== undefined) { bd.items[+ti].title = e.target.value; }
+  });
+  $("bdPop").addEventListener("change", e => {
+    const t = e.target;
+    if (t.dataset.bdon !== undefined) { bd.items[+t.dataset.bdon].on = t.checked; renderBd(); return; }
+    if (t.dataset.bdtype !== undefined) { bd.items[+t.dataset.bdtype].type = t.value; return; }
+    if (t.dataset.bdtitle !== undefined) { renderBd(); return; }
+    if (t.matches("[data-bdkeep]")) { bd.keepNote = t.checked; return; }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("bdPop").hidden) bdOpen(false); });
   // ---------- Workflow: What I'm working with → Values → Areas with goals → Projects and timing → Resources ----------
   // A view over real entries: ideas, values, areas, goals, projects and resources, chained by their two-way links.
   // Each card: From (linked entries of the section above) · the entry · its children (linked entries of the next kind).
