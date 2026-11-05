@@ -5166,7 +5166,7 @@ Don't invent appointments or facts that aren't listed.`);
       const linked = wfLinked(g.area.id, "projects").filter(p => !pids.includes(p.id)), others = data.projects.filter(p => !pids.includes(p.id) && !linked.includes(p)).sort((a, b) => titleSort({ e: a }, { e: b }));
       const gi = goalsOf(g.area).indexOf(g.text);
       return card("goals", g.key, {
-        top: areaChip(g.area) + (PUBLIC ? "" : valuesFor(g.area.id).map(valChip).join("")),
+        top: areaChip(g.area),
         mid: `<span class="wf-dot">🎯</span><input class="wf-in wf-name" data-wfgoal="${esc(g.area.id)}" data-wfgi="${gi}" value="${esc(g.text)}" aria-label="Goal"${ro}>`,
         label: "Projects and timing",
         bottom: `<div class="wf-list">${projs.map(p => { const top = wf.topProjects.includes(p.id); return `<div class="wf-prow"><div class="wf-row">${star(top, "data-wfptop", p.id, "project")}${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${esc(p.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfpun="${esc(g.key)}" data-wfp="${esc(p.id)}" title="Take this project off the goal (the project stays)">×</button>`}</div><div class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></div></div>`; }).join("") || `<p class="wf-empty">No projects yet.</p>`}</div>
@@ -5180,7 +5180,7 @@ Don't invent appointments or facts that aren't listed.`);
     const tops = wfTopProjects();
     const goalsOfProject = (pid) => Object.entries(wf.goalProjects).filter(([, ids]) => ids.includes(pid)).map(([k]) => { const [aid] = k.split("|"); const a = data.areas.find(x => x.id === aid); const t = a && goalsOf(a).find(x => goalKey(aid, x) === k); return t ? { a, t } : null; }).filter(Boolean);
     const resCards = tops.map(p => { const res = wfLinked(p.id, "pages"), gs = goalsOfProject(p.id), areas = [...new Set([...gs.map(x => x.a), ...wfLinked(p.id, "areas")])], rest = data.pages.filter(r => !res.includes(r)).sort((a, b) => titleSort({ e: a }, { e: b })); return card("projects", p.id, {
-        top: areas.map(areaChip).join("") + gs.map(x => goalChip(x.t)).join(""),
+        top: gs.map(x => goalChip(x.t)).join(""),
         mid: `${emo(p, "projects")}<input class="wf-in wf-name" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="title" value="${esc(p.title || "")}" aria-label="Project name"${ro}>${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`,
         label: "Resources",
         bottom: `<div class="wf-list">${res.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${esc(r.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfrun="${esc(p.id)}" data-wfr="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || `<p class="wf-empty">No resources yet.</p>`}</div>
