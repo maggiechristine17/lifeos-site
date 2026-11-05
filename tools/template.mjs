@@ -40,7 +40,13 @@ const shim = String.raw`<script>
   window.LIFEOS_USE = function (name) { return Promise.resolve(name === "db" ? db : null); };
   window.LIFEOS_MINE = true;
   // ---- Backup, restore and start-over controls in ⚙ Settings ----
-  function download(name, text) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  // Inside Claude the backup is saved through the viewer's own save dialog; on a normal web page, as a plain download.
+  function download(name, text) {
+    var blob = new Blob([text], { type: "application/json" });
+    var real = window.claude && window.claude.use ? window.claude.use("downloads") : Promise.resolve(null);
+    return real.then(function (d) { if (d) return d.save({ filename: name, data: blob }); plain(name, text); }).catch(function (e) { if (!(e && /declin|cancel/i.test(e.code || ""))) plain(name, text); });
+  }
+  function plain(name, text) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
   document.addEventListener("DOMContentLoaded", function () {
     var pop = document.getElementById("setPop"); if (!pop) return;
     var box = document.createElement("div");
