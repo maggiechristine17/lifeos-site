@@ -1122,6 +1122,13 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .ml-group h2 { font-size: 15px; margin: 10px 0 8px; display: flex; gap: 8px; align-items: baseline; }
 .ml-group h2 span { font-size: 12px; color: var(--muted); font-weight: 500; }
 .ml-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.ml-card.has-cover { flex-wrap: wrap; padding-top: 0; overflow: hidden; }
+.ml-cover { flex: 0 0 calc(100% + 24px); margin: 0 -12px 2px; height: 150px; overflow: hidden; background: var(--bg); }
+.ml-cover img, .ml-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ml-hero { height: 240px; margin: -4px 0 4px; border-radius: 12px; overflow: hidden; background: var(--bg); }
+.ml-photo-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.ml-photo-btn { cursor: pointer; }
+.ml-photo-msg { font-size: 12.5px; color: var(--muted); }
 .ml-card { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--ink); font: inherit; }
 .ml-card:hover { border-color: var(--panel-line); }
 .ml-emo { font-size: 22px; line-height: 1.1; }
@@ -5922,6 +5929,10 @@ ${text}
   const mlArr = (v) => Array.isArray(v) ? v.filter(Boolean).map(String) : (v ? String(v).split(",").map(s => s.trim()).filter(Boolean) : []);
   const mlOptsFor = (k) => [...new Set([...(mealOpts[k] || []), ...meals.flatMap(m => mlArr(m[k]))])];
   const isArchivedMeal = (m) => mlArr(m.category).includes("Archived");
+  // Meal photos: covers imported from Notion live in "mealcovers" (one doc per meal); a photo I add later is the meal's own "cover"
+  let mealCovers = {};
+  const mealCover = (m) => PUBLIC || !m ? "" : m.cover === "none" ? "" : (m.cover || (mealCovers[m.id] && mealCovers[m.id].url) || "");
+  const mealCoverPos = (m) => { const p = !m.cover && mealCovers[m.id] && mealCovers[m.id].pos; return typeof p === "number" ? `object-position: 50% ${Math.round((1 - p) * 100)}%` : ""; };
   async function saveMeal(m) {
     const { id, ...body } = m; const i = meals.findIndex(x => x.id === id); if (i >= 0) meals[i] = m; else meals.push(m);
     if (local || !db) { renderMeals(); renderHome(); return; }
@@ -5945,7 +5956,7 @@ ${text}
     ML_FIELDS.forEach(([k]) => { const sel = (ml.f[k] || []); if (sel.length) list = list.filter(m => mlArr(m[k]).some(v => sel.includes(v))); });
     list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     $("mlCount").textContent = `${meals.filter(m => !isArchivedMeal(m)).length} meals${meals.some(isArchivedMeal) ? ` · ${meals.filter(isArchivedMeal).length} archived` : ""}`;
-    const card = (m) => `<button type="button" class="ml-card" data-mlopen="${esc(m.id)}"><span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
+    const card = (m) => `<button type="button" class="ml-card${mealCover(m) ? " has-cover" : ""}" data-mlopen="${esc(m.id)}">${mealCover(m) ? `<span class="ml-cover"><img src="${esc(mealCover(m))}" alt="" loading="lazy" style="${mealCoverPos(m)}"></span>` : ""}<span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
     let groups;
     if (ml.group === "none") groups = [["All meals", list]];
     else { const key = ml.group, opts = mlOptsFor(key), g = new Map(opts.map(o => [o, []])); const none = []; list.forEach(m => { const vs = mlArr(m[key]); if (!vs.length) none.push(m); vs.forEach(v => { if (!g.has(v)) g.set(v, []); g.get(v).push(m); }); }); groups = [...g.entries()].filter(([, l]) => l.length); if (none.length) groups.push(["No " + ML_FIELDS.find(f => f[0] === key)[1].toLowerCase(), none]); }
@@ -5966,6 +5977,8 @@ ${text}
     const multi = (k, label) => { const cur = mlArr(m[k]); return `<div class="ml-f"><span class="flabel">${label}</span><span class="chips">${ro ? (cur.map(mlChip).join("") || '<span class="pl-none">—</span>') : mlOptsFor(k).map(o => `<button type="button" class="chip" data-mlset="${k}|${esc(o)}" aria-pressed="${cur.includes(o)}">${esc(o)}</button>`).join("") + `<input type="text" class="ml-addopt" data-mladdopt="${k}" placeholder="+ New" aria-label="Add a ${label.toLowerCase()} choice">`}</span></div>`; };
     const link = m.link && /^https?:/i.test(m.link) ? m.link : "";
     $("mlDialog").innerHTML = `<div class="dlg-head"><div class="dlg-top"><span class="dlg-kind">Meal</span></div><div class="dialog-actions">${ro ? "" : `<button type="button" class="btn danger" data-mldel>${ml.del ? "Tap again to delete" : "Delete"}</button>`}<div class="right"><button type="button" class="btn" data-mlclose>Close</button></div></div></div>
+      ${mealCover(m) ? `<div class="ml-hero"><img src="${esc(mealCover(m))}" alt="${esc(m.title || "Meal")}" style="${mealCoverPos(m)}"></div>` : ""}
+      ${ro || !assetsApi ? "" : `<div class="ml-photo-row"><label class="btn ml-photo-btn">📷 ${mealCover(m) ? "Change photo" : "Add a photo"}<input type="file" accept="image/*" data-mlphoto hidden></label>${mealCover(m) ? `<button type="button" class="btn ghost" data-mlphotodel>Remove photo</button>` : ""}<span class="ml-photo-msg" id="mlPhotoMsg" role="status"></span></div>`}
       <div class="ml-dbody">
         <div class="ml-titlerow"><button type="button" class="emoji-btn ml-emobtn" data-mlemoji${ro ? " disabled" : ""} aria-label="Change emoji">${esc(m.icon || "🍽️")}</button>${ro ? `<h2 class="ml-h">${esc(m.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-mltext="title" value="${esc(m.title || "")}" placeholder="Meal name" aria-label="Meal name">`}</div>
         ${multi("category", "Category")}${multi("menu", "Menu")}${multi("cuisine", "Cuisine")}${multi("method", "Method")}
@@ -5991,11 +6004,19 @@ ${text}
   $("mlBody").addEventListener("change", e => { if (e.target.id === "mlArch") { ml.archived = e.target.checked; saveMlView(); renderMeals(); } });
   $("mlBody").addEventListener("input", e => { if (e.target.id === "mlQ") { ml.q = e.target.value; const pos = e.target.selectionStart; renderMeals(); const q = $("mlQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } });
   const mlClose = () => { $("mlOverlay").hidden = true; ml.open = null; ml.del = false; renderMeals(); };
+  $("mlOverlay").addEventListener("change", async e => {
+    const inp = e.target.closest("[data-mlphoto]"); if (!inp || PUBLIC) return;
+    const f = inp.files && inp.files[0], m = meals.find(x => x.id === ml.open); if (!f || !m || !assetsApi) return;
+    const msg = $("mlPhotoMsg"); if (msg) msg.textContent = "Uploading…";
+    try { const r = await assetsApi.upload(f); const cur = meals.find(x => x.id === m.id); if (cur && r && r.url) await saveMeal({ ...cur, cover: r.url }); renderMealDialog(); renderMeals(); }
+    catch (err) { if (msg) msg.textContent = "Couldn't upload that photo (" + ((err && err.code) || "error") + ")."; }
+  });
   $("mlOverlay").addEventListener("click", async e => {
     if (e.target.id === "mlOverlay" || e.target.closest("[data-mlclose]")) { mlClose(); return; }
     const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
     const s = e.target.closest("[data-mlset]"); if (s) { const [k, v] = s.dataset.mlset.split("|"); const cur = mlArr(m[k]); await saveMeal({ ...m, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v], updatedAt: new Date().toISOString() }); renderMealDialog(); return; }
     if (e.target.closest("[data-mldel]")) { if (!ml.del) { ml.del = true; renderMealDialog(); setTimeout(() => { if (ml.del) { ml.del = false; if (ml.open) renderMealDialog(); } }, 3000); return; } const id = m.id; ml.open = null; ml.del = false; $("mlOverlay").hidden = true; await deleteMeal(id); return; }
+    if (e.target.closest("[data-mlphotodel]")) { const cur = meals.find(x => x.id === m.id); if (cur) { await saveMeal({ ...cur, cover: "none" }); renderMealDialog(); renderMeals(); } return; }
     const em = e.target.closest("[data-mlemoji]"); if (em) { openFloatPicker(em, m.icon || "", async (pick) => { const cur = meals.find(x => x.id === m.id); if (cur) { await saveMeal({ ...cur, icon: pick || "🍽️" }); renderMealDialog(); } }); return; }
   });
   $("mlOverlay").addEventListener("change", async e => {
@@ -6084,6 +6105,7 @@ ${text}
       inventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const a = document.activeElement; if (!(a && a.closest && a.closest("#invBody") && a.matches("input[type=text], input[type=search]"))) renderInventory(); renderHome();
     }, () => {});
+    db.collection("mealcovers").onSnapshot(snap => { mealCovers = {}; snap.docs.forEach(d => { const x = d.data(); if (x && x.url) mealCovers[d.id] = { url: String(x.url), pos: x.pos }; }); renderMeals(); if (ml.open) renderMealDialog(); }, () => {});
     db.collection("meals").onSnapshot(snap => {
       meals = snap.docs.map(d => ({ id: d.id, ...JSON.parse(JSON.stringify(d.data())) }));
       const a = document.activeElement; const typing = a && a.closest && (a.closest("#mlDialog") || a.id === "mlQ") && a.matches("input, textarea");
