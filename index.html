@@ -1137,6 +1137,21 @@ table.pr-rt { width: 100%; }
 .bd-mic.on { background: color-mix(in srgb, #ff6b6b 25%, var(--surface)); border-color: #ff6b6b; color: var(--ink); animation: bdPulse 1.2s ease-in-out infinite; }
 @keyframes bdPulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, #ff6b6b 25%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .bd-mic.on { animation: none; } }
+.bd-hist { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 6px; }
+.bd-htog { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; width: fit-content; }
+.bd-htog:hover { color: var(--ink); }
+.bd-htog .vcaret { width: 12px; height: 12px; transition: transform .15s; }
+.bd-htog .vcaret.open { transform: rotate(90deg); }
+.bd-hn { font-size: 11.5px; border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+.bd-hlist { display: grid; gap: 4px; max-height: 40vh; overflow-y: auto; }
+.bd-hitem { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.bd-hhead { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-size: 13px; padding: 7px 10px; cursor: pointer; min-width: 0; }
+.bd-htime { flex: none; color: var(--accent); font-size: 12px; font-weight: 600; }
+.bd-hprev { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.bd-hitem.open .bd-hprev { display: none; }
+.bd-hfull { padding: 0 10px 8px; font-size: 13.5px; white-space: pre-wrap; color: var(--ink); }
+.bd-hitem .bd-row { padding: 0 10px 10px; }
+.bd-hempty { margin: 0; font-size: 12.5px; color: var(--muted); }
 .bd-cover { margin: 0; font-size: 13px; color: var(--good, #5ccf83); }
 .bd-keep { font-size: 13px; color: var(--ink); display: flex; gap: 8px; align-items: flex-start; }
 .is-public #bdBtn { display: none; }
@@ -5240,10 +5255,24 @@ ${text}
     const type = BD_TYPE_KEYS.includes(s(x.type)) ? s(x.type) : "archive";
     return { on: true, type, title: s(x.title).slice(0, 200) || s(x.body).slice(0, 80) || "Untitled", subtitle: s(x.subtitle).slice(0, 300), body: s(x.body), layer: /^[0-9]$/.test(s(x.layer)) ? s(x.layer) : "", color: COLORS.includes(s(x.color)) ? s(x.color) : "", focusStart: d(x.focusStart), focusEnd: d(x.focusEnd), timeStart: h(x.timeStart), timeEnd: h(x.timeEnd), tags: Array.isArray(x.tags) ? x.tags.map(String).map(t => t.trim()).filter(Boolean).slice(0, 8) : [], links: Array.isArray(x.links) ? x.links.map(String).map(t => t.trim()).filter(Boolean) : [] };
   }
+  // History: every brain dump I send is kept by its timestamp (collection "braindumps", private, never published)
+  let bdHist = [], bdHistOpen = false, bdHistShow = null, bdHistArm = null;
+  try { bdHistOpen = localStorage.getItem("chevy.braindump.histOpen") === "1"; } catch (e) {}
+  async function bdSaveHist(text) {
+    text = String(text || "").trim(); if (!text || PUBLIC) return;
+    if (bdHist.length && bdHist[0].text === text) return;
+    const at = new Date().toISOString(), id = "bd" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    bdHist = [{ id, text, at }, ...bdHist];
+    if (local || !db) return;
+    try { await db.collection("braindumps").doc(id).set({ text, at }); } catch (e) { notice("Couldn't save this brain dump to the history."); }
+  }
+  function applyBdHist(snap) { bdHist = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x && x.text).sort((a, b) => String(b.at || "").localeCompare(String(a.at || ""))); if (!$("bdPop").hidden && !(document.activeElement && document.activeElement.id === "bdText")) renderBd(); }
+  const bdStamp = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); };
   let bdSample; // undefined = not asked yet
   async function bdSort() {
     const text = ($("bdText").value || "").trim(); bd.text = text;
     if (!text) { bd.msg = "Type or paste your brain dump first."; bd.bad = true; renderBd(); return; }
+    bdSaveHist(text);
     if (bdSample === undefined) { try { bdSample = await window.claude?.use?.("sample"); } catch (e) { bdSample = null; } }
     if (!bdSample) { bd.items = bdSplitPlain(text); bd.msg = "Claude isn't available here, so each line and sentence became its own entry. Change their kinds and titles below before adding them."; bd.bad = false; renderBd(); return; }
     bd.busy = true; bd.msg = "Claude is reading your brain dump…"; bd.bad = false; renderBd();
@@ -5303,7 +5332,9 @@ ${text}
           ${x.body && x.body !== x.title ? `<div class="bd-body">“${esc(x.body)}”</div>` : ""}</div></div>`).join("")}</div>
         <p class="bd-cover${miss.length ? " bad" : ""}">${miss.length ? `Words not in any entry yet: <b>${miss.slice(0, 40).map(esc).join(", ")}${miss.length > 40 ? "…" : ""}</b>. They're still kept in the full brain dump note.` : "✓ Every word of your brain dump is in these entries."}</p>
         <label class="bd-keep"><input type="checkbox" data-bdkeep${bd.keepNote ? " checked" : ""}> Also save the whole brain dump, word for word, as a Resource note linked to these entries</label>
-        <div class="bd-row"><button type="button" class="btn primary" data-bdadd ${bd.busy || !n ? "disabled" : ""}>Add ${n} entr${n === 1 ? "y" : "ies"}</button></div>` : ""}`;
+        <div class="bd-row"><button type="button" class="btn primary" data-bdadd ${bd.busy || !n ? "disabled" : ""}>Add ${n} entr${n === 1 ? "y" : "ies"}</button></div>` : ""}
+      ${PUBLIC ? "" : `<div class="bd-hist"><button type="button" class="bd-htog" data-bdhist aria-expanded="${bdHistOpen}"><svg class="vcaret${bdHistOpen ? " open" : ""}" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>History <span class="bd-hn">${bdHist.length}</span></button>
+        ${bdHistOpen ? (bdHist.length ? `<div class="bd-hlist">${bdHist.map(h => { const open = bdHistShow === h.id, first = h.text.split(/\n/)[0]; return `<div class="bd-hitem${open ? " open" : ""}"><button type="button" class="bd-hhead" data-bdhshow="${esc(h.id)}" aria-expanded="${open}"><span class="bd-htime">${esc(bdStamp(h.at))}</span><span class="bd-hprev">${esc(first.length > 90 ? first.slice(0, 90) + "…" : first)}</span></button>${open ? `<div class="bd-hfull">${esc(h.text)}</div><div class="bd-row"><button type="button" class="btn" data-bdhuse="${esc(h.id)}">Put it back in the box</button><button type="button" class="btn ghost danger" data-bdhdel="${esc(h.id)}">${bdHistArm === h.id ? "Tap again to delete" : "Delete"}</button></div>` : ""}</div>`; }).join("")}</div>` : `<p class="bd-hempty">Nothing yet. Each brain dump you turn into entries is kept here by its date and time.</p>`) : ""}</div>`}`;
   }
   // 🎤 Speak: the browser's own speech-to-text adds what I say to the end of the text
   let bdRec = null;
@@ -5332,6 +5363,10 @@ ${text}
   $("bdPop").addEventListener("click", async e => {
     if (e.target.closest("[data-bdclose]") || e.target === $("bdPop")) { bdOpen(false); return; }
     if (e.target.closest("[data-bdmic]")) { bdMic(); return; }
+    if (e.target.closest("[data-bdhist]")) { bdHistOpen = !bdHistOpen; try { localStorage.setItem("chevy.braindump.histOpen", bdHistOpen ? "1" : "0"); } catch (err) {} renderBd(); return; }
+    const hs = e.target.closest("[data-bdhshow]"); if (hs) { bdHistShow = bdHistShow === hs.dataset.bdhshow ? null : hs.dataset.bdhshow; renderBd(); return; }
+    const hu = e.target.closest("[data-bdhuse]"); if (hu) { const h = bdHist.find(x => x.id === hu.dataset.bdhuse); if (h) { bd.text = h.text; bd.items = []; bd.msg = "Put back in the box. Press ✨ Turn into entries when you're ready."; bd.bad = false; try { localStorage.setItem("chevy.braindump.draft", bd.text); } catch (err) {} renderBd(); const t = $("bdText"); if (t) { t.focus(); t.scrollTop = 0; } } return; }
+    const hd = e.target.closest("[data-bdhdel]"); if (hd) { const id = hd.dataset.bdhdel; if (bdHistArm !== id) { bdHistArm = id; renderBd(); setTimeout(() => { if (bdHistArm === id) { bdHistArm = null; renderBd(); } }, 3000); return; } bdHistArm = null; bdHist = bdHist.filter(x => x.id !== id); renderBd(); if (!(local || !db)) { try { await db.collection("braindumps").doc(id).delete(); } catch (err) { notice("Couldn't delete it."); } } return; }
     if (e.target.closest("[data-bdsort]")) { await bdSort(); return; }
     if (e.target.closest("[data-bdadd]")) { await bdAdd(); return; }
     if (e.target.closest("[data-bdclear]")) { bd.items = []; bd.msg = ""; renderBd(); return; }
@@ -5900,6 +5935,7 @@ ${text}
     }, () => {});
     db.doc("settings/mealOptions").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { ML_FIELDS.forEach(([k]) => { if (Array.isArray(d[k])) mealOpts[k] = d[k]; }); store("chevy.mealOpts", mealOpts); } }, () => {});
     db.doc("settings/rooms").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && Array.isArray(d.rooms)) { rooms = d.rooms; store("chevy.rooms", rooms); renderInventory(); } }, () => {});
+    db.collection("braindumps").onSnapshot(applyBdHist, () => {});
     db.doc("settings/workflow").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.v === 2) { wf = wfNorm(JSON.parse(JSON.stringify(d))); store("chevy.workflow2", wf); if (!wfTyping()) renderWorkflow(); } }, () => {});
     db.doc("settings/home").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.web && typeof d.web === "object") { homeWeb = { ...HOME_WEB_DEFAULT, ...d.web }; store("chevy.homeWeb", homeWeb); renderHome(); } }, () => {});
     db.doc("settings/site").onSnapshot(snap => {
