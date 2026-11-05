@@ -5093,8 +5093,8 @@ Don't invent appointments or facts that aren't listed.`);
     const st = d.stars && typeof d.stars === "object" ? d.stars : {}, od = d.order && typeof d.order === "object" ? d.order : {};
     return {
       focus: !!d.focus,
-      stars: Object.fromEntries(["ideas", "values", "areas", "goals", "projects"].map(k => [k, arr(st[k])])),
-      order: Object.fromEntries(["ideas", "values", "areas", "goals", "projects"].map(k => [k, arr(od[k])])),
+      stars: Object.fromEntries(WF_CHAIN.map(k => [k, arr(st[k])])),
+      order: Object.fromEntries(WF_CHAIN.map(k => [k, arr(od[k])])),
     };
   }
   let wf = PUBLIC ? wfNorm(null) : wfNorm(recall("chevy.workflow2"));
@@ -5112,9 +5112,10 @@ Don't invent appointments or facts that aren't listed.`);
   function wfShown() {
     const F = wf.focus && !PUBLIC, out = {}, starred = {};
     let prev = null;
-    ["ideas", "values", "areas", "goals", "projects"].forEach((type, i) => {
+    WF_CHAIN.forEach((type, i) => {
       let list = wfAll(type);
       if (type === "projects") list = list.filter(p => wfLinked(p.id, "goals").length);
+      if (type === "pages") list = list.filter(r => wfLinked(r.id, "projects").some(p => out.projects.includes(p)));
       if (i > 0) {
         const above = WF_CHAIN[i - 1], st = (out[above] || []).filter(x => isStar(above, x.id));
         starred[above] = F && st.length ? st : null;
@@ -5144,31 +5145,31 @@ Don't invent appointments or facts that aren't listed.`);
     const chipIcon = (type, x) => ICON[type] || (emojiOf(x, type) + " ");
     // From: the linked entries of the section above, plus a dropdown to add one
     const fromPart = (e, type) => {
-      const i = WF_CHAIN.indexOf(type); if (i <= 0) return "";
-      const up = WF_CHAIN[i - 1], par = wfLinked(e.id, up), rest = wfAll(up).filter(x => !par.includes(x));
+      const i = WF_CHAIN.indexOf(type); if (i < 0) return "";
+      const up = WF_CHAIN[(i + WF_CHAIN.length - 1) % WF_CHAIN.length], par = wfLinked(e.id, up), rest = wfAll(up).filter(x => !par.includes(x));
       return par.map(x => linkChip(x, e.id, chipIcon(up, x))).join("") + (PUBLIC ? (par.length ? "" : `<span class="wf-none">Starting point</span>`) :
-        `<select class="wf-fsel${par.length ? "" : " empty"}" data-wflinkto="${esc(e.id)}" data-wfltype="${up}" aria-label="Where this came from"><option value="">${par.length ? "+ Add…" : `Starting point: pick ${TYPE[up].singular === "idea" ? "an idea" : TYPE[up].singular === "area" ? "an area" : "a " + TYPE[up].singular}…`}</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}</select>`);
+        `<select class="wf-fsel${par.length ? "" : " empty"}" data-wflinkto="${esc(e.id)}" data-wfltype="${up}" aria-label="Where this came from"><option value="">${par.length ? "+ Add…" : `Starting point: pick ${/^[aeiou]/.test(TYPE[up].singular) ? "an " + TYPE[up].singular : "a " + TYPE[up].singular}…`}</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}</select>`);
     };
     // Children: the linked entries of the next kind, with a dropdown (existing or new) to add one
     const childPart = (e, type, opts = {}) => {
-      const down = WF_CHAIN[WF_CHAIN.indexOf(type) + 1], kids = wfLinked(e.id, down), rest = wfAll(down).filter(x => !kids.includes(x));
+      const down = WF_CHAIN[(WF_CHAIN.indexOf(type) + 1) % WF_CHAIN.length], kids = wfLinked(e.id, down), rest = wfAll(down).filter(x => !kids.includes(x));
       const T = TYPE[down];
       const chips = opts.rows ? opts.rows(kids) : `<div class="wf-chips">${kids.map(x => linkChip(x, e.id, chipIcon(down, x))).join("")}</div>`;
       if (PUBLIC) return chips || "";
       const adder = opts.inline ? opts.inline : wfNewFor === e.id ? `<div class="wf-row"><input class="wf-in" data-wfnewin="${esc(e.id)}" data-wfntype="${down}" placeholder="New ${T.singular}" maxlength="200" aria-label="New ${T.singular}"><button type="button" class="btn small-go" data-wfnewgo="${esc(e.id)}">Add</button></div>` :
-        `<select class="wf-sel" data-wfchild="${esc(e.id)}" data-wfctype="${down}" aria-label="Add a ${T.singular}"><option value="">+ Add ${T.singular === "area" ? "an area" : "a " + T.singular}…</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}<option value="__new">＋ New ${T.singular}…</option></select>`;
+        `<select class="wf-sel" data-wfchild="${esc(e.id)}" data-wfctype="${down}" aria-label="Add a ${T.singular}"><option value="">+ Add ${/^[aeiou]/.test(T.singular) ? "an " + T.singular : "a " + T.singular}…</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}<option value="__new">＋ New ${T.singular}…</option></select>`;
       return chips + adder + (opts.extra || "");
     };
     const titleIn = (type, e, label) => `<input class="wf-in wf-name" data-wfedit="${type}" data-wfid="${esc(e.id)}" data-wffield="title" value="${esc(e.title || "")}" aria-label="${label}" maxlength="300"${ro}>`;
     const sec = (id, n, title, sub, body) => `<section class="wf-sec" id="wf-${id}"><div class="hm-label">${n}. ${title}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
     const focusNote = (above) => F ? (S.starred[above] ? `<p class="wf-note">Showing what's linked to your starred ${TYPE[above].label.toLowerCase()}.</p>` : `<p class="wf-note">Nothing starred in ${TYPE[above].label.toLowerCase()} yet, so everything shows.</p>`) : "";
-    const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${above ? (() => { const st = S.starred[above]; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>`}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
+    const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${type === "ideas" ? `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>` : ""}${above ? (() => { const st = S.starred[above]; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : ""}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
     const empty = (t) => `<p class="wf-empty">${t}</p>`;
 
     // 0. What I'm working with (ideas)
     const ideaCards = S.ideas.map(e => card("ideas", e, {
-      top: PUBLIC ? (e.wfKind ? `<span class="wf-achip solo">${esc(e.wfKind)}</span>` : `<span class="wf-none">Starting point</span>`) : `<select class="wf-fsel${e.wfKind ? "" : " empty"}" data-wfkind="${esc(e.id)}" aria-label="Where this idea comes from"><option value="">Starting point: pick a kind…</option>${SRC_KINDS.map(k => `<option${e.wfKind === k ? " selected" : ""}>${k}</option>`).join("")}</select>`,
-      mid: `${titleIn("ideas", e, "Idea")}${openBtn("ideas", e.id)}${del("ideas", e.id)}`, label: "Values", bottom: childPart(e, "ideas"),
+      top: fromPart(e, "ideas"),
+      mid: `${titleIn("ideas", e, "Idea")}${openBtn("ideas", e.id)}${del("ideas", e.id)}<span class="wf-break"></span>${PUBLIC ? (e.wfKind ? `<span class="wf-meta wf-mdate">${esc(e.wfKind)}</span>` : "") : `<select class="wf-kind wf-mdate${e.wfKind ? "" : " empty"}" data-wfkind="${esc(e.id)}" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option${e.wfKind === k ? " selected" : ""}>${k}</option>`).join("")}</select>`}`, label: "Values", bottom: childPart(e, "ideas"),
     })).join("");
     // 1. Values
     const valueCards = S.values.map(e => card("values", e, { top: fromPart(e, "values"), mid: `${titleIn("values", e, "Value")}${openBtn("values", e.id)}${del("values", e.id)}`, label: "Areas", bottom: childPart(e, "values") })).join("");
@@ -5189,17 +5190,20 @@ Don't invent appointments or facts that aren't listed.`);
     const resCards = S.projects.map(p => card("projects", p, { top: fromPart(p, "projects"), mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
       bottom: childPart(p, "projects", { rows: (kids) => `<div class="wf-list">${kids.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${name(r)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(p.id)}" data-wfo="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || empty("No resources yet.")}</div>` }) })).join("");
 
+    // 6. Resources (from the projects above), pointing back to ideas: the circle closes
+    const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Ideas", bottom: childPart(r, "pages") })).join("");
     el.innerHTML = `<div class="hm-page wf-page">
       <div class="hm-icon" aria-hidden="true">🧠</div>
       <h1 class="hm-title">Workflow</h1>
       ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card is an entry and reads the same way: <b>From</b> on top (a dropdown of where it came from), the entry itself in the middle, and what grows out of it at the bottom.</p>`}
       ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel"><b>⭐ Focus on starred</b> ${F ? "Star (☆) cards in any section; the section below shows only what's linked to them." : "Showing everything. Turn on to star what you're focusing on."}</span></div>`}
-      <nav class="wf-jump" aria-label="Jump to a section">${[["sources", "What I'm working with"], ["values", "Values"], ["areas", "Areas with goals"], ["projects", "Projects and timing"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i}</span>${l}</button>`).join("")}</nav>
-      ${sec("sources", 0, "What I'm working with", "Ideas I'm drawing from: religion, politics, society, my past experience. Each card points to the values it shapes.", board("ideas", ideaCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("ideas", "An idea I'm drawing from", "Add idea")))}
-      ${sec("values", 1, "Values", "Each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("ideas") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "ideas")))}
-      ${sec("areas", 2, "Areas with goals", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("values") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")))}
-      ${sec("projects", 3, "Projects and timing", "Each goal is a card. Assign projects and set their dates.", focusNote("areas") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : "Add goals to your areas in “Areas with goals” and each one becomes a card here.")))}
-      ${sec("resources", 4, "Resources", "Each project from the goals above is a card. Add the resources that go with it.", focusNote("goals") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : "Assign projects to goals in “Projects and timing” and each one becomes a card here.")))}
+      <nav class="wf-jump" aria-label="Jump to a section">${[["ideas", "Ideas"], ["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
+      ${sec("ideas", 1, "Ideas", "Ideas I'm drawing from: religion, politics, society, my past experience. From shows the resources they came from; each idea points to the values it shapes.", board("ideas", ideaCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("ideas", "An idea I'm drawing from", "Add idea", "pages")))}
+      ${sec("values", 2, "Values", "Each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("ideas") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "ideas")))}
+      ${sec("areas", 3, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("values") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")))}
+      ${sec("goals", 4, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("areas") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")))}
+      ${sec("projects", 5, "Projects", "Each project from the goals above is a card. Add the resources that go with it.", focusNote("goals") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : "Assign projects to goals in “Goals” and each one becomes a card here.")))}
+      ${sec("resources", 6, "Resources", "Each resource from the projects above is a card. Choose the ideas it feeds, and they show it under From back in “Ideas”, closing the circle.", focusNote("projects") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : "Add resources to projects in “Projects” and each one becomes a card here.")))}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
   }
