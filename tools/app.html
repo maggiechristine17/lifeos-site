@@ -1083,6 +1083,21 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .wf-c.ins { outline: 2px dashed var(--accent); outline-offset: 2px; }
 .wf-c .wf-in { background: var(--bg); }
 .wf-addc { border-style: dashed; background: none; }
+.wf-c { padding: 0; gap: 0; overflow: hidden; }
+.wf-c > .wf-here { margin: 8px 10px 0; }
+.wf-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 40px; }
+.wf-mid { display: flex; align-items: center; gap: 6px; padding: 10px; min-width: 0; flex-wrap: wrap; }
+.wf-mid .wf-name { flex: 1 1 140px; font-size: 15.5px; }
+.wf-bot { display: grid; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
+.wf-plabel { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.wf-top .wf-plabel { margin-right: 2px; }
+.wf-none { font-size: 12.5px; color: var(--muted); font-style: italic; }
+.wf-schip, .wf-gchip { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--ink); background: var(--surface); }
+.wf-kind { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.wf-addc { padding: 10px; gap: 8px; }
+.wf-break { flex-basis: 100%; height: 0; }
+.wf-mdate { flex: none; margin-left: 26px; }
+
 .wf-ch { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .wf-ctitle { flex: 1; min-width: 0; font-size: 15px; }
 .wf-grip { flex: none; border: 0; background: none; color: var(--muted); cursor: grab; font-size: 16px; padding: 4px 2px; border-radius: 6px; touch-action: none; }
@@ -5063,7 +5078,8 @@ Don't invent appointments or facts that aren't listed.`);
     const av = d.areaValues && typeof d.areaValues === "object" ? d.areaValues : {};
     const values = Array.isArray(d.values) ? d.values.filter(v => v && v.id).map(v => ({ id: String(v.id), text: String(v.text || ""), areas: Array.isArray(v.areas) ? arr(v.areas) : Object.keys(av).filter(a => arr(av[a]).includes(String(v.id))) })) : [];
     const gp = d.goalProjects && typeof d.goalProjects === "object" ? Object.fromEntries(Object.entries(d.goalProjects).map(([k, v]) => [k, arr(v)])) : {};
-    return { values, areaOrder: arr(d.areaOrder), topAreas: arr(d.topAreas), goalOrder: arr(d.goalOrder), goalProjects: gp, topProjects: arr(d.topProjects), projOrder: arr(d.projOrder) };
+    const sources = Array.isArray(d.sources) ? d.sources.filter(x => x && x.id).map(x => ({ id: String(x.id), text: String(x.text || ""), kind: String(x.kind || ""), values: arr(x.values) })) : [];
+    return { sources, values, areaOrder: arr(d.areaOrder), topAreas: arr(d.topAreas), goalOrder: arr(d.goalOrder), goalProjects: gp, topProjects: arr(d.topProjects), projOrder: arr(d.projOrder) };
   }
   let wf = PUBLIC ? wfNorm(null) : wfNorm(recall("chevy.workflow"));
   const wfId = () => "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -5082,7 +5098,8 @@ Don't invent appointments or facts that aren't listed.`);
     return byOrder(out, wf.goalOrder, g => g.key);
   }
   const wfTopProjects = () => byOrder(wf.topProjects.map(id => data.projects.find(p => p.id === id)).filter(Boolean), wf.projOrder, p => p.id);
-  let wfDelArm = null, wfMove = null, wfDrag = null, wfNewArea = null;
+  let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null;
+  const SRC_KINDS = ["Religion", "Politics", "Society", "Past experience", "Other"];
   function renderWorkflow() {
     const el = $("wfBody"); if (!el) return;
     const ro = PUBLIC ? " readonly" : "", dis = PUBLIC ? " disabled" : "";
@@ -5090,68 +5107,103 @@ Don't invent appointments or facts that aren't listed.`);
     const openBtn = (type, id) => `<button type="button" class="wf-open" data-wfopen="${type}" data-wfid="${esc(id)}" title="Open the entry">↗</button>`;
     const grip = (sec, key) => PUBLIC ? "" : `<button type="button" class="wf-grip${wfMove && wfMove.sec === sec && wfMove.key === key ? " on" : ""}" data-wfgrip="${sec}" data-wfkey="${esc(key)}" title="Drag to move, or tap and then tap “Move here”" aria-label="Move card">⠿</button>`;
     const del = (attr, id, what) => PUBLIC ? "" : `<button type="button" class="wf-x" ${attr}="${esc(id)}" title="${wfDelArm === id ? "Tap again" : what}">${wfDelArm === id ? "Sure?" : "×"}</button>`;
-    const card = (sec, key, inner, extra = "") => `<article class="wf-c${extra}" data-wfsec="${sec}" data-wfkey="${esc(key)}">${wfMove && wfMove.sec === sec && wfMove.key !== key ? `<button type="button" class="wf-here" data-wfhere="${sec}" data-wfkey="${esc(key)}">Move here</button>` : ""}${inner}</article>`;
+    // Every card has the same three parts: where it came from (top), the card itself (middle), and its children (bottom)
+    const card = (sec, key, { top, mid, label, bottom }, extra = "") => `<article class="wf-c${extra}" data-wfsec="${sec}" data-wfkey="${esc(key)}">${wfMove && wfMove.sec === sec && wfMove.key !== key ? `<button type="button" class="wf-here" data-wfhere="${sec}" data-wfkey="${esc(key)}">Move here</button>` : ""}
+      <div class="wf-top"><span class="wf-plabel">From</span>${top || `<span class="wf-none">Starting point</span>`}</div>
+      <div class="wf-mid">${grip(sec, key)}${mid}</div>
+      <div class="wf-bot"><span class="wf-plabel">${label}</span>${bottom}</div></article>`;
     const board = (sec, cards, addCard) => `<div class="wf-board" data-wfboard="${sec}">${cards}${wfMove && wfMove.sec === sec ? `<button type="button" class="wf-here wf-end" data-wfhere="${sec}" data-wfkey="">Move to the end</button>` : ""}${addCard || ""}</div>`;
     const aName = (id) => { const a = data.areas.find(x => x.id === id); return a ? a.title || "Untitled" : null; };
     const valuesFor = (areaId) => wf.values.filter(v => v.areas.includes(areaId));
-    const vchips = (vals) => vals.length ? `<div class="wf-chips">${vals.map(v => `<span class="wf-vchip">◆ ${esc(v.text)}</span>`).join("")}</div>` : "";
+    const sourcesFor = (valueId) => wf.sources.filter(s => s.values.includes(valueId));
+    const chip = (cls, icon, text, title) => `<span class="${cls}" title="${title}">${icon} ${esc(text)}</span>`;
+    const srcChip = (s) => chip("wf-schip", "✦", s.text, s.kind || "What I'm working with");
+    const valChip = (v) => chip("wf-vchip", "◆", v.text, "Value");
+    const areaChip = (a) => `<span class="wf-achip solo" title="Area">${emo(a, "areas")} ${esc(a.title || "Untitled")}</span>`;
+    const goalChip = (t) => chip("wf-gchip", "🎯", t, "Goal");
     const sec = (id, n, title, sub, body) => `<section class="wf-sec" id="wf-${id}"><div class="hm-label">${n}. ${title}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
+    const removable = (text, attrs, icon = "") => `<span class="wf-achip">${icon}${esc(text)}<button type="button" ${attrs} title="Take it off this card" aria-label="Remove">×</button></span>`;
 
-    // 1. Values: cards, each with the names of the areas it points to
+    // 0. What I'm working with: ideas from religion, politics, society or my past that my values come from
+    const valuesSorted = wf.values;
+    const srcCards = PUBLIC ? "" : wf.sources.map(s => card("sources", s.id, {
+      top: `<select class="wf-kind" data-wfskind="${esc(s.id)}" aria-label="Where this idea comes from"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option${s.kind === k ? " selected" : ""}>${k}</option>`).join("")}</select>`,
+      mid: `<input class="wf-in wf-name" data-wfsrc="${esc(s.id)}" value="${esc(s.text)}" aria-label="Idea" maxlength="300">${del("data-wfsdel", s.id, "Delete this card")}`,
+      label: "Values",
+      bottom: `<div class="wf-chips">${s.values.map(id => { const v = wf.values.find(x => x.id === id); return v ? removable(v.text, `data-wfsvrm="${esc(s.id)}" data-wfv="${esc(id)}"`, "◆ ") : ""; }).join("")}</div>
+        ${wfNewFor === "s:" + s.id ? `<div class="wf-row"><input class="wf-in" data-wfnewin="s:${esc(s.id)}" placeholder="New value" maxlength="200" aria-label="New value"><button type="button" class="btn small-go" data-wfnewgo="s:${esc(s.id)}">Add</button></div>` :
+        `<select class="wf-sel" data-wfsvadd="${esc(s.id)}" aria-label="Add a value"><option value="">+ Add a value…</option>${valuesSorted.filter(v => !s.values.includes(v.id)).map(v => `<option value="${esc(v.id)}">${esc(v.text)}</option>`).join("")}<option value="__new">＋ New value…</option></select>`}`,
+    })).join("");
+    const sources = PUBLIC ? `<p class="wf-empty">This is a private brainstorming page.</p>` : board("sources", srcCards, `<div class="wf-c wf-addc"><select class="wf-kind" id="wfSrcKind" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select><input class="wf-in" id="wfSrcNew" placeholder="An idea I'm drawing from" maxlength="300" aria-label="New idea"><button type="button" class="btn primary" id="wfSrcAdd">Add idea</button></div>`);
+
+    // 1. Values: each card lists the areas it points to
     const areasAll = wfAreasSorted();
-    const valueCards = PUBLIC ? "" : wf.values.map(v => {
-      const left = areasAll.filter(a => !v.areas.includes(a.id));
-      return card("values", v.id, `<div class="wf-ch">${grip("values", v.id)}<input class="wf-in wf-name" data-wfval="${esc(v.id)}" value="${esc(v.text)}" aria-label="Value" maxlength="200">${del("data-wfvdel", v.id, "Delete this value")}</div>
-        <div class="wf-chips">${v.areas.map(id => aName(id) === null ? "" : `<span class="wf-achip">${esc(aName(id))}<button type="button" data-wfvarm="${esc(v.id)}" data-wfa="${esc(id)}" title="Take this area off the card" aria-label="Remove">×</button></span>`).join("")}</div>
-        ${wfNewArea === v.id ? `<div class="wf-row"><input class="wf-in" data-wfnewarea="${esc(v.id)}" placeholder="New area name" maxlength="200" aria-label="New area name"><button type="button" class="btn small-go" data-wfnewareago="${esc(v.id)}">Add</button></div>` :
-        `<select class="wf-sel" data-wfvadd="${esc(v.id)}" aria-label="Add an area to this value"><option value="">+ Add an area…</option>${left.map(a => `<option value="${esc(a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}<option value="__new">＋ New area…</option></select>`}`);
-    }).join("");
+    const valueCards = PUBLIC ? "" : wf.values.map(v => card("values", v.id, {
+      top: sourcesFor(v.id).map(srcChip).join(""),
+      mid: `<input class="wf-in wf-name" data-wfval="${esc(v.id)}" value="${esc(v.text)}" aria-label="Value" maxlength="200">${del("data-wfvdel", v.id, "Delete this value")}`,
+      label: "Areas",
+      bottom: `<div class="wf-chips">${v.areas.map(id => aName(id) === null ? "" : removable(aName(id), `data-wfvarm="${esc(v.id)}" data-wfa="${esc(id)}"`)).join("")}</div>
+        ${wfNewFor === "v:" + v.id ? `<div class="wf-row"><input class="wf-in" data-wfnewin="v:${esc(v.id)}" placeholder="New area name" maxlength="200" aria-label="New area name"><button type="button" class="btn small-go" data-wfnewgo="v:${esc(v.id)}">Add</button></div>` :
+        `<select class="wf-sel" data-wfvadd="${esc(v.id)}" aria-label="Add an area to this value"><option value="">+ Add an area…</option>${areasAll.filter(a => !v.areas.includes(a.id)).map(a => `<option value="${esc(a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}<option value="__new">＋ New area…</option></select>`}`,
+    })).join("");
     const values = PUBLIC ? `<p class="wf-empty">This is a private brainstorming page.</p>` : board("values", valueCards, `<div class="wf-c wf-addc"><input class="wf-in" id="wfValNew" placeholder="New value, like Freedom" maxlength="200" aria-label="New value"><button type="button" class="btn primary" id="wfValAdd">Add value</button></div>`);
 
-    // 2. Areas with goals: cards; each goal is a line of the area's subtitle
-    const areaCards = areasAll.map(a => { const top = wf.topAreas.includes(a.id), goals = goalsOf(a); return card("areas", a.id, `<div class="wf-ch">${grip("areas", a.id)}${star(top, "data-wfatop", a.id, "area")}${emo(a, "areas")}<input class="wf-in wf-name" data-wfedit="areas" data-wfid="${esc(a.id)}" data-wffield="title" value="${esc(a.title || "")}" aria-label="Area name"${ro}>${openBtn("areas", a.id)}</div>
-        ${PUBLIC ? "" : vchips(valuesFor(a.id))}
-        <div class="wf-glabel">Goals</div>
-        <div class="wf-list">${goals.map((g, i) => `<div class="wf-row"><span class="wf-dot">🎯</span><input class="wf-in" data-wfgoal="${esc(a.id)}" data-wfgi="${i}" value="${esc(g)}" aria-label="Goal"${ro}>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfgdel="${esc(a.id)}" data-wfgi="${i}" title="Remove this goal">×</button>`}</div>`).join("") || (PUBLIC ? `<p class="wf-empty">No goals yet.</p>` : "")}</div>
-        ${PUBLIC ? "" : `<div class="wf-row"><input class="wf-in" data-wfgnew="${esc(a.id)}" placeholder="+ Add a goal" maxlength="200" aria-label="New goal for ${esc(a.title || "this area")}"></div>`}`, top ? " top" : ""); }).join("");
+    // 2. Areas with goals: each goal is a line of the area's subtitle
+    const areaCards = areasAll.map(a => { const top = wf.topAreas.includes(a.id), goals = goalsOf(a); return card("areas", a.id, {
+      top: PUBLIC ? "" : valuesFor(a.id).map(valChip).join(""),
+      mid: `${star(top, "data-wfatop", a.id, "area")}${emo(a, "areas")}<input class="wf-in wf-name" data-wfedit="areas" data-wfid="${esc(a.id)}" data-wffield="title" value="${esc(a.title || "")}" aria-label="Area name"${ro}>${openBtn("areas", a.id)}`,
+      label: "Goals",
+      bottom: `<div class="wf-list">${goals.map((g, i) => `<div class="wf-row"><span class="wf-dot">🎯</span><input class="wf-in" data-wfgoal="${esc(a.id)}" data-wfgi="${i}" value="${esc(g)}" aria-label="Goal"${ro}>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfgdel="${esc(a.id)}" data-wfgi="${i}" title="Remove this goal">×</button>`}</div>`).join("") || (PUBLIC ? `<p class="wf-empty">No goals yet.</p>` : "")}</div>
+        ${PUBLIC ? "" : `<input class="wf-in" data-wfgnew="${esc(a.id)}" placeholder="+ Add a goal" maxlength="200" aria-label="New goal for ${esc(a.title || "this area")}">`}`,
+    }, top ? " top" : ""); }).join("");
     const areasSec = board("areas", areaCards || (PUBLIC ? `<p class="wf-empty">No areas yet.</p>` : ""), PUBLIC ? "" : `<div class="wf-c wf-addc"><input class="wf-in" id="wfAreaNew" placeholder="New area, like Health" maxlength="200" aria-label="New area"><input class="wf-in" id="wfAreaGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal"><button type="button" class="btn primary" id="wfAreaAdd">Add area</button></div>`);
 
-    // 3. Projects and timing: one card per goal; assign projects and set their dates
+    // 3. Projects and timing: one card per goal
     const goals = wfGoals();
     const goalCards = goals.map(g => {
       const pids = (wf.goalProjects[g.key] || []).filter(id => data.projects.some(p => p.id === id));
       const projs = pids.map(id => data.projects.find(p => p.id === id));
       const linked = wfLinked(g.area.id, "projects").filter(p => !pids.includes(p.id)), others = data.projects.filter(p => !pids.includes(p.id) && !linked.includes(p)).sort((a, b) => titleSort({ e: a }, { e: b }));
-      return card("goals", g.key, `<div class="wf-ch">${grip("goals", g.key)}<div class="wf-gtitle">🎯 ${esc(g.text)}</div></div>
-        <div class="wf-chips wf-from"><span class="wf-achip solo" title="Area">${emo(g.area, "areas")} ${esc(g.area.title || "Untitled")}</span>${PUBLIC ? "" : valuesFor(g.area.id).map(v => `<span class="wf-vchip" title="Value">◆ ${esc(v.text)}</span>`).join("")}</div>
-        <div class="wf-list">${projs.map(p => { const top = wf.topProjects.includes(p.id); return `<div class="wf-prow"><div class="wf-row">${star(top, "data-wfptop", p.id, "project")}${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${esc(p.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfpun="${esc(g.key)}" data-wfp="${esc(p.id)}" title="Take this project off the goal (the project stays)">×</button>`}</div><div class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></div></div>`; }).join("") || `<p class="wf-empty">No projects yet.</p>`}</div>
+      const gi = goalsOf(g.area).indexOf(g.text);
+      return card("goals", g.key, {
+        top: areaChip(g.area) + (PUBLIC ? "" : valuesFor(g.area.id).map(valChip).join("")),
+        mid: `<span class="wf-dot">🎯</span><input class="wf-in wf-name" data-wfgoal="${esc(g.area.id)}" data-wfgi="${gi}" value="${esc(g.text)}" aria-label="Goal"${ro}>`,
+        label: "Projects and timing",
+        bottom: `<div class="wf-list">${projs.map(p => { const top = wf.topProjects.includes(p.id); return `<div class="wf-prow"><div class="wf-row">${star(top, "data-wfptop", p.id, "project")}${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${esc(p.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfpun="${esc(g.key)}" data-wfp="${esc(p.id)}" title="Take this project off the goal (the project stays)">×</button>`}</div><div class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></div></div>`; }).join("") || `<p class="wf-empty">No projects yet.</p>`}</div>
         ${PUBLIC ? "" : `<select class="wf-sel" data-wfpassign="${esc(g.key)}" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="${esc(g.area.title || "This area")}">${linked.map(p => `<option value="${esc(p.id)}">${esc(p.title || "Untitled")}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${esc(p.title || "Untitled")}</option>`).join("")}</optgroup>` : ""}</select>
-        <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.key)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.key)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.key)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.key)}">Add</button></div></div>`}`);
+        <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.key)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.key)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.key)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.key)}">Add</button></div></div>`}`,
+      });
     }).join("");
     const projSec = goals.length ? board("goals", goalCards) : `<p class="wf-empty">${PUBLIC ? "Nothing here yet." : wf.topAreas.length ? "Your top areas don't have goals yet. Add some in “Areas with goals”." : "Add goals to your areas in “Areas with goals” and each one becomes a card here."}</p>`;
 
     // 4. Resources: one card per starred project
     const tops = wfTopProjects();
-    const resCards = tops.map(p => { const res = wfLinked(p.id, "pages"), area = wfLinked(p.id, "areas")[0], rest = data.pages.filter(r => !res.includes(r)).sort((a, b) => titleSort({ e: a }, { e: b })); return card("projects", p.id, `<div class="wf-ch">${grip("projects", p.id)}${emo(p, "projects")}<b class="wf-ctitle">${esc(p.title || "Untitled")}</b>${openBtn("projects", p.id)}</div>
-        <div class="wf-chips">${area ? `<span class="wf-meta">${esc(area.title || "")}</span>` : ""}${wfDate(p) ? `<span class="wf-meta">${esc(wfDate(p))}</span>` : ""}</div>
-        <div class="wf-list">${res.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${esc(r.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfrun="${esc(p.id)}" data-wfr="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || `<p class="wf-empty">No resources yet.</p>`}</div>
+    const goalsOfProject = (pid) => Object.entries(wf.goalProjects).filter(([, ids]) => ids.includes(pid)).map(([k]) => { const [aid] = k.split("|"); const a = data.areas.find(x => x.id === aid); const t = a && goalsOf(a).find(x => goalKey(aid, x) === k); return t ? { a, t } : null; }).filter(Boolean);
+    const resCards = tops.map(p => { const res = wfLinked(p.id, "pages"), gs = goalsOfProject(p.id), areas = [...new Set([...gs.map(x => x.a), ...wfLinked(p.id, "areas")])], rest = data.pages.filter(r => !res.includes(r)).sort((a, b) => titleSort({ e: a }, { e: b })); return card("projects", p.id, {
+        top: areas.map(areaChip).join("") + gs.map(x => goalChip(x.t)).join(""),
+        mid: `${emo(p, "projects")}<input class="wf-in wf-name" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="title" value="${esc(p.title || "")}" aria-label="Project name"${ro}>${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`,
+        label: "Resources",
+        bottom: `<div class="wf-list">${res.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${esc(r.title || "Untitled")}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfrun="${esc(p.id)}" data-wfr="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || `<p class="wf-empty">No resources yet.</p>`}</div>
         ${PUBLIC ? "" : `<div class="wf-row"><input class="wf-in" data-wfrnew="${esc(p.id)}" placeholder="+ New resource" maxlength="200" aria-label="New resource"><button type="button" class="btn small-go" data-wfradd="${esc(p.id)}">Add</button></div>
-        ${rest.length ? `<select class="wf-sel" data-wfrlink="${esc(p.id)}" aria-label="Link an existing resource"><option value="">+ Link an existing resource…</option>${rest.map(r => `<option value="${esc(r.id)}">${esc(r.title || "Untitled")}</option>`).join("")}</select>` : ""}`}`); }).join("");
+        ${rest.length ? `<select class="wf-sel" data-wfrlink="${esc(p.id)}" aria-label="Link an existing resource"><option value="">+ Link an existing resource…</option>${rest.map(r => `<option value="${esc(r.id)}">${esc(r.title || "Untitled")}</option>`).join("")}</select>` : ""}`}`,
+      }); }).join("");
     const resSec = tops.length ? board("projects", resCards) : `<p class="wf-empty">${PUBLIC ? "Nothing here yet." : "Star (☆) projects in “Projects and timing” and each one becomes a card here."}</p>`;
 
     el.innerHTML = `<div class="hm-page wf-page">
       <div class="hm-icon" aria-hidden="true">🧠</div>
       <h1 class="hm-title">Workflow</h1>
-      ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming: values, then areas and their goals, then projects and timing, then resources.</p>`}
-      <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas with goals"], ["projects", "Projects and timing"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
-      ${sec("values", 1, "Values", "Each value is a card. Add the areas it points to from the card's dropdown (or make a new area there). These cards stay on this page only.", values)}
+      ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card reads the same way: <b>From</b> (where it came from) on top, the card itself in the middle, and what grows out of it at the bottom.</p>`}
+      <nav class="wf-jump" aria-label="Jump to a section">${[["sources", "What I'm working with"], ["values", "Values"], ["areas", "Areas with goals"], ["projects", "Projects and timing"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i}</span>${l}</button>`).join("")}</nav>
+      ${sec("sources", 0, "What I'm working with", "Ideas I'm drawing from: religion, politics, society, my past experience. Each card can point to the values it shapes. These stay on this page only.", sources)}
+      ${sec("values", 1, "Values", "Each value is a card. Add the areas it points to from the dropdown (or make a new area there). These stay on this page only.", values)}
       ${sec("areas", 2, "Areas with goals", "Add goals to each area; they make up its subtitle. Star (☆) your top areas to focus the next section on them.", areasSec)}
       ${sec("projects", 3, "Projects and timing", `Each goal${wf.topAreas.length ? " of your top areas" : ""} is a card. Assign projects, set their dates, and star (☆) the ones you're working on.`, projSec)}
       ${sec("resources", 4, "Resources", "Each starred project is a card. Add the resources that go with it; they're linked to the project.", resSec)}
     </div>`;
-    if (wfNewArea) { const i = el.querySelector(`[data-wfnewarea]`); if (i) i.focus(); }
+    if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
   }
   const wfFocus = (sel) => { const n = $("wfBody").querySelector(sel); if (n) n.focus(); };
+  const wfAddSource = () => { const i = $("wfSrcNew"), t = (i && i.value || "").trim(); if (!t) { if (i) i.focus(); return; } wf.sources.push({ id: wfId(), text: t.slice(0, 300), kind: $("wfSrcKind").value || "", values: [] }); saveWf(); renderWorkflow(); wfFocus("#wfSrcNew"); };
   const wfAddValue = () => { const i = $("wfValNew"), t = (i && i.value || "").trim(); if (!t) { if (i) i.focus(); return; } wf.values.push({ id: wfId(), text: t.slice(0, 200), areas: [] }); saveWf(); renderWorkflow(); wfFocus("#wfValNew"); };
   async function wfCreate(type, title, extra) {
     const T = TYPE[type], now = new Date().toISOString(), cf = T.props.find(P => P.kind === "date").field;
@@ -5188,6 +5240,7 @@ Don't invent appointments or facts that aren't listed.`);
     const keys = [...$("wfBody").querySelectorAll(`.wf-c[data-wfsec="${sec}"][data-wfkey]`)].map(c => c.dataset.wfkey).filter(k => k !== key);
     const i = beforeKey ? keys.indexOf(beforeKey) : -1; if (i >= 0) keys.splice(i, 0, key); else keys.push(key);
     if (sec === "values") { const m = new Map(wf.values.map(v => [v.id, v])); wf.values = keys.map(k => m.get(k)).filter(Boolean); }
+    if (sec === "sources") { const m = new Map(wf.sources.map(v => [v.id, v])); wf.sources = keys.map(k => m.get(k)).filter(Boolean); }
     if (sec === "areas") wf.areaOrder = keys;
     if (sec === "goals") wf.goalOrder = keys;
     if (sec === "projects") wf.projOrder = keys;
@@ -5206,9 +5259,15 @@ Don't invent appointments or facts that aren't listed.`);
     const gr = t.closest("[data-wfgrip]"); if (gr) { const k = { sec: gr.dataset.wfgrip, key: gr.dataset.wfkey }; wfMove = wfMove && wfMove.sec === k.sec && wfMove.key === k.key ? null : k; renderWorkflow(); return; }
     const hr = t.closest("[data-wfhere]"); if (hr && wfMove) { wfReorder(wfMove.sec, wfMove.key, hr.dataset.wfkey || null); return; }
     if (t.closest("#wfValAdd")) { wfAddValue(); return; }
-    const vd = t.closest("[data-wfvdel]"); if (vd) { const id = vd.dataset.wfvdel; if (wfDelArm !== id) { wfDelArm = id; renderWorkflow(); setTimeout(() => { if (wfDelArm === id) { wfDelArm = null; renderWorkflow(); } }, 3000); return; } wfDelArm = null; wf.values = wf.values.filter(v => v.id !== id); saveWf(); renderWorkflow(); return; }
+    const vd = t.closest("[data-wfvdel]"); if (vd) { const id = vd.dataset.wfvdel; if (wfDelArm !== id) { wfDelArm = id; renderWorkflow(); setTimeout(() => { if (wfDelArm === id) { wfDelArm = null; renderWorkflow(); } }, 3000); return; } wfDelArm = null; wf.values = wf.values.filter(v => v.id !== id); wf.sources.forEach(s => { s.values = s.values.filter(x => x !== id); }); saveWf(); renderWorkflow(); return; }
     const vr = t.closest("[data-wfvarm]"); if (vr) { const v = wf.values.find(x => x.id === vr.dataset.wfvarm); if (v) { v.areas = v.areas.filter(a => a !== vr.dataset.wfa); saveWf(); renderWorkflow(); } return; }
-    const ng = t.closest("[data-wfnewareago]"); if (ng) { const vid = ng.dataset.wfnewareago, i = $("wfBody").querySelector("[data-wfnewarea]"), name = (i && i.value || "").trim(); if (!name) { if (i) i.focus(); return; } wfNewArea = null; await wfAddArea(name, vid); renderWorkflow(); return; }
+    const ng = t.closest("[data-wfnewgo]"); if (ng) { const [kind, id] = [ng.dataset.wfnewgo.slice(0, 1), ng.dataset.wfnewgo.slice(2)], i = $("wfBody").querySelector("[data-wfnewin]"), name = (i && i.value || "").trim(); if (!name) { if (i) i.focus(); return; } wfNewFor = null;
+      if (kind === "v") await wfAddArea(name, id);
+      else { const s = wf.sources.find(x => x.id === id), v = { id: wfId(), text: name.slice(0, 200), areas: [] }; wf.values.push(v); if (s) s.values.push(v.id); saveWf(); }
+      renderWorkflow(); return; }
+    if (t.closest("#wfSrcAdd")) { wfAddSource(); return; }
+    const sd = t.closest("[data-wfsdel]"); if (sd) { const id = sd.dataset.wfsdel; if (wfDelArm !== id) { wfDelArm = id; renderWorkflow(); setTimeout(() => { if (wfDelArm === id) { wfDelArm = null; renderWorkflow(); } }, 3000); return; } wfDelArm = null; wf.sources = wf.sources.filter(x => x.id !== id); saveWf(); renderWorkflow(); return; }
+    const sv = t.closest("[data-wfsvrm]"); if (sv) { const s = wf.sources.find(x => x.id === sv.dataset.wfsvrm); if (s) { s.values = s.values.filter(x => x !== sv.dataset.wfv); saveWf(); renderWorkflow(); } return; }
     const at = t.closest("[data-wfatop]"); if (at) { const id = at.dataset.wfatop; wf.topAreas = wf.topAreas.includes(id) ? wf.topAreas.filter(x => x !== id) : [...wf.topAreas, id]; saveWf(); renderWorkflow(); return; }
     const pt = t.closest("[data-wfptop]"); if (pt) { const id = pt.dataset.wfptop; wf.topProjects = wf.topProjects.includes(id) ? wf.topProjects.filter(x => x !== id) : [...wf.topProjects, id]; saveWf(); renderWorkflow(); return; }
     const gd = t.closest("[data-wfgdel]"); if (gd) { const a = data.areas.find(x => x.id === gd.dataset.wfgdel); if (!a) return; const g = goalsOf(a); g.splice(Number(gd.dataset.wfgi), 1); await wfSetGoals(a, g); renderWorkflow(); return; }
@@ -5226,20 +5285,24 @@ Don't invent appointments or facts that aren't listed.`);
   });
   $("wfBody").addEventListener("keydown", ev => {
     if (PUBLIC) return; const t = ev.target;
-    if (ev.key === "Escape" && t.dataset.wfnewarea) { wfNewArea = null; renderWorkflow(); return; }
+    if (ev.key === "Escape" && t.dataset.wfnewin) { wfNewFor = null; renderWorkflow(); return; }
     if (ev.key !== "Enter") return;
     if (t.id === "wfValNew") { ev.preventDefault(); wfAddValue(); return; }
     if (t.id === "wfAreaNew" || t.id === "wfAreaGoal") { ev.preventDefault(); $("wfAreaAdd").click(); return; }
-    if (t.dataset.wfnewarea) { ev.preventDefault(); $("wfBody").querySelector("[data-wfnewareago]").click(); return; }
+    if (t.dataset.wfnewin) { ev.preventDefault(); $("wfBody").querySelector("[data-wfnewgo]").click(); return; }
+    if (t.id === "wfSrcNew") { ev.preventDefault(); wfAddSource(); return; }
     if (t.dataset.wfpnew) { ev.preventDefault(); t.closest(".wf-newp").querySelector("[data-wfpadd]").click(); return; }
     if (t.dataset.wfrnew) { ev.preventDefault(); t.closest(".wf-row").querySelector("[data-wfradd]").click(); return; }
     if (t.dataset.wfgnew) { ev.preventDefault(); const a = data.areas.find(x => x.id === t.dataset.wfgnew), txt = t.value.trim(); if (!a || !txt) return; wfSetGoals(a, [...goalsOf(a), txt.replace(/\s+·\s+/g, " ")]).then(() => { renderWorkflow(); wfFocus(`[data-wfgnew="${CSS.escape(a.id)}"]`); }); return; }
-    if (t.matches("[data-wfval], [data-wfedit], [data-wfgoal]")) { ev.preventDefault(); t.blur(); }
+    if (t.matches("[data-wfval], [data-wfedit], [data-wfgoal], [data-wfsrc]")) { ev.preventDefault(); t.blur(); }
   });
   $("wfBody").addEventListener("change", async ev => {
     if (PUBLIC) return; const t = ev.target;
     if (t.dataset.wfval) { const v = wf.values.find(x => x.id === t.dataset.wfval), txt = t.value.trim(); if (!v) return; if (!txt) { t.value = v.text; return; } if (txt !== v.text) { v.text = txt.slice(0, 200); saveWf(); } return; }
-    if (t.dataset.wfvadd !== undefined) { const v = wf.values.find(x => x.id === t.dataset.wfvadd); if (!v) return; if (t.value === "__new") { wfNewArea = v.id; renderWorkflow(); return; } if (t.value && !v.areas.includes(t.value)) { v.areas.push(t.value); saveWf(); } renderWorkflow(); return; }
+    if (t.dataset.wfsrc) { const s = wf.sources.find(x => x.id === t.dataset.wfsrc), txt = t.value.trim(); if (!s) return; if (!txt) { t.value = s.text; return; } if (txt !== s.text) { s.text = txt.slice(0, 300); saveWf(); } return; }
+    if (t.dataset.wfskind !== undefined) { const s = wf.sources.find(x => x.id === t.dataset.wfskind); if (s) { s.kind = t.value; saveWf(); } return; }
+    if (t.dataset.wfsvadd !== undefined) { const s = wf.sources.find(x => x.id === t.dataset.wfsvadd); if (!s) return; if (t.value === "__new") { wfNewFor = "s:" + s.id; renderWorkflow(); return; } if (t.value && !s.values.includes(t.value)) { s.values.push(t.value); saveWf(); } renderWorkflow(); return; }
+    if (t.dataset.wfvadd !== undefined) { const v = wf.values.find(x => x.id === t.dataset.wfvadd); if (!v) return; if (t.value === "__new") { wfNewFor = "v:" + v.id; renderWorkflow(); return; } if (t.value && !v.areas.includes(t.value)) { v.areas.push(t.value); saveWf(); } renderWorkflow(); return; }
     if (t.dataset.wfgoal) { const a = data.areas.find(x => x.id === t.dataset.wfgoal); if (!a) return; const g = goalsOf(a), i = Number(t.dataset.wfgi), old = g[i], txt = t.value.trim().replace(/\s+·\s+/g, " "); if (old === undefined) return; if (!txt) { t.value = old; return; } if (txt === old) return; const ok = goalKey(a.id, old), nk = goalKey(a.id, txt); if (wf.goalProjects[ok]) { wf.goalProjects[nk] = [...new Set([...(wf.goalProjects[nk] || []), ...wf.goalProjects[ok]])]; delete wf.goalProjects[ok]; } wf.goalOrder = wf.goalOrder.map(k => k === ok ? nk : k); saveWf(); g[i] = txt; await wfSetGoals(a, g); return; }
     if (t.dataset.wfpassign) { const k = t.dataset.wfpassign, pid = t.value; if (!pid) return; wf.goalProjects[k] = [...new Set([...(wf.goalProjects[k] || []), pid])]; saveWf(); const areaId = k.split("|")[0]; if (data.areas.some(a => a.id === areaId)) await wfLink("projects", pid, areaId); renderWorkflow(); return; }
     if (t.dataset.wfrlink) { const p = t.dataset.wfrlink, rid = t.value; if (!rid) return; await wfLink("pages", rid, p); renderWorkflow(); return; }
