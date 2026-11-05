@@ -1109,6 +1109,12 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .wf-flabel b { color: var(--ink); margin-right: 4px; }
 .wf-focus .qt { min-width: 58px; }
 .wf-note { margin: 0 0 2px; font-size: 12.5px; color: var(--accent); }
+.pr-jump { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0 0; max-width: 1200px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+.pr-jump[hidden] { display: none; }
+.pr-sec { border-top: 1px solid var(--line); margin-top: 18px; scroll-margin-top: 12px; }
+.pr-rtadd { display: flex; gap: 8px; flex-wrap: wrap; }
+.pr-rtadd .wf-in { min-width: 220px; }
+table.pr-rt { width: 100%; }
 .wf-shead { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
 .wf-shead .hm-label { border: 0; padding: 0; margin: 0; }
 .wf-mtog { font-size: 12.5px; padding: 3px 10px 3px 4px; }
@@ -4762,7 +4768,35 @@ Don't invent appointments or facts that aren't listed.`);
       : k === "layer" ? (layersOf(e)[0] ?? "") : k === "color" ? (colorOf(e) ? COLORS.indexOf(colorOf(e)) : "")
       : k === "focus" ? (e.focusStart || e.focusEnd || "") : k === "created" ? (e.created || e.createdTime || "") : (e.updatedAt || "");
   }
+  // Projects tab has three sections: Projects, Goals and Routines
+  function mountProjectSections() {
+    const prMain = views.projects && views.projects.main, gMain = views.goals && views.goals.main; if (!prMain || !gMain) return;
+    gMain.classList.add("pr-sec"); gMain.id = "view-goals";
+    const jump = document.createElement("nav"); jump.className = "pr-jump"; jump.id = "prJump"; jump.hidden = true; jump.setAttribute("aria-label", "Sections on this tab");
+    jump.innerHTML = [["view-projects", "Projects"], ["view-goals", "Goals"], ["view-prt", "Routines"]].map(([id, l]) => `<button type="button" class="wf-jbtn" data-prjump="${id}">${l}</button>`).join("");
+    prMain.parentNode.insertBefore(jump, prMain);
+    const rt = document.createElement("main"); rt.id = "view-prt"; rt.className = "pr-sec"; rt.hidden = true;
+    gMain.after(rt);
+    prMain.after(gMain);
+    jump.addEventListener("click", e => { const b = e.target.closest("[data-prjump]"); if (b) { const t = $(b.dataset.prjump); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); } });
+    rt.addEventListener("click", async e => {
+      const ro2 = e.target.closest("[data-prrt]"); if (ro2) { pl.sub = "routines"; savePl(); const id = ro2.dataset.prrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
+      if (e.target.closest("[data-prrtadd]")) { const i = $("prRtNew"), r = await newRoutine(i.value); if (r) { i.value = ""; renderPlanner(); renderProjRoutines(true); const n = $("prRtNew"); if (n) n.focus(); } return; }
+    });
+    rt.addEventListener("keydown", e => { if (e.target.id === "prRtNew" && e.key === "Enter") { e.preventDefault(); rt.querySelector("[data-prrtadd]").click(); } });
+  }
+  function renderProjRoutines(force) {
+    const el = $("view-prt"); if (!el) return;
+    if (!force && document.activeElement && document.activeElement.id === "prRtNew") return;
+    const t = today(), tn = dn(t);
+    const list = routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    const row = (r) => { const done = rtPlans(r).filter(x => x.status === "done"), w = done.filter(x => dn(x.date) > tn - 7 && dn(x.date) <= tn).length;
+      return `<tr class="row ec-purple"><td data-label="Title"><button type="button" class="db-open" data-prrt="${esc(r.id)}" title="Open in Planner → Routines"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span class="t-main">${esc(r.name || "Untitled routine")}</span></button></td><td data-label="Color">${rtColorCtl(r)}</td><td data-label="Done" class="num">${w} in the last 7 days · ${done.length} all time</td><td data-label="Show on website">${PUBLIC ? `<span class="qt qt-ro" aria-pressed="${r.public === true}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On" : "Off"}</span></span>` : rtWebBtn(r)}</td></tr>`; };
+    el.innerHTML = `<div class="view-head"><div><h1>Routines</h1><div class="count">${list.length} routine${list.length === 1 ? "" : "s"} · Layer 7 · always purple</div></div>${PUBLIC ? "" : `<div class="head-actions pr-rtadd"><input class="wf-in" id="prRtNew" placeholder="New routine, like Morning walk" maxlength="120" aria-label="New routine"><button type="button" class="btn primary" data-prrtadd>+ New routine</button></div>`}</div>
+      ${list.length ? `<div class="table-wrap"><table class="tbl pr-rt"><thead><tr><th>Title</th><th>Color</th><th>Done</th><th>Show on website</th></tr></thead><tbody>${list.map(row).join("")}</tbody></table></div>` : `<div class="empty"><strong>No routines yet</strong>Add one here or in Planner → Routines.</div>`}`;
+  }
   function renderDatabase() {
+    renderProjRoutines();
     if (!$("dbBody") || $("view-database").hidden) return;
     const rtRows = routines.map(r => ({ type: "routine", r, e: { id: r.id, title: r.name || "Untitled routine", emoji: rtEmoji(r), layers: ["7"], created: (r.createdAt || "").slice(0, 10), updatedAt: r.updatedAt || r.createdAt || "" } }));
     const all = [...TYPES.flatMap(T => data[T.key].map(e => ({ type: T.key, e }))), ...rtRows];
@@ -5594,13 +5628,15 @@ Don't invent appointments or facts that aren't listed.`);
   const TABS = [{ key: "home", label: "Home", kind: "tool" }, ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
+  mountProjectSections();
   function showView() {
     const home = "home";
     let v = (location.hash || "#" + home).slice(1);
     const HOME_ONLY = ["inventory", "meals"]; // opened from the Home page only, never in the top bar
     if (!TABS.some(t => t.key === v) && !(HOME_ONLY.includes(v) && (!PUBLIC || webOn(v)))) v = home;
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v || (t.dataset.view === "home" && ["inventory", "meals"].includes(v)))));
-    TYPES.forEach(T => { views[T.key].main.hidden = v !== T.key; });
+    TYPES.forEach(T => { views[T.key].main.hidden = v !== T.key && !(v === "projects" && T.key === "goals"); });
+    { const pr = $("view-prt"); if (pr) pr.hidden = v !== "projects"; const jb = $("prJump"); if (jb) jb.hidden = v !== "projects"; }
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
     $("view-planner").hidden = v !== "planner";
