@@ -1114,6 +1114,38 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .pr-rtadd { display: flex; gap: 8px; flex-wrap: wrap; }
 .pr-rtadd .wf-in { min-width: 220px; }
 table.pr-rt { width: 100%; }
+.sc-dialog { width: min(1100px, 100%); }
+.sc-flow { display: grid; gap: 6px; justify-items: center; }
+.sc-node { display: grid; gap: 2px; text-align: center; border: 1px solid var(--line); border-radius: 14px; padding: 12px 18px; background: var(--bg); max-width: 520px; font-size: 13.5px; color: var(--muted); }
+.sc-big { font-size: 18px; font-weight: 700; color: var(--ink); }
+.sc-entry { border-color: var(--accent); }
+.sc-db { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 30%, var(--bg)); }
+.sc-arrow { color: var(--accent); font-size: 12.5px; font-weight: 600; letter-spacing: .03em; }
+.sc-views { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.sc-view { display: grid; gap: 3px; justify-items: center; text-align: center; border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; background: var(--bg); font-size: 12.5px; color: var(--muted); }
+.sc-view b { color: var(--ink); font-size: 14px; }
+.sc-vi { font-size: 20px; }
+.sc-h { margin: 14px 0 0; font-size: 15px; display: block !important; }
+.sc-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sc-panel { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--bg); display: grid; gap: 8px; align-content: start; min-width: 0; }
+.sc-panel h4 { margin: 0; font-size: 13.5px; color: var(--accent); }
+.sc-panel p { margin: 0; font-size: 13px; color: var(--muted); }
+.sc-type { display: grid; gap: 4px; border-left: 3px solid var(--line); padding-left: 8px; }
+.sc-type b { font-size: 14px; }
+.sc-arch { border-left-color: var(--muted); }
+.sc-kids { display: flex; flex-wrap: wrap; gap: 5px; }
+.sc-kid { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; background: var(--surface); }
+.sc-kid em { font-style: normal; color: var(--muted); font-size: 11.5px; }
+.sc-kid.t-i { border-color: var(--idea); } .sc-kid.t-v { border-color: var(--value); } .sc-kid.t-g { border-color: var(--goal); } .sc-kid.t-r { border-color: var(--c-purple); }
+.sc-layers { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.sc-layers li { display: grid; grid-template-columns: 30px 1fr auto; gap: 6px; align-items: baseline; font-size: 12.5px; }
+.sc-ln { font-weight: 700; color: var(--accent); }
+.sc-layers em { font-style: normal; color: var(--muted); font-size: 11.5px; }
+.sc-props { display: flex; flex-wrap: wrap; gap: 5px; }
+.sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
+.sc-note { font-size: 12px !important; }
+@media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
+.is-public #scBtn { display: none; }
 .bd-pop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.55); display: grid; place-items: start center; padding: 40px 16px; overflow-y: auto; }
 .bd-pop[hidden] { display: none; }
 .bd-dialog { width: min(820px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
@@ -1405,7 +1437,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button></div>
+  <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
     <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
@@ -5189,6 +5222,59 @@ Don't invent appointments or facts that aren't listed.`);
 
   // ---------- Tabs ----------
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
+  // ---------- 🗺 Schematic: a picture of how entries and views fit together ----------
+  function renderSchematic() {
+    const el = $("scBody"); if (!el) return;
+    const n = (k) => (data[k] || []).length, rt = routines.length;
+    const all = TYPES.reduce((s, T) => s + n(T.key), 0) + rt;
+    const view = (icon, name, what) => `<div class="sc-view"><span class="sc-vi" aria-hidden="true">${icon}</span><b>${name}</b><span>${what}</span></div>`;
+    const kid = (label, count, cls) => `<span class="sc-kid ${cls || ""}">${label}<em>${count}</em></span>`;
+    const LAYER_TXT = ["System instructions for this artifact", "Narrative facts I know about my own life", "Evidence", "Authority and academic principles", "My argumentation and meaning-making", "Artifacts I make, anything I create", "My to-do list: things to do, projects, goals and scheduled events", "Routines and habits", "Therapy, emotional information and conversations", "Structure, such as where the areas live"];
+    const lc = (i) => { let c = 0; byId.forEach(({ e }) => { if ((e.layers || []).map(String).includes(String(i))) c++; }); return i === 7 ? c + rt : c; };
+    el.innerHTML = `
+      <div class="sc-flow">
+        <div class="sc-node sc-entry"><span class="sc-big">📄 Entry</span><span>The basic unit of information.</span></div>
+        <div class="sc-arrow" aria-hidden="true">↓ all live in ↓</div>
+        <div class="sc-node sc-db"><span class="sc-big">🗃 Master database</span><span>${all} entr${all === 1 ? "y" : "ies"}. It is one database, seen five different ways:</span></div>
+        <div class="sc-arrow" aria-hidden="true">↓</div>
+        <div class="sc-views">
+          ${view("🔄", "Workflow", "Ideas → values → areas → goals → projects → resources, in a circle")}
+          ${view("🗓", "Planner", "Cards, calendar, routines and weekly planning")}
+          ${view("🗂", "Obsidian", "Folders and notes")}
+          ${view("🧱", "Layers", "The typical database table, L0–L9")}
+          ${view("🕸", "Graph", "Obsidian-style map of links")}
+        </div>
+      </div>
+      <h3 class="sc-h">Three ways to sort an entry</h3>
+      <div class="sc-cols">
+        <section class="sc-panel">
+          <h4>1 · By type of information</h4>
+          <div class="sc-type"><b>📚 Resources</b><div class="sc-kids">${kid("Resources", n("pages"))}${kid("Ideas", n("ideas"), "t-i")}${kid("Values", n("values"), "t-v")}</div></div>
+          <div class="sc-type"><b>📌 Projects</b><div class="sc-kids">${kid("Projects", n("projects"))}${kid("Goals", n("goals"), "t-g")}${kid("Routines", rt, "t-r")}</div></div>
+          <div class="sc-type"><b>🧭 Areas</b><div class="sc-kids">${kid("Areas", n("areas"))}${kid("Sub-areas", "—")}</div></div>
+          <div class="sc-type sc-arch"><b>🗄 Archive</b><div class="sc-kids">${kid("Archived", n("archive"))}</div><p>⇅ Any entry can move into the Archive and back out to any type, at any time.</p></div>
+        </section>
+        <section class="sc-panel">
+          <h4>2 · By layer</h4>
+          <ol class="sc-layers" start="0">${LAYER_TXT.map((t, i) => `<li><span class="sc-ln">L${i}</span><span>${t}</span><em>${lc(i)}</em></li>`).join("")}</ol>
+        </section>
+        <section class="sc-panel">
+          <h4>3 · By its properties</h4>
+          <div class="sc-props">${["Title", "When (dates and times, or a range)", "Links (to any other entry)", "Status", "Database", "Tags", "Layer", "Color", "Created date", "Show on website", "Notes"].map(p => `<span>${p}</span>`).join("")}</div>
+          <p class="sc-note">Colors: red personal administration · orange family and friends · yellow community · green money and work · blue everything else · purple routines.</p>
+        </section>
+      </div>
+      <h3 class="sc-h">Where you find them</h3>
+      <div class="sc-cols sc-where">
+        <section class="sc-panel"><h4>Top bar: key sections of the database</h4><div class="sc-kids">${kid("Projects", n("projects"))}${kid("Areas", n("areas"))}${kid("Resources", n("pages"))}${kid("Archive", n("archive"))}</div><p>Each one can be seen as a <b>Table</b>, a <b>Timeline</b>, a <b>Feed</b> (like social media) or <b>Cards</b>.</p></section>
+        <section class="sc-panel"><h4>🏠 Home: extra databases</h4><div class="sc-kids">${kid("📦 Inventory", inventory.length)}${kid("🍽 Meals", meals.length)}</div><p>Databases for specific information live on Home.</p></section>
+        <section class="sc-panel"><h4>Ways in</h4><p><b>🧠 Brain dump</b> turns a pile of text into entries. <b>+ New</b> buttons add one at a time. A link made anywhere shows everywhere.</p></section>
+      </div>`;
+  }
+  const scOpen = (v) => { const p = $("scPop"); p.hidden = !v; $("scBtn").setAttribute("aria-expanded", String(v)); if (v) renderSchematic(); };
+  $("scBtn").addEventListener("click", e => { e.stopPropagation(); scOpen($("scPop").hidden); });
+  $("scPop").addEventListener("click", e => { if (e.target.closest("[data-scclose]") || e.target === $("scPop")) scOpen(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scPop").hidden) scOpen(false); });
   // ---------- 🧠 Brain dump: paste a pile of text, Claude turns it into entries (nothing is left out) ----------
   const BD_TYPES = [["projects", "Project"], ["areas", "Area"], ["pages", "Resource"], ["archive", "Archive"], ["ideas", "Idea"], ["values", "Value"], ["goals", "Goal"], ["routines", "Routine"]];
   const BD_TYPE_KEYS = BD_TYPES.map(x => x[0]);
@@ -5643,15 +5729,6 @@ ${text}
   const HOME_LINKS = [
     { key: "inventory", icon: "📦", label: "Inventory", desc: "My things, and which room they're in" },
     { key: "meals", icon: "🍽️", label: "Meals", desc: "Recipes by category, menu, cuisine and method" },
-    { key: "workflow", icon: "🧠", label: "Workflow", desc: "Values, areas with goals, projects and timing, resources" },
-    { key: "planner", icon: "🗓️", label: "Planner", desc: "Cards, calendar, routines and weekly planning" },
-    { key: "projects", icon: "📌", label: "Projects", desc: "Everything I'm working on" },
-    { key: "areas", icon: "🧭", label: "Areas", desc: "The parts of my life I look after" },
-    { key: "pages", icon: "📚", label: "Resources", desc: "Notes, references and things to keep" },
-    { key: "archive", icon: "🗄️", label: "Archive", desc: "Done and set-aside entries" },
-    { key: "obsidian", icon: "🪨", label: "Obsidian", desc: "All notes as files and folders" },
-    { key: "database", icon: "🧱", label: "Layers", desc: "Every entry by layer, L0–L9" },
-    { key: "graph", icon: "🕸️", label: "Graph", desc: "How everything links together" },
   ];
   const HOME_WEB_DEFAULT = { workflow: true, planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
   let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
@@ -5672,7 +5749,7 @@ ${text}
       <div class="hm-icon" aria-hidden="true">🏠</div>
       <h1 class="hm-title">${esc(PUBLIC && String(PUBLIC.title || "").trim() ? PUBLIC.title : "Home")}</h1>
       <p class="hm-sub">${PUBLIC ? "Pick a section to explore." : window.LIFEOS_MINE ? "Jump to any part of LifeOS." : "Jump to any part of LifeOS. Every tab is on your public website; each entry's own \"Show on website\" decides whether that entry appears. Inventory and Meals have one switch for the whole list."}</p>
-      <div class="hm-label">Databases &amp; tools</div>
+      <div class="hm-label">Databases</div>
       <div class="hm-links">${links.map(l => { const n = countFor(l.key), on = webOn(l.key); return `<div class="hm-link">
         <a href="#${l.key}" class="hm-go" data-hmgo="${l.key}"><span class="hm-emo" aria-hidden="true">${l.icon}</span><span class="hm-txt"><b>${esc(l.label)}</b><span>${esc(PUBLIC && l.key === "planner" ? "What's coming up, by day, week and month" : l.desc)}${n != null && !(l.key === "planner") ? ` · ${n}` : ""}</span></span></a>
         ${PUBLIC || !HOME_SWITCH.includes(l.key) ? "" : `<button type="button" class="qt hm-web" data-hmweb="${l.key}" aria-pressed="${on}" title="${on ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "On" : "Off"}</span></button>`}
