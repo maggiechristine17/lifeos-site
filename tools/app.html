@@ -1305,7 +1305,11 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 @media (max-width: 760px) { .tab { padding: 14px 7px 11px; } .appbar { gap: 4px 16px; } .vault { grid-template-columns: minmax(0, 1fr); } .vm-bar { flex-wrap: wrap; } }
 
 /* Layers and colors */
-:root { --c-red: #ff6b6b; --c-orange: #ff9f43; --c-yellow: #ffd43b; --c-green: #51cf66; --c-blue: #4dabf7; }
+:root { --c-red: #ff6b6b; --c-orange: #ff9f43; --c-yellow: #ffd43b; --c-green: #51cf66; --c-blue: #4dabf7; --c-purple: #b69be6; }
+.rt-color { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink); }
+.rt-color .cdot { width: 12px; height: 12px; border-radius: 50%; background: var(--c-purple); flex: none; box-shadow: 0 0 0 2px var(--surface); }
+.rt-color .cdot.has { outline: 2px solid var(--rtc); outline-offset: 1px; }
+.rt-color select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; color: var(--ink); font: inherit; font-size: 12.5px; cursor: pointer; }
 .ec-white { --ec: #f2f2ec; }
 .ec-red { --ec: var(--c-red); } .ec-orange { --ec: var(--c-orange); } .ec-yellow { --ec: var(--c-yellow); } .ec-green { --ec: var(--c-green); } .ec-blue { --ec: var(--c-blue); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
@@ -3483,7 +3487,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
     const prev = new Map(gNodes.map(n => [n.id, n]));
     let items = [...byId.values()].filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
-    if (gOpts.routine !== false) items = items.concat(routines.map(r => ({ type: "routine", e: { id: r.id, title: (r.emoji || rtEmoji(r)) + " " + (r.name || "Untitled routine"), status: "" } })));
+    if (gOpts.routine !== false) items = items.concat(routines.map(r => ({ type: "routine", e: { id: r.id, title: (r.emoji || rtEmoji(r)) + " " + (r.name || "Untitled routine"), status: "", color: COLORS.includes(r.color) ? r.color : "" } })));
     const ids = new Set(items.map(x => x.e.id));
     const links = [];
     adj.forEach((set, a) => set.forEach(b => { if (a < b && ids.has(a) && ids.has(b)) links.push({ source: a, target: b }); }));
@@ -3905,7 +3909,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       else { const ps = rtPlans(r), done = ps.filter(x => x.status === "done"), last = done.slice().sort((a, b) => (b.doneAt || b.date).localeCompare(a.doneAt || a.date))[0];
         html = `<div class="vm-crumb">Routines / <strong>${esc(r.name || "Untitled routine")}</strong></div>
           <h1 class="vm-title"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span> <span class="t-main">${esc(r.name || "Untitled routine")}</span></h1>
-          <div class="vm-meta"><span class="vm-type">🔁 Routine · Layer 7</span><span>${done.length} done${last ? ` · last ${esc(fmt(last.date, false))}` : ""}</span>${rtWebBtn(r)}<button type="button" class="btn" data-vrtgo="${esc(r.id)}">Open in Planner → Routines</button></div>
+          <div class="vm-meta"><span class="vm-type">🔁 Routine · Layer 7</span><span>${done.length} done${last ? ` · last ${esc(fmt(last.date, false))}` : ""}</span>${rtColorCtl(r)}${rtWebBtn(r)}<button type="button" class="btn" data-vrtgo="${esc(r.id)}">Open in Planner → Routines</button></div>
           ${vEditing ? `<textarea id="vEditor" class="vm-editor" aria-label="Routine notes in Markdown">${esc(vDraft)}</textarea>` : `<div class="md vm-body" id="vBody">${(r.body || "").trim() ? renderMd(r.body) : '<p class="placeholder">No notes yet. Tap Edit to add some.</p>'}</div>`}`; }
     } else {
       const x = byId.get(vCurrent.id);
@@ -4060,6 +4064,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const rtById = (id) => routines.find(r => r.id === id);
   // A routine is a Layer 7 entry: it has its own "Show on website" switch like every other entry
   const rtWebBtn = (r) => PUBLIC ? "" : `<button type="button" class="qt rt-web" data-rtweb="${esc(r.id)}" aria-pressed="${r.public === true}" title="${r.public === true ? "Shown on the website. Click to hide it there." : "Not on the website. Click to show it there."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On" : "Off"}</span></button>`;
+  // Rule: routines are always colored purple; each one also names the main color it belongs to (shown as a word)
+  const RT_COLOR_NAME = { red: "Red", orange: "Orange", yellow: "Yellow", green: "Green", blue: "Blue" };
+  const rtColorCtl = (r) => { const c = COLORS.includes(r.color) ? r.color : ""; const dot = `<i class="cdot${c ? " has" : ""}"${c ? ` style="--rtc:var(--c-${c})"` : ""} title="Routines are purple" aria-hidden="true"></i>`;
+    return PUBLIC ? (c ? `<span class="rt-color">${dot}${RT_COLOR_NAME[c]}</span>` : `<span class="rt-color">${dot}Purple</span>`) : `<span class="rt-color">${dot}<select data-rtcolor="${esc(r.id)}" aria-label="Main color this routine belongs to"><option value="">Main color…</option>${COLORS.map(k => `<option value="${k}"${c === k ? " selected" : ""}>${RT_COLOR_NAME[k]}</option>`).join("")}</select></span>`; };
+  async function rtSetColor(id, color) { const r = rtById(id); if (!r || PUBLIC) return; const next = { ...r, color: COLORS.includes(color) ? color : "", updatedAt: new Date().toISOString() }; routines = routines.map(x => x.id === id ? next : x); renderPlanner(); renderDatabase(); renderVault(); renderGraph(); await saveRoutine(next); }
+  document.addEventListener("change", e => { const s = e.target.closest && e.target.closest("[data-rtcolor]"); if (s) rtSetColor(s.dataset.rtcolor, s.value); });
   async function rtToggleWeb(id) { const r = rtById(id); if (!r || PUBLIC) return; const next = { ...r, public: r.public !== true, updatedAt: new Date().toISOString() }; routines = routines.map(x => x.id === id ? next : x); renderPlanner(); renderDatabase(); renderVault(); await saveRoutine(next); }
   document.addEventListener("click", ev => { const b = ev.target.closest && ev.target.closest("[data-rtweb]"); if (!b) return; ev.preventDefault(); ev.stopPropagation(); rtToggleWeb(b.dataset.rtweb); }, true);
   const rtPlans = (r) => (Array.isArray(r && r.plans) ? r.plans : []).filter(x => x && x.id && /^\d{4}-\d\d-\d\d$/.test(x.date || ""));
@@ -4200,7 +4210,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const s = statsOf(r), maxSlot = Math.max(1, ...s.bySlot.map(b => b[1]));
       const hist = s.done.slice().sort((a, b) => (b.doneAt || b.date).localeCompare(a.doneAt || a.date));
       const open = rtIsOpen(r.id);
-      const head = `<div class="rt-head"><button type="button" class="rt-tog" data-rttoggle="${esc(r.id)}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(r.name)}"><svg class="vcaret${open ? " open" : ""}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" class="emoji-btn rt-emoji${r.emoji ? "" : " is-auto"}" data-rtemoji="${esc(r.id)}" aria-label="Choose an emoji for ${esc(r.name)}" title="Choose an emoji"><span class="emo">${esc(rtEmoji(r))}</span>${r.emoji ? "" : '<span class="emo-auto">auto</span>'}</button><input class="rt-name" value="${esc(r.name)}" data-rtname="${esc(r.id)}" aria-label="Routine name"${PUBLIC ? " readonly" : ""}>${rtWebBtn(r)}<button type="button" class="btn primary rt-today" data-rtlog="${esc(r.id)}">✓ Did it today</button></div>`;
+      const head = `<div class="rt-head"><button type="button" class="rt-tog" data-rttoggle="${esc(r.id)}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} ${esc(r.name)}"><svg class="vcaret${open ? " open" : ""}" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" class="emoji-btn rt-emoji${r.emoji ? "" : " is-auto"}" data-rtemoji="${esc(r.id)}" aria-label="Choose an emoji for ${esc(r.name)}" title="Choose an emoji"><span class="emo">${esc(rtEmoji(r))}</span>${r.emoji ? "" : '<span class="emo-auto">auto</span>'}</button><input class="rt-name" value="${esc(r.name)}" data-rtname="${esc(r.id)}" aria-label="Routine name"${PUBLIC ? " readonly" : ""}>${rtColorCtl(r)}${rtWebBtn(r)}<button type="button" class="btn primary rt-today" data-rtlog="${esc(r.id)}">✓ Did it today</button></div>`;
       if (!open) return `<article class="rt-card closed" data-rtcard="${esc(r.id)}">${head}<div class="rt-mini">${s.w} in the last 7 days · ${s.total} all time${s.streak ? ` · ${s.streak}-day streak` : ""} · ${s.last ? "last done " + esc(fmt(s.last.date, false)) : "not done yet"}</div></article>`;
       return `<article class="rt-card" data-rtcard="${esc(r.id)}">
         ${head}
@@ -4781,6 +4791,7 @@ Don't invent appointments or facts that aren't listed.`);
         if (k === "created") return `<td data-label="Created" class="num">${r.createdAt ? esc(fmt(r.createdAt.slice(0, 10))) : "—"}</td>`;
         if (k === "updated") return `<td data-label="Last edited" class="num">${x.e.updatedAt ? esc(fmt(x.e.updatedAt.slice(0, 10))) : "—"}</td>`;
         if (k === "tasks") return `<td data-label="Tasks" class="num">${done.length} done</td>`;
+        if (k === "color") return `<td data-label="Color">${rtColorCtl(r)}</td>`;
         if (k === "public") return `<td data-label="Show on website">${PUBLIC ? `<span class="qt qt-ro" aria-pressed="${r.public === true}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${r.public === true ? "On" : "Off"}</span></span>` : rtWebBtn(r)}</td>`;
         return `<td data-label="${DB_COL[k][1]}"><span class="db-empty">—</span></td>`;
       }

@@ -40,7 +40,7 @@ for (const type of ["projects", "areas", "pages", "archive", "ideas", "values", 
   count += out[type].length; out[type].forEach(e => titles.push(e.title || "Untitled"));
 }
 // Routines are Layer 7 entries: only those with public === true are published (with their planner placements)
-out.routines = readCol("routines").filter(r => r.public === true).map(r => ({ id: r.id, name: String(r.name || ""), emoji: r.emoji || "", body: String(r.body || ""), public: true, createdAt: r.createdAt || "", plans: (Array.isArray(r.plans) ? r.plans : []).map(p => ({ id: p.id, date: p.date, slot: p.slot, status: p.status, doneAt: p.doneAt || "" })) }));
+out.routines = readCol("routines").filter(r => r.public === true).map(r => ({ id: r.id, name: String(r.name || ""), emoji: r.emoji || "", body: String(r.body || ""), color: String(r.color || ""), public: true, createdAt: r.createdAt || "", plans: (Array.isArray(r.plans) ? r.plans : []).map(p => ({ id: p.id, date: p.date, slot: p.slot, status: p.status, doneAt: p.doneAt || "" })) }));
 count += out.routines.length; out.routines.forEach(r => titles.push(r.name));
 // Links may only point at other public entries
 const pub = new Set(Object.values(out).flat().map(e => e.id));
