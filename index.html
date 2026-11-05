@@ -1103,6 +1103,11 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .wf-flabel b { color: var(--ink); margin-right: 4px; }
 .wf-focus .qt { min-width: 58px; }
 .wf-note { margin: 0 0 2px; font-size: 12.5px; color: var(--accent); }
+.wf-shead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.wf-shead .hm-label { border: 0; padding: 0; margin: 0; }
+.wf-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.wf-seg button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 12px; cursor: pointer; }
+.wf-seg button[aria-pressed="true"] { background: var(--forest); color: var(--accent); }
 .wf-kind { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
 .wf-addc { padding: 10px; gap: 8px; }
 .wf-break { flex-basis: 100%; height: 0; }
@@ -5091,8 +5096,9 @@ Don't invent appointments or facts that aren't listed.`);
   function wfNorm(d) {
     d = d || {};
     const st = d.stars && typeof d.stars === "object" ? d.stars : {}, od = d.order && typeof d.order === "object" ? d.order : {};
+    const md = d.mode && typeof d.mode === "object" ? d.mode : null;
     return {
-      focus: !!d.focus,
+      mode: Object.fromEntries(WF_CHAIN.map(k => [k, md ? (md[k] === "starred" ? "starred" : "all") : (d.focus && k !== "ideas" ? "starred" : "all")])),
       stars: Object.fromEntries(WF_CHAIN.map(k => [k, arr(st[k])])),
       order: Object.fromEntries(WF_CHAIN.map(k => [k, arr(od[k])])),
     };
@@ -5109,17 +5115,19 @@ Don't invent appointments or facts that aren't listed.`);
   const wfAll = (type) => byOrder(data[type].slice().sort((a, b) => titleSort({ e: a }, { e: b })), wf.order[type] || []);
   const isStar = (type, id) => (wf.stars[type] || []).includes(id);
   // Focus mode: a section shows only what is linked to the starred cards right above it (everything, when nothing above is starred)
+  // Each section is either "all" (every entry of its kind) or "starred" (only entries linked to a starred card in the section right above).
+  // Ideas sit at the start of the circle: in "starred" mode they follow the starred resources (section 6).
+  const wfMode = (type) => PUBLIC ? "all" : (wf.mode[type] || "all");
+  const wfPrev = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + WF_CHAIN.length - 1) % WF_CHAIN.length];
+  const wfNext = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + 1) % WF_CHAIN.length];
   function wfShown() {
-    const F = wf.focus && !PUBLIC, out = {}, starred = {};
-    let prev = null;
+    const out = {}, starred = {};
     WF_CHAIN.forEach((type, i) => {
       let list = wfAll(type);
-      if (type === "projects") list = list.filter(p => wfLinked(p.id, "goals").length);
-      if (type === "pages") list = list.filter(r => wfLinked(r.id, "projects").some(p => out.projects.includes(p)));
-      if (i > 0) {
-        const above = WF_CHAIN[i - 1], st = (out[above] || []).filter(x => isStar(above, x.id));
-        starred[above] = F && st.length ? st : null;
-        if (starred[above]) list = list.filter(x => st.some(s => (adj.get(s.id) || new Set()).has(x.id)));
+      if (wfMode(type) === "starred") {
+        const above = wfPrev(type), pool = i === 0 ? wfAll(above) : (out[above] || []), st = pool.filter(x => isStar(above, x.id));
+        starred[above] = st;
+        list = list.filter(x => st.some(s => (adj.get(s.id) || new Set()).has(x.id)));
       }
       out[type] = list;
     });
@@ -5128,13 +5136,13 @@ Don't invent appointments or facts that aren't listed.`);
   let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null;
   function renderWorkflow() {
     const el = $("wfBody"); if (!el) return;
-    const ro = PUBLIC ? " readonly" : "", F = wf.focus && !PUBLIC;
+    const ro = PUBLIC ? " readonly" : "", F = !PUBLIC && WF_CHAIN.some(k => wfMode(k) === "starred");
     const S = wfShown();
-    const star = (type, id) => F ? `<button type="button" class="wf-star" data-wfstar="${type}" data-wfkey="${esc(id)}" aria-pressed="${isStar(type, id)}" title="${isStar(type, id) ? "Starred: the next section focuses on it. Click to unstar." : `Star this ${TYPE[type].singular} to focus on it`}">${isStar(type, id) ? "★" : "☆"}</button>` : "";
+    const star = (type, id) => !PUBLIC && wfMode(wfNext(type)) === "starred" ? `<button type="button" class="wf-star" data-wfstar="${type}" data-wfkey="${esc(id)}" aria-pressed="${isStar(type, id)}" title="${isStar(type, id) ? "Starred: the next section focuses on it. Click to unstar." : `Star this ${TYPE[type].singular} to focus on it`}">${isStar(type, id) ? "★" : "☆"}</button>` : "";
     const openBtn = (type, id) => `<button type="button" class="wf-open" data-wfopen="${type}" data-wfid="${esc(id)}" title="Open the entry">↗</button>`;
     const grip = (type, id) => PUBLIC ? "" : `<button type="button" class="wf-grip${wfMove && wfMove.sec === type && wfMove.key === id ? " on" : ""}" data-wfgrip="${type}" data-wfkey="${esc(id)}" title="Drag to move, or tap and then tap “Move here”" aria-label="Move card">⠿</button>`;
     const del = (type, id) => PUBLIC ? "" : `<button type="button" class="wf-x" data-wfdel="${type}" data-wfid="${esc(id)}" title="${wfDelArm === id ? "Tap again to delete this entry" : `Delete this ${TYPE[type].singular}`}">${wfDelArm === id ? "Delete?" : "×"}</button>`;
-    const card = (type, e, { top, mid, label, bottom }) => `<article class="wf-c${F && isStar(type, e.id) ? " top" : ""}" data-wfsec="${type}" data-wfkey="${esc(e.id)}">${wfMove && wfMove.sec === type && wfMove.key !== e.id ? `<button type="button" class="wf-here" data-wfhere="${type}" data-wfkey="${esc(e.id)}">Move here</button>` : ""}
+    const card = (type, e, { top, mid, label, bottom }) => `<article class="wf-c${!PUBLIC && wfMode(wfNext(type)) === "starred" && isStar(type, e.id) ? " top" : ""}" data-wfsec="${type}" data-wfkey="${esc(e.id)}">${wfMove && wfMove.sec === type && wfMove.key !== e.id ? `<button type="button" class="wf-here" data-wfhere="${type}" data-wfkey="${esc(e.id)}">Move here</button>` : ""}
       <div class="wf-top"><span class="wf-plabel">From</span>${top}</div>
       <div class="wf-mid">${grip(type, e.id)}${star(type, e.id)}${mid}</div>
       <div class="wf-bot"><span class="wf-plabel">${label}</span>${bottom}</div></article>`;
@@ -5161,9 +5169,11 @@ Don't invent appointments or facts that aren't listed.`);
       return chips + adder + (opts.extra || "");
     };
     const titleIn = (type, e, label) => `<input class="wf-in wf-name" data-wfedit="${type}" data-wfid="${esc(e.id)}" data-wffield="title" value="${esc(e.title || "")}" aria-label="${label}" maxlength="300"${ro}>`;
-    const sec = (id, n, title, sub, body) => `<section class="wf-sec" id="wf-${id}"><div class="hm-label">${n}. ${title}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
-    const focusNote = (above) => F ? (S.starred[above] ? `<p class="wf-note">Showing what's linked to your starred ${TYPE[above].label.toLowerCase()}.</p>` : `<p class="wf-note">Nothing starred in ${TYPE[above].label.toLowerCase()} yet, so everything shows.</p>`) : "";
-    const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${type === "ideas" ? `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>` : ""}${above ? (() => { const st = S.starred[above]; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : ""}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
+    const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div>${type ? modeSeg(type) : ""}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
+    const SEC_N = { ideas: 1, values: 2, areas: 3, goals: 4, projects: 5, pages: 6 };
+    const focusNote = (type) => { if (wfMode(type) !== "starred") return ""; const above = wfPrev(type), n = (S.starred[above] || []).length, lab = TYPE[above].label.toLowerCase(); return n ? `<p class="wf-note">Showing only what comes from your ${n} starred ${n === 1 ? TYPE[above].singular : lab} in section ${SEC_N[above]}.</p>` : `<p class="wf-note">Nothing is starred in ${TYPE[above].label} (section ${SEC_N[above]}) yet. Star (☆) some there to fill this section.</p>`; };
+    const modeSeg = (type) => PUBLIC ? "" : `<span class="wf-seg" role="group" aria-label="What this section shows"><button type="button" data-wfmode="${type}" data-m="all" aria-pressed="${wfMode(type) === "all"}">All</button><button type="button" data-wfmode="${type}" data-m="starred" aria-pressed="${wfMode(type) === "starred"}">From starred</button></span>`;
+    const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${type === "ideas" ? `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>` : ""}${above ? (() => { const st = wfMode(type) === "starred" ? S.starred[above] : null; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : ""}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
     const empty = (t) => `<p class="wf-empty">${t}</p>`;
 
     // 0. What I'm working with (ideas)
@@ -5196,14 +5206,14 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="hm-icon" aria-hidden="true">🧠</div>
       <h1 class="hm-title">Workflow</h1>
       ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card is an entry and reads the same way: <b>From</b> on top (a dropdown of where it came from), the entry itself in the middle, and what grows out of it at the bottom.</p>`}
-      ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel"><b>⭐ Focus on starred</b> ${F ? "Star (☆) cards in any section; the section below shows only what's linked to them." : "Showing everything. Turn on to star what you're focusing on."}</span></div>`}
+      ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel">${F ? `<b>⭐ Focus on starred</b> Each section marked “From starred” shows only what comes from the starred cards in the section right above it. Ideas start the circle, so they show all.` : `<b>Showing everything</b> Every entry shows in its section. Turn on to focus on starred cards.`}</span></div>`}
       <nav class="wf-jump" aria-label="Jump to a section">${[["ideas", "Ideas"], ["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
-      ${sec("ideas", 1, "Ideas", "Ideas I'm drawing from: religion, politics, society, my past experience. From shows the resources they came from; each idea points to the values it shapes.", board("ideas", ideaCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("ideas", "An idea I'm drawing from", "Add idea", "pages")))}
-      ${sec("values", 2, "Values", "Each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("ideas") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "ideas")))}
-      ${sec("areas", 3, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("values") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")))}
-      ${sec("goals", 4, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("areas") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")))}
-      ${sec("projects", 5, "Projects", "Each project from the goals above is a card. Add the resources that go with it.", focusNote("goals") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : "Assign projects to goals in “Goals” and each one becomes a card here.")))}
-      ${sec("resources", 6, "Resources", "Each resource from the projects above is a card. Choose the ideas it feeds, and they show it under From back in “Ideas”, closing the circle.", focusNote("projects") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : "Add resources to projects in “Projects” and each one becomes a card here.")))}
+      ${sec("ideas", 1, "Ideas", "Ideas I'm drawing from: religion, politics, society, my past experience. From shows the resources they came from; each idea points to the values it shapes.", focusNote("ideas") + board("ideas", ideaCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("ideas", "An idea I'm drawing from", "Add idea", "pages")), "ideas")}
+      ${sec("values", 2, "Values", "Each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "ideas")), "values")}
+      ${sec("areas", 3, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
+      ${sec("goals", 4, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
+      ${sec("projects", 5, "Projects", "Each project is a card. Add the resources that go with it.", focusNote("projects") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")), "projects")}
+      ${sec("resources", 6, "Resources", "Each resource is a card. Choose the ideas it feeds, and they show it under From back in “Ideas”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
   }
@@ -5277,7 +5287,8 @@ Don't invent appointments or facts that aren't listed.`);
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
     if (PUBLIC) return;
-    if (t.closest("[data-wffocus]")) { wf.focus = !wf.focus; saveWf(); renderWorkflow(); return; }
+    if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "ideas" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
+    const mo = t.closest("[data-wfmode]"); if (mo) { wf.mode[mo.dataset.wfmode] = mo.dataset.m === "starred" ? "starred" : "all"; saveWf(); renderWorkflow(); return; }
     const st = t.closest("[data-wfstar]"); if (st) { const sc = st.dataset.wfstar, k = st.dataset.wfkey, l = wf.stars[sc] || []; wf.stars[sc] = l.includes(k) ? l.filter(x => x !== k) : [...l, k]; saveWf(); renderWorkflow(); return; }
     const gr = t.closest("[data-wfgrip]"); if (gr) { const k = { sec: gr.dataset.wfgrip, key: gr.dataset.wfkey }; wfMove = wfMove && wfMove.sec === k.sec && wfMove.key === k.key ? null : k; renderWorkflow(); return; }
     const hr = t.closest("[data-wfhere]"); if (hr && wfMove) { wfReorder(wfMove.sec, wfMove.key, hr.dataset.wfkey || null); return; }
@@ -5544,7 +5555,7 @@ Don't invent appointments or facts that aren't listed.`);
   TOOL_ICON.home = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 7.5 8 2.5l5.5 5"/><path d="M4 6.5v7h8v-7"/><path d="M6.5 13.5v-4h3v4"/></svg>';
   TOOL_ICON.workflow = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="3.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="8" r="1.8"/><circle cx="3.5" cy="12.5" r="1.8"/><path d="M5.3 3.5h3.2a2 2 0 0 1 2 2v.7M5.3 12.5h3.2a2 2 0 0 0 2-2v-.7"/></svg>';
   TOOL_ICON.database = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>';
-  const TABS = [{ key: "home", label: "Home", kind: "tool" }, { key: "workflow", label: "Workflow", kind: "tool" }, ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
+  const TABS = [{ key: "home", label: "Home", kind: "tool" }, ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   function showView() {
