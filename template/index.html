@@ -3900,18 +3900,26 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     vSorts = cycleSort(vSorts, k, k === "title" || k === "status" ? "asc" : "desc");
     saveVf(); renderTree();
   });
+  const VAULT_GROUPS = [
+    { key: "projects", label: "Projects, Goals, Routines", types: ["projects", "goals"], routines: true },
+    { key: "areas", label: "Areas", types: ["areas"] },
+    { key: "pages", label: "Resources", types: ["pages", "ideas", "values"] },
+    { key: "archive", label: "Archive", types: ["archive"] },
+  ];
+  const vaultGroupOf = (type) => (VAULT_GROUPS.find(G => G.types.includes(type)) || VAULT_GROUPS[0]).key;
   function renderTree() {
     const q = ($("vSearch").value || "").trim().toLowerCase();
     vFa = vFilterCount() > 0; renderVaultTools();
     let html = `<button type="button" class="vnote vwelcome${vCurrent.kind === "welcome" ? " active" : ""}" style="--d:0" data-vwelcome="1"><svg class="vicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7.5 8 2.5l6 5V14H10v-4H6v4H2z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span>Welcome</span></button>`;
     html += childFolders("").map(f => renderFolder(f, 0, q)).join("");
-    html += TYPES.map(T => {
-      const notes = unfiled(T.key).filter(x => (!q || (x.e.title || "").toLowerCase().includes(q)) && vPass(x)).sort(vCmp);
-      if ((q || vFa) && !notes.length) return "";
-      return folderRow("type:" + T.key, T.label, 0, notes.map(x => noteRow(x, 1)).join(""), { forceOpen: !!q || vFa });
+    // Obsidian folders: Projects, Goals, Routines together; ideas and values file under Resources
+    const rtRows = () => { const rts = routines.filter(r => !q || (r.name || "").toLowerCase().includes(q)).sort((a, b) => (a.name || "").localeCompare(b.name || "")); return { n: rts.length, html: rts.map(r => `<button type="button" class="vnote${vCurrent.kind === "routine" && vCurrent.id === r.id ? " active" : ""}" style="--d:1" data-vroutine="${esc(r.id)}"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span>${esc(r.name || "Untitled routine")}</span></button>`).join("") }; };
+    html += VAULT_GROUPS.map(G => {
+      const notes = G.types.flatMap(k => unfiled(k)).filter(x => (!q || (x.e.title || "").toLowerCase().includes(q)) && vPass(x)).sort(vCmp);
+      const rt = G.routines ? rtRows() : { n: 0, html: "" };
+      if ((q || vFa) && !notes.length && !rt.n) return "";
+      return folderRow("type:" + G.key, G.label, 0, notes.map(x => noteRow(x, 1)).join("") + rt.html, { forceOpen: !!q || vFa });
     }).join("");
-    { const rts = routines.filter(r => !q || (r.name || "").toLowerCase().includes(q)).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-      if (rts.length || !(q || vFa)) html += folderRow("type:routines", "Routines", 0, rts.map(r => `<button type="button" class="vnote${vCurrent.kind === "routine" && vCurrent.id === r.id ? " active" : ""}" style="--d:1" data-vroutine="${esc(r.id)}"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span>${esc(r.name || "Untitled routine")}</span></button>`).join("") || '<div class="vempty" style="--d:1">No routines yet.</div>', { forceOpen: !!q }); }
     if ((q || vFa) && !html.includes("data-vnote=")) html += `<div class="vempty" style="--d:0;padding-left:8px">No notes match.${vFa ? " Try clearing the filter." : ""}</div>`;
     $("vTree").innerHTML = html;
     if (vRenaming) { const i = $("vRenameInput"); if (i) { i.focus(); i.select(); } }
@@ -3990,7 +3998,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!(await commitEdit())) return;
     if (remember) vHistory.push(vCurrent);
     vCurrent = target; vEditing = false;
-    if (target.kind === "note") { const x = byId.get(target.id); if (x) { const fk = x.e.folder && folderById(x.e.folder) ? null : "type:" + x.type; if (fk) vOpen.add(fk); let f = folderById(x.e.folder); while (f) { vOpen.add("f:" + f.id); f = folderById(f.parent); } saveOpenState(); } }
+    if (target.kind === "note") { const x = byId.get(target.id); if (x) { const fk = x.e.folder && folderById(x.e.folder) ? null : "type:" + vaultGroupOf(x.type); if (fk) vOpen.add(fk); let f = folderById(x.e.folder); while (f) { vOpen.add("f:" + f.id); f = folderById(f.parent); } saveOpenState(); } }
     buildAdj(); renderVault();
     if (window.innerWidth < 760) setFilesOpen(false);
     $("vNote").scrollTop = 0; window.scrollTo({ top: $("view-obsidian").offsetTop - 10 });

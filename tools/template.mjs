@@ -77,6 +77,7 @@ const shim = String.raw`<script>
 if (!app.includes("</head>")) { console.error("No </head> in page."); process.exit(1); }
 app = app.replace("</head>", shim + "\n</head>");
 app = app.replace(/<title>[^<]*<\/title>/, "<title>LifeOS</title>");
+app = app.replace('<div class="brand">LifeOS for Maggie</div>', '<div class="brand">LifeOS</div>');
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
 fs.writeFileSync(outFile, app);
 console.log("WROTE " + outFile);
