@@ -839,6 +839,9 @@ td[data-qe]:hover, .card-prop[data-qe]:hover, .post-props [data-qe]:hover { back
 .db-pop .tag-pick { gap: 5px; }
 .db-type { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; white-space: nowrap; }
 .layer.hot { background: var(--accent); color: var(--on-accent); }
+#view-database .db-table .layer { display: inline-flex; align-items: baseline; justify-content: center; line-height: 30px; min-width: 40px; height: 32px; padding: 0 9px; border-radius: 8px; font-size: 18px; font-weight: 800; letter-spacing: .01em; }
+#view-database .db-table .layer::before { content: "L"; font-size: .72em; font-weight: 700; margin-right: 1px; opacity: .75; }
+#view-database .db-table .layers { gap: 5px; }
 @media (max-width: 760px) { .db-layers { grid-template-columns: repeat(6, minmax(0, 1fr)); } .db-ltile { min-height: 92px; } .db-lnum { font-size: 18px; } }
 @media (max-width: 600px) { .db-table table { width: 100% !important; } .db-row td[data-label]:not(:first-child)::before { display: none; } .db-row td { display: flex !important; align-items: center; gap: 6px; } }
 #view-planner { max-width: 1240px; }
