@@ -1785,8 +1785,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Rule: anything in Projects, Areas or Resources marked Done moves to Archive (same id, so links stay)
   const archiving = new Set();
   let archNoticeTimer = null;
-  // Rule: projects are always Layer 6; areas, ideas, values and goals are always Layer 9
-  const FIXED_LAYER = { projects: "6", areas: "9", ideas: "9", values: "9", goals: "9" };
+  // Rule: projects and goals are always Layer 6; areas, ideas and values are always Layer 9
+  const FIXED_LAYER = { projects: "6", areas: "9", ideas: "9", values: "9", goals: "6" };
   const layerOk = (type, e) => !FIXED_LAYER[type] || (Array.isArray(e.layers) && e.layers.length === 1 && String(e.layers[0]) === FIXED_LAYER[type]);
   async function saveEntry(type, e) {
     if (FIXED_LAYER[type] && !e._pub && !layerOk(type, e)) e = { ...e, layers: [FIXED_LAYER[type]] };
@@ -1819,6 +1819,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Entries already marked Done (for example from before this rule) are moved once they load
   function sweepDone() {
     ["archive"].forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !archiving.has(e.id) && !(Array.isArray(e.layers) && e.layers.length)).forEach(e => { saveEntry(k, e).catch(() => {}); }); });
+    ["ideas", "values", "goals"].forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !layerOk(k, e)).forEach(e => { saveEntry(k, e).catch(() => {}); }); });
     LIVE.forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !archiving.has(e.id) && (e.status === "Done" || !layerOk(k, e) || (!FIXED_LAYER[k] && !(Array.isArray(e.layers) && e.layers.length)))).forEach(e => { saveEntry(k, e).catch(err => notice(err.message)); }); });
   }
   async function saveEntryRaw(type, e) {
@@ -5292,7 +5293,7 @@ Don't invent appointments or facts that aren't listed.`);
 Entry kinds (type):
 - projects: anything to do, plan or schedule (Layer 6). Anything with a date or time is a project.
 - areas: ongoing parts of my life I keep up (Layer 9).
-- goals: outcomes I want for an area (Layer 9). Link each goal to its area.
+- goals: outcomes I want for an area (Layer 6). Link each goal to its area.
 - values: what matters to me (Layer 9).
 - ideas: ideas, beliefs or influences I'm drawing from, from religion, politics, society or my past (Layer 9).
 - routines: anything that repeats, habits (Layer 7).
