@@ -1058,6 +1058,9 @@ textarea.pl-notein { resize: vertical; min-height: 44px; }
 .ml-group h2 { font-size: 15px; margin: 10px 0 8px; display: flex; gap: 8px; align-items: baseline; }
 .ml-group h2 span { font-size: 12px; color: var(--muted); font-weight: 500; }
 .ml-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.sp-run { font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+.sp-run.ok { border-color: var(--forest); }
+.sp-run.bad { border-color: #f2a65a; }
 .ml-card.has-cover { flex-wrap: wrap; padding-top: 0; overflow: hidden; }
 .ml-cover { flex: 0 0 calc(100% + 24px); margin: 0 -12px 2px; height: 150px; overflow: hidden; background: var(--bg); }
 .ml-cover img, .ml-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -5138,14 +5141,44 @@ Don't invent appointments or facts that aren't listed.`);
   $("siteBtn").addEventListener("click", () => { siteAdd = !siteAdd; applySite(); saveSiteSettings(); notice(siteAdd ? "🌐 On: new entries you add now will be shown on your website." : "🌐 Off: new entries won't be added to your website."); });
   let siteMsg = "", siteBad = false, sitePushing = false, sitePushMsg = "", sitePushBad = false, mcpApi;
   const SITE_TASK = "trig_01KTDfpXNFfemtQn4MG7or88";
+  // Live status of the website update (read from the scheduled task's last run)
+  let siteRun = null, siteRunTimer = null;
+  const tLocal = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }); };
+  async function siteRunCheck() {
+    if (mcpApi === undefined) { try { mcpApi = await window.claude?.use?.("mcp"); } catch (e) { mcpApi = null; } }
+    if (!mcpApi) return null;
+    try {
+      const r = await mcpApi.callTool("Claude Code Remote", "list_triggers", { limit: 20 }, { cache: false });
+      const p = r && (r.payload || (r.structuredContent));
+      const list = p && Array.isArray(p.data) ? p.data : [];
+      const t = list.find(x => x.id === SITE_TASK);
+      siteRun = t && t.last_run ? { status: String(t.last_run.status || ""), fired: t.last_run.fired_at || "", done: t.last_run.finished_at || "" } : siteRun;
+    } catch (e) {}
+    if (!$("sitePop").hidden) renderSitePop();
+    return siteRun;
+  }
+  function siteRunWatch(since) {
+    clearInterval(siteRunTimer);
+    let n = 0;
+    siteRunTimer = setInterval(async () => {
+      n++; const r = await siteRunCheck();
+      const fresh = r && r.fired && new Date(r.fired).getTime() >= since - 60000;
+      if ((fresh && /SUCCEEDED|FAILED|CANCEL/.test(r.status)) || n > 40) { clearInterval(siteRunTimer); siteRunTimer = null; if (!$("sitePop").hidden) renderSitePop(); }
+    }, 30000);
+  }
+  const siteRunLine = () => { if (!siteRun || !siteRun.fired) return ""; const st = siteRun.status;
+    if (/SUCCEEDED/.test(st)) return `<div class="sp-run ok">✅ Last update finished ${esc(tLocal(siteRun.done || siteRun.fired))}. It's live about a minute later; reload the website (on a phone, pull down to refresh).</div>`;
+    if (/FAILED|CANCEL/.test(st)) return `<div class="sp-run bad">⚠️ The update started ${esc(tLocal(siteRun.fired))} didn't finish. Press 🚀 Update website now to try again.</div>`;
+    return `<div class="sp-run">⏳ Updating… started ${esc(tLocal(siteRun.fired))}. This takes about 8 to 10 minutes.</div>`; };
   async function pushSiteNow() {
     if (sitePushing) return;
     sitePushing = true; sitePushMsg = ""; renderSitePop();
     if (mcpApi === undefined) { try { mcpApi = await window.claude?.use?.("mcp"); } catch (e) { mcpApi = null; } }
-    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude. Your website still updates by itself once a day."; renderSitePop(); return; }
+    if (!mcpApi) { sitePushing = false; sitePushBad = true; sitePushMsg = "This button only works for you, signed in to Claude."; renderSitePop(); return; }
     try {
       await mcpApi.callTool("Claude Code Remote", "fire_trigger", { trigger_id: SITE_TASK, text: "Manual update requested with the LifeOS 'Update website now' button." }, { cache: false });
-      sitePushBad = false; sitePushMsg = "Update started. Your website will show the changes in about 5 minutes; you'll get a notification when it's done.";
+      sitePushBad = false; sitePushMsg = "Update started. It takes about 8 to 10 minutes; this panel shows when it's live.";
+      siteRunWatch(Date.now());
     } catch (err) {
       const c = err && err.code; sitePushBad = true;
       sitePushMsg = c === "server_not_connected" ? "Claude Code Remote isn't connected for you here, so the update couldn't start." : c === "server_unavailable" ? "The update service didn't answer. Try again in a minute." : c === "tool_error" ? "The update task couldn't start (it may have been paused or deleted)." : "Couldn't start the update (" + (c || "error") + ").";
@@ -5161,12 +5194,12 @@ Don't invent appointments or facts that aren't listed.`);
       <input type="text" id="spTitle" maxlength="80" placeholder="e.g. Maggie's Resources" value="${esc(siteTitle)}">
       <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself once a day, overnight.</div>
       <button type="button" class="btn primary" data-sppush${sitePushing ? " disabled" : ""}>${sitePushing ? "Starting the update…" : "🚀 Update website now"}</button>
-      ${sitePushMsg ? `<div class="sp-msg${sitePushBad ? " bad" : ""}">${esc(sitePushMsg)}</div>` : ""}
+      ${sitePushMsg ? `<div class="sp-msg${sitePushBad ? " bad" : ""}">${esc(sitePushMsg)}</div>` : ""}${siteRunLine()}
       <button type="button" class="btn" data-spbuild${list.length ? "" : " disabled"}>⬇ Download website file (backup)</button>
       ${siteMsg ? `<div class="sp-msg${siteBad ? " bad" : ""}">${esc(siteMsg)}</div>` : ""}
       <div class="sp-msg"><b>Backup, if the automatic update ever stops (free):</b><ol><li>Download the file (it's called index.html) and put it in a new folder, e.g. "my-website".</li><li>Go to <b>app.netlify.com/drop</b> and sign up free (or the site expires).</li><li>Drag the folder onto the page. Netlify gives you a public link.</li><li>After changes, download again, replace the file in the folder, and drag the folder onto your site's <b>Deploys</b> page.</li></ol></div>`;
   }
-  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; renderSitePop(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
+  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
   $("setBtn").addEventListener("click", e => { e.stopPropagation(); setOpen($("setPop").hidden); });
   $("setPop").addEventListener("click", e => { if (e.target.closest("[data-setclose]")) setOpen(false); });
   document.addEventListener("pointerdown", e => { const p = $("setPop"); if (p && !p.hidden && !e.target.closest("#setPop") && !e.target.closest("#setBtn")) setOpen(false); });
