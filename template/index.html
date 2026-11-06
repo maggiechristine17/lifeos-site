@@ -1223,6 +1223,11 @@ table.pr-rt { width: 100%; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
 .is-public #scBtn { display: none; }
+.ai-box { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; display: grid; gap: 6px; }
+.ai-title { font-weight: 700; }
+.ai-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ai-msg { color: var(--accent) !important; }
+.is-public #aiBox { display: none; }
 .bd-pop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.55); display: grid; place-items: start center; padding: 40px 16px; overflow-y: auto; }
 .bd-pop[hidden] { display: none; }
 .bd-dialog { width: min(820px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
@@ -1521,6 +1526,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
     <div class="set-row"><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><span class="set-desc">Shows the how-to tips throughout LifeOS.</span></div>
     <div class="set-row"><button type="button" class="easy-btn site-btn" id="siteBtn" aria-pressed="false"><span class="easy-dot" aria-hidden="true"></span>🌐 Add to website</button><span class="set-desc">While on, every new entry you add is shown on your website.</span></div>
+    <div class="ai-box" id="aiBox"></div>
     <div class="site-pop in-set" id="sitePop" aria-label="Your website"></div>
   </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -5263,7 +5269,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${siteMsg ? `<div class="sp-msg${siteBad ? " bad" : ""}">${esc(siteMsg)}</div>` : ""}
       <div class="sp-msg"><b>Backup, if the automatic update ever stops (free):</b><ol><li>Download the file (it's called index.html) and put it in a new folder, e.g. "my-website".</li><li>Go to <b>app.netlify.com/drop</b> and sign up free (or the site expires).</li><li>Drag the folder onto the page. Netlify gives you a public link.</li><li>After changes, download again, replace the file in the folder, and drag the folder onto your site's <b>Deploys</b> page.</li></ol></div>`;
   }
-  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
+  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; aiMsg = ""; renderAiBox(); renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
   $("setBtn").addEventListener("click", e => { e.stopPropagation(); setOpen($("setPop").hidden); });
   $("setPop").addEventListener("click", e => { if (e.target.closest("[data-setclose]")) setOpen(false); });
   document.addEventListener("pointerdown", e => { const p = $("setPop"); if (p && !p.hidden && !e.target.closest("#setPop") && !e.target.closest("#setBtn")) setOpen(false); });
@@ -5342,6 +5348,71 @@ Don't invent appointments or facts that aren't listed.`);
 
   // ---------- Tabs ----------
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
+  // ---------- 🤖 Export for AI: every main-database entry as compact plain text ----------
+  // Short on purpose (fewer tokens): no ids, empty fields left out, links by title, one legend at the top.
+  function buildAiExport() {
+    const LAY = ["system instructions", "narrative facts of my life", "evidence", "authority and academia", "my argumentation and meaning-making", "artifacts I create", "to-do list, projects, goals, scheduled events", "routines and habits", "therapy and emotional", "structure, where areas live"];
+    const COLW = { red: "personal admin", orange: "family and friends", yellow: "community", green: "money and work", blue: "everything else" };
+    const when = (e) => { const d = e.focusStart ? (e.focusEnd && e.focusEnd !== e.focusStart ? e.focusStart + "→" + e.focusEnd : e.focusStart) : ""; const t = e.timeStart ? timeRange(e.timeStart, e.timeEnd) : ""; return [d, t].filter(Boolean).join(" "); };
+    const clean = (s) => String(s || "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    const order = ["areas", "goals", "projects", "pages", "ideas", "values", "archive"];
+    const out = [`# My LifeOS entries (${today()})\nLayers: ${LAY.map((t, i) => `L${i} ${t}`).join("; ")}.\nColors: ${Object.entries(COLW).map(([k, v]) => k + " " + v).join("; ")}; purple routines. Links are two-way.`];
+    order.forEach(k => {
+      const T = TYPE[k]; const list = data[k].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")); if (!list.length) return;
+      out.push(`## ${T.label} (${list.length})`);
+      list.forEach(e => {
+        const meta = [layersOf(e).length ? "L" + layersOf(e).join("/L") : "", e.color || "", e.status && e.status !== "Not started" ? e.status : "", e.scheduled ? "scheduled" : "", T.archive && e.archivedFrom ? "was " + (TYPE[e.archivedFrom] ? TYPE[e.archivedFrom].singular : e.archivedFrom) : "", k === "ideas" && e.wfKind ? e.wfKind : ""].filter(Boolean).join(", ");
+        const lines = [`### ${e.title || "Untitled"}${meta ? ` (${meta})` : ""}`];
+        const tasks = taskList(e).filter(t => (t.text || "").trim());
+        const sub = clean(e.subtitle); if (sub && !tasks.length) lines.push(sub);
+        tasks.forEach(t => lines.push(`- [${t.done ? "x" : " "}] ${t.text.trim()}`));
+        const w = when(e); if (w) lines.push("When: " + w);
+        const ln = linksOf(e.id).map(x => x.e.title || "Untitled"); if (ln.length) lines.push("Links: " + [...new Set(ln)].join("; "));
+        const tg = tagsOf(e); if (tg.length) lines.push("Tags: " + tg.join(", "));
+        const tabs = [{ name: "", body: e.body, files: e.files }, ...(Array.isArray(e.noteTabs) ? e.noteTabs : [])];
+        tabs.forEach(t => { const b = clean(t.body), urls = (t.files || []).filter(f => f && f.kind === "link" && f.url).map(f => f.url); if (!b && !urls.length) return; if (t.name) lines.push(`[${t.name}]`); if (b) lines.push(b); if (urls.length) lines.push("Links out: " + urls.join(" ")); });
+        out.push(lines.join("\n"));
+      });
+    });
+    if (routines.length) {
+      out.push(`## Routines (${routines.length}, L7, purple)`);
+      routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach(r => {
+        const done = rtPlans(r).filter(x => x.status === "done");
+        const lines = [`### ${r.name || "Untitled routine"}${r.color ? ` (${r.color})` : ""}`, `Done ${done.length} times${done.length ? ", last " + done.map(x => x.date).sort().pop() : ""}`];
+        const ln = linksOf(r.id).map(x => x.e.title || "Untitled"); if (ln.length) lines.push("Links: " + ln.join("; "));
+        const b = clean(r.body); if (b) lines.push(b);
+        out.push(lines.join("\n"));
+      });
+    }
+    return out.join("\n\n").replace(/\n{3,}/g, "\n\n") + "\n";
+  }
+  let aiMsg = "";
+  function renderAiBox() {
+    const el = $("aiBox"); if (!el) return;
+    const n = TYPES.reduce((s, T) => s + data[T.key].length, 0) + routines.length;
+    el.innerHTML = `<div class="ai-title">🤖 Talk about my entries with another AI</div><p class="set-desc">Puts all ${n} entries (properties, links and notes) into one short text file, written to use as few tokens as possible. Paste it into another AI and ask it anything.</p>
+      <div class="ai-row"><button type="button" class="btn primary" data-aicopy>📋 Copy</button><button type="button" class="btn" data-aidl>⬇ Download .md</button></div>${aiMsg ? `<p class="set-desc ai-msg" role="status">${esc(aiMsg)}</p>` : ""}`;
+  }
+  async function aiCopy() {
+    const txt = buildAiExport(), tok = Math.round(txt.length / 4);
+    let ok = false;
+    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {}
+    if (!ok) { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); }
+    aiMsg = ok ? `Copied: about ${tok.toLocaleString()} tokens. Paste it into another AI.` : "Your browser blocked copying here. Use ⬇ Download .md instead and upload or paste the file.";
+    renderAiBox();
+  }
+  async function aiDownload() {
+    const txt = buildAiExport(), name = "lifeos-entries-" + today() + ".md";
+    const blob = new Blob([txt], { type: "text/markdown" });
+    try {
+      if (downloadsApi === undefined) { try { downloadsApi = await window.LIFEOS_USE("downloads"); } catch (e) { downloadsApi = null; } }
+      if (downloadsApi) { await downloadsApi.save({ filename: name, data: blob }); }
+      else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+      aiMsg = `Saved ${name} (about ${Math.round(txt.length / 4).toLocaleString()} tokens).`;
+    } catch (err) { const c = err && err.code; aiMsg = c === "declined" || c === "canceled" || c === "cancelled" ? "Download cancelled." : "Couldn't save the file (" + (c || "error") + ")."; }
+    renderAiBox();
+  }
+  $("aiBox").addEventListener("click", e => { if (e.target.closest("[data-aicopy]")) aiCopy(); else if (e.target.closest("[data-aidl]")) aiDownload(); });
   // ---------- 🗺 Schematic: a picture of how entries and views fit together ----------
   function renderSchematic() {
     const el = $("scBody"); if (!el) return;
