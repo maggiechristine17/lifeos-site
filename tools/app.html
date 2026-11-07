@@ -2974,7 +2974,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     }
     function render() { renderLayout(); renderControls(); renderColPanel(); renderHead(); renderRows(); renderBadge(); }
     function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols2`, cols[T.key]); render(); }
-    return { T, main, render, applyRemoteCols, applyBoard };
+    // Rule: a tab always opens on its first (left-most) view button
+    const openFirst = () => { const f = R("layouts").querySelector("[data-layout]"); const k = f && f.dataset.layout; if (k && ui.layout !== k) { ui.layout = k; saveUi(); render(); } };
+    return { T, main, render, applyRemoteCols, applyBoard, openFirst };
   }
 
   // ---------- Editor ----------
@@ -3743,7 +3745,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     buildAdj(); renderGraph(); renderGSel();
   }
   function graphTap(n) {
-    if (n.type === "routine") { gSel = null; renderGSel(); pl.sub = "routines"; savePl(); rtView.over[n.id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${n.id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
+    if (n.type === "routine") { gSel = null; renderGSel(); pl.sub = "routines"; savePl(); plKeepSub = true; rtView.over[n.id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${n.id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     if (PUBLIC) { openEditor(n.type, n.id); return; }
     if (!gSel || gSel === n.id) { gSel = gSel === n.id ? null : n.id; gMsg = ""; renderGSel(); draw(); return; }
     toggleLink(gSel, n.id);
@@ -4028,7 +4030,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     $("vNote").querySelectorAll('.vm-body a[href]:not(.wikilink)').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
     $("vNote").querySelectorAll('.vm-body input[type="checkbox"]').forEach(c => { c.disabled = true; });
   }
-  $("vNote").addEventListener("click", e => { const g = e.target.closest("[data-vrtgo]"); if (!g) return; const id = g.dataset.vrtgo; pl.sub = "routines"; savePl(); rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); });
+  $("vNote").addEventListener("click", e => { const g = e.target.closest("[data-vrtgo]"); if (!g) return; const id = g.dataset.vrtgo; pl.sub = "routines"; savePl(); plKeepSub = true; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); });
   function renderVault() { if (!$("vTree")) return; renderTree(); if (!vEditing) renderMain(); else { $("vBack").hidden = !vHistory.length; } }
 
   async function commitEdit() {
@@ -4878,7 +4880,7 @@ Don't invent appointments or facts that aren't listed.`);
     prMain.after(gMain);
     jump.addEventListener("click", e => { const b = e.target.closest("[data-prjump]"); if (b) { const t = $(b.dataset.prjump); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); } });
     rt.addEventListener("click", async e => {
-      const ro2 = e.target.closest("[data-prrt]"); if (ro2) { pl.sub = "routines"; savePl(); const id = ro2.dataset.prrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
+      const ro2 = e.target.closest("[data-prrt]"); if (ro2) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = ro2.dataset.prrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
       if (e.target.closest("[data-prrtadd]")) { const i = $("prRtNew"), r = await newRoutine(i.value); if (r) { i.value = ""; renderPlanner(); renderProjRoutines(true); const n = $("prRtNew"); if (n) n.focus(); } return; }
     });
     rt.addEventListener("keydown", e => { if (e.target.id === "prRtNew" && e.key === "Enter") { e.preventDefault(); rt.querySelector("[data-prrtadd]").click(); } });
@@ -4967,7 +4969,7 @@ Don't invent appointments or facts that aren't listed.`);
     const so = e.target.closest("[data-dbsort]"); if (so) { const k = so.dataset.dbsort; if (k !== "title" && dbs.sorts.length === 1 && dbs.sorts[0].key === "title" && dbs.sorts[0].dir === "asc") dbs.sorts = []; dbs.sorts = cycleSort(dbs.sorts, k, ["created", "updated", "focus"].includes(k) ? "desc" : "asc"); saveDb(); renderDatabase(); return; }
     if (e.target.closest("[data-dbsortclear]")) { dbs.sorts = []; saveDb(); renderDatabase(); return; }
     if (e.target.closest("[data-dbclear]")) { Object.assign(dbs, { layer: "", types: [], status: [] }); dbQ = ""; $("dbQ").value = ""; saveDb(); renderDatabase(); return; }
-    const ro2 = e.target.closest("[data-dbroutine]"); if (ro2) { pl.sub = "routines"; savePl(); const id = ro2.dataset.dbroutine; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
+    const ro2 = e.target.closest("[data-dbroutine]"); if (ro2) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = ro2.dataset.dbroutine; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     const r = e.target.closest("[data-dbopen]"); if (r) { dbClosePop(); openEditor(r.dataset.dbtype2, r.dataset.dbopen); return; }
     const pb = e.target.closest("[data-dbpop]"); if (pb) { dbOpenPop(pb.dataset.dbpop, pb.dataset.dbt, pb.dataset.dbe, pb); return; }
   });
@@ -6080,9 +6082,16 @@ ${text}
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   mountProjectSections();
+  let lastView = null, plKeepSub = false;
   function showView() {
     const home = "home";
     let v = (location.hash || "#" + home).slice(1);
+    // Opening a tab (coming from another tab) starts on its first view: Cards on the databases, the first sub-tab in Planner
+    if (v !== lastView) {
+      if (views[v] && views[v].openFirst) { views[v].openFirst(); if (v === "projects" && views.goals) views.goals.openFirst(); }
+      if (v === "planner") { if (plKeepSub) plKeepSub = false; else { const f = "cards"; if (pl.sub !== f) { pl.sub = f; savePl(); } } }
+    }
+    lastView = v;
     const HOME_ONLY = ["inventory", "meals"]; // opened from the Home page only, never in the top bar
     if (!TABS.some(t => t.key === v) && !(HOME_ONLY.includes(v) && (!PUBLIC || webOn(v)))) v = home;
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === v || (t.dataset.view === "home" && ["inventory", "meals"].includes(v)))));
