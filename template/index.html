@@ -621,6 +621,11 @@ tr.ag-hiddenrow td { font-size: 12.5px; font-weight: 400; color: var(--muted); f
 .t-main { font-weight: 600; }
 .t-sub { font-family: var(--font-sub); font-style: normal; font-weight: 400; font-size: 1.1em; color: var(--muted); margin-left: .35em; }
 td .t-sub:only-child, .card-prop .t-sub { margin-left: 0; }
+.t-sub-ed { cursor: text; border-radius: 4px; padding: 0 3px; }
+.t-sub-ed:hover, .t-sub-ed:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); outline: none; box-shadow: inset 0 -1px 0 var(--accent); }
+.sub-ed-in { font-family: var(--font-sub); font-size: 1.05em; margin-left: .35em; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 5px; background: var(--bg); color: var(--ink); min-width: 160px; max-width: 100%; }
+td .db-open + .t-sub, td .db-open + .sub-ed-in { margin-left: 4px; }
+td .db-open ~ .sub-tasks { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 3px; }
 .done .t-main, .card.done .t-main { text-decoration: line-through; color: var(--muted); font-weight: 500; }
 .done .title-text, .card.done .title-text { text-decoration: none !important; }
 .ed-fields .f:has(#ed-subtitle) { grid-column: 1 / -1; }
@@ -2144,6 +2149,26 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     </li>`;
   }
   // Ticking a box saves right away, stamped with the date and time.
+  function startSubEdit(sp) {
+    const id = sp.dataset.subed, type = sp.dataset.subet;
+    const e = (data[type] || []).find(x => x.id === id); if (!e || e._pub) return;
+    const inp = document.createElement("input"); inp.type = "text"; inp.className = "sub-ed-in"; inp.value = e.subtitle || ""; inp.setAttribute("aria-label", "Subtitle for " + (e.title || "this entry"));
+    sp.replaceWith(inp); inp.focus(); inp.select();
+    let done = false;
+    const finish = async (save) => {
+      if (done) return; done = true;
+      const v = inp.value.trim(), cur = (data[type] || []).find(x => x.id === id);
+      if (!save || !cur || v === (cur.subtitle || "")) { renderAll(); if (typeof renderDatabase === "function" && location.hash === "#database") renderDatabase(); return; }
+      try { await saveEntry(type, { ...cur, subtitle: v, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message || "Couldn't save the subtitle."); renderAll(); }
+    };
+    inp.addEventListener("keydown", ev => { ev.stopPropagation(); if (ev.key === "Enter") { ev.preventDefault(); finish(true); } if (ev.key === "Escape") { ev.preventDefault(); finish(false); } });
+    inp.addEventListener("click", ev => ev.stopPropagation());
+    inp.addEventListener("blur", () => finish(true));
+  }
+  document.addEventListener("click", ev => { const sp = ev.target.closest && ev.target.closest("[data-subed]"); if (!sp || !sp.closest("td")) return; ev.preventDefault(); ev.stopPropagation(); startSubEdit(sp); }, true);
+  document.addEventListener("keydown", ev => { if (ev.key !== "Enter" && ev.key !== " ") return; const sp = ev.target.closest && ev.target.closest("[data-subed]"); if (!sp || !sp.closest("td")) return; ev.preventDefault(); ev.stopPropagation(); startSubEdit(sp); }, true);
+  // Checkboxes in any table cell (Layers included) can be ticked right there
+  document.addEventListener("click", ev => { if (ev.target.closest && ev.target.closest("td .st-item")) ev.stopPropagation(); }, true);
   async function toggleTask(type, id, tid, checked) {
     const e = data[type].find(x => x.id === id); if (!e || e._pub) return;
     const stamp = (t) => t.id === tid ? { ...t, done: checked, doneAt: checked ? nowLocal() : "" } : t;
@@ -2208,7 +2233,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const qeAttrs = (e, P, type) => { const k = !PUBLIC && e && !e._pub && !QE_NATIVE(P, type) && QE_KIND(P); return k ? ` data-qe="1" data-dbpop="${k}" data-dbt="${esc(type)}" data-dbe="${esc(e.id)}" title="Click to change ${esc(P.label.toLowerCase())}"` : ""; };
   document.addEventListener("click", ev => {
     const c = ev.target.closest && ev.target.closest("[data-qe][data-dbpop]"); if (!c) return;
-    if (ev.target.closest("select, input, a, textarea, [data-open], [data-qt], .lchip, .st-item, .qe-live")) return;
+    if (ev.target.closest("select, input, a, textarea, [data-open], [data-qt], .lchip, .st-item, .qe-live, [data-subed], .sub-ed-in")) return;
     ev.preventDefault(); ev.stopPropagation();
     if (dbPopFor && dbPopFor.el === c) { dbClosePop(); return; }
     dbOpenPop(c.dataset.dbpop, c.dataset.dbt, c.dataset.dbe, c);
@@ -2222,6 +2247,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     ? `<option value="projects"${cur === "projects" && !sched ? " selected" : ""}>Projects</option><option value="projects|s"${cur === "projects" && sched ? " selected" : ""}>Projects · Scheduled</option>`
     : `<option value="${Y.key}"${Y.key === cur ? " selected" : ""}>${Y.label}</option>`).join("");
   // Checkboxes that live in the subtitle line (saved as the entry's tasks)
+  // Subtitle in a table's title cell: click it to edit right there
+  const subEdHtml = (e, type) => e.subtitle ? `<span class="t-sub${PUBLIC || e._pub ? "" : " t-sub-ed"}"${PUBLIC || e._pub ? "" : ` data-subed="${esc(e.id)}" data-subet="${esc(type)}" tabindex="0" role="button" title="Click to edit the subtitle"`}>${esc(e.subtitle)}</span>` : "";
   const subTasksHtml = (e, type, opts = {}) => { const ts = taskList(e).filter(t => (t.text || "").trim()); if (!ts.length) return ""; return `<span class="sub-tasks">${ts.map(t => `<label class="st-item${t.done ? " is-done" : ""}"><input type="checkbox" data-task="${esc(t.id)}" data-entry="${esc(e.id)}" data-etype="${esc(type)}"${t.done ? " checked" : ""}${e._pub || opts.ro ? " disabled" : ""}><span>${esc(t.text)}</span></label>`).join("")}</span>`; };
   const K = {
     subtitle: {
@@ -2253,7 +2280,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       sync: (box, f) => { const i = box.querySelector('[data-part="q"]'); if (document.activeElement !== i) i.value = f.q; },
       cell: (e, P, T) => {
         const done = hasStatus(T) && e.status === "Done";
-        return `<span class="title-cell">${isPinned(e) ? `<span class="pinned" title="Pinned: tagged Now">${PIN_SVG}</span>` : ""}${done ? '<span class="check" aria-label="Done">✓</span>' : ""}${emo(e, T.key)}<span class="title-text"><span class="t-main">${esc(e.title || "Untitled")}</span>${e.subtitle ? `<span class="t-sub">${esc(e.subtitle)}</span>` : ""}</span>${done && T.archive ? '<span class="done-badge">Done</span>' : ""}${isSched(e, T.key) ? SCHED_TAG : ""}</span>${subTasksHtml(e, T.key)}`;
+        return `<span class="title-cell">${isPinned(e) ? `<span class="pinned" title="Pinned: tagged Now">${PIN_SVG}</span>` : ""}${done ? '<span class="check" aria-label="Done">✓</span>' : ""}${emo(e, T.key)}<span class="title-text"><span class="t-main">${esc(e.title || "Untitled")}</span>${subEdHtml(e, T.key)}</span>${done && T.archive ? '<span class="done-badge">Done</span>' : ""}${isSched(e, T.key) ? SCHED_TAG : ""}</span>${subTasksHtml(e, T.key)}`;
       },
       editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><div class="title-row"><button type="button" id="ed-emoji" class="emoji-btn" aria-haspopup="dialog" aria-label="Choose an emoji" title="Choose an emoji"></button><textarea id="ed-${P.key}" class="title-ta" rows="1" autocomplete="off" spellcheck="true">${esc(e?.title || "")}</textarea></div>`,
       read: (P, out) => { out.title = $("ed-" + P.key).value.replace(/\s*\n+\s*/g, " ").trim(); if (!out.title) return "Give it a title."; out.emoji = draft.emoji || ""; },
@@ -5027,7 +5054,7 @@ Don't invent appointments or facts that aren't listed.`);
         return `<td data-label="${DB_COL[k][1]}"><span class="db-empty">—</span></td>`;
       }
       const e = x.e, T = TYPE[x.type], ro = !!e._pub, done = (e.status || "") === "Done";
-      if (k === "title") return `<td data-label="Title"><button type="button" class="db-open" data-dbopen="${esc(e.id)}" data-dbtype2="${x.type}" title="Open the note">${isPinned(e) ? `<span class="pinned">${PIN_SVG}</span>` : ""}${done ? '<span class="check" aria-label="Done">✓</span>' : ""}${emo(e, x.type)}<span class="t-main">${esc(e.title || "Untitled")}</span>${e.subtitle ? `<span class="t-sub">${esc(e.subtitle)}</span>` : ""}${done && T.archive ? '<span class="done-badge">Done</span>' : ""}${isSched(e, x.type) ? SCHED_TAG : ""}</button></td>`;
+      if (k === "title") return `<td data-label="Title"><button type="button" class="db-open" data-dbopen="${esc(e.id)}" data-dbtype2="${x.type}" title="Open the note">${isPinned(e) ? `<span class="pinned">${PIN_SVG}</span>` : ""}${done ? '<span class="check" aria-label="Done">✓</span>' : ""}${emo(e, x.type)}<span class="t-main">${esc(e.title || "Untitled")}</span>${done && T.archive ? '<span class="done-badge">Done</span>' : ""}${isSched(e, x.type) ? SCHED_TAG : ""}</button>${subEdHtml(e, x.type)}${subTasksHtml(e, x.type)}</td>`;
       const attrs = `data-dbe="${esc(e.id)}" data-dbt="${x.type}"`;
       if (k === "type") return `<td data-label="Database"><span class="db-type"><i class="tdot t-${x.type}" aria-hidden="true"></i><span class="db-selwrap"><span class="db-sellabel">${esc(T.label)}${isSched(e, x.type) ? SCHED_TAG : ""}<span class="db-caret" aria-hidden="true">▾</span></span><select data-dbedit="type" ${attrs} aria-label="Database for ${esc(e.title)}"${ro ? " disabled" : ""}>${dbOptions(x.type, isSched(e, x.type))}</select></span></span></td>`;
       if (k === "status") return `<td data-label="Status"><select class="pill ${statusOf(e.status).cls}" data-dbedit="status" ${attrs} aria-label="Status for ${esc(e.title)}"${ro ? " disabled" : ""}>${STATUSES.map(s => `<option${s.v === (e.status || "Not started") ? " selected" : ""}>${s.v}</option>`).join("")}</select></td>`;
@@ -5169,6 +5196,7 @@ Don't invent appointments or facts that aren't listed.`);
   });
   $("view-database").addEventListener("dragend", () => { dbDragKey = null; dbClearMarks(); document.querySelectorAll("#dbBody th.dragging").forEach(t => t.classList.remove("dragging")); });
   $("view-database").addEventListener("change", async e => {
+    const tk = e.target.closest("input[data-task][data-entry]"); if (tk) { await toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); return; }
     const ed = e.target.closest("[data-dbedit]");
     if (ed) {
       const type = ed.dataset.dbt, id = ed.dataset.dbe, it = dbEntry(type, id); if (!it) return;
