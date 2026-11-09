@@ -291,6 +291,15 @@ tr.group td { background: var(--bg); font-size: 13px; font-weight: 600; color: v
 .lchip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 1px 7px; font-size: 12px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .lchip:hover { border-color: var(--accent); color: var(--accent); }
 .lk-emo { margin-right: 4px; font-size: 1.05em; }
+.lk-search { position: relative; margin: 8px 0 6px; }
+.lk-search input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
+.lk-search input:focus { outline: none; border-color: var(--accent); }
+.lk-res { margin-top: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 4px; display: grid; gap: 2px; max-height: 280px; overflow-y: auto; }
+.lk-hit { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; background: none; border: 0; border-radius: 6px; padding: 5px 6px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; }
+.lk-hit:hover, .lk-hit.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.lk-hit .lchip { pointer-events: none; font-size: 13px; }
+.lk-kind { font-size: 11px; color: var(--muted); flex: none; }
+.lk-none { font-size: 13px; color: var(--muted); padding: 6px 8px; }
 .lchip.lk-c { border-color: color-mix(in srgb, var(--ec) 60%, var(--line)); background: color-mix(in srgb, var(--ec) 16%, var(--bg)); color: color-mix(in srgb, var(--ec) 55%, var(--ink)); }
 .lchip.lk-c:hover { border-color: var(--ec); color: var(--ink); background: color-mix(in srgb, var(--ec) 26%, var(--bg)); }
 .link-edit .lchip.lk-c .go:hover { color: var(--ink); }
@@ -2469,7 +2478,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         const ls = linksOf(e.id);
         return ls.length ? `<span class="lchips">${ls.map(x => `<button type="button" class="lchip${lkCls(x)}" data-open="${esc(x.e.id)}">${lkIn(x)}</button>`).join("")}</span>` : '<span style="color:var(--muted)">—</span>';
       },
-      editHtml: (P) => `<div class="link-edit"><label for="ed-addlink">${P.label}</label><div class="lchips" id="ed-links"></div><select id="ed-addlink"></select><div class="newlink" id="ed-newlink" hidden><span class="newlink-k" id="ed-newlink-k"></span><input id="ed-newlink-t" type="text" autocomplete="off" placeholder="Title"><button type="button" class="btn primary" id="ed-newlink-go">Create &amp; link</button><button type="button" class="btn" id="ed-newlink-x">Cancel</button></div></div>`,
+      editHtml: (P) => `<div class="link-edit"><label for="ed-addlink">${P.label}</label><div class="lchips" id="ed-links"></div><div class="lk-search"><input id="ed-linkq" type="search" autocomplete="off" spellcheck="false" placeholder="🔍 Search entries to link… (type a few letters)" aria-label="Search entries to link" aria-controls="ed-linkres"><div class="lk-res" id="ed-linkres" role="listbox" hidden></div></div><select id="ed-addlink"></select><div class="newlink" id="ed-newlink" hidden><span class="newlink-k" id="ed-newlink-k"></span><input id="ed-newlink-t" type="text" autocomplete="off" placeholder="Title"><button type="button" class="btn primary" id="ed-newlink-go">Create &amp; link</button><button type="button" class="btn" id="ed-newlink-x">Cancel</button></div></div>`,
       read: (P, out) => { out.links = [...draft.links]; },
     },
   };
@@ -3169,6 +3178,35 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     }).join("");
     sel.innerHTML = `<option value="">${any ? "+ Link a project, area or resource…" : "+ Link something…"}</option><optgroup label="Create something new">${LIVE.map(k => `<option value="new:${k}">+ New ${TYPE[k].singular}…</option>`).join("")}</optgroup>` + groups;
   }
+  // Link search: type a few letters to find an existing entry and link it
+  let lkSel = 0;
+  function renderLinkSearch() {
+    const inp = $("ed-linkq"), box = $("ed-linkres"); if (!inp || !box || !editing) return;
+    const q = inp.value.trim().toLowerCase();
+    if (!q) { box.hidden = true; box.innerHTML = ""; return; }
+    const words = q.split(/\s+/);
+    const hits = [...byId.values()].filter(x => x.e.id !== editing.id && !draft.links.includes(x.e.id) && TYPE[x.type])
+      .map(x => { const t = (x.e.title || "").toLowerCase(), hay = t + " " + (x.e.subtitle || "").toLowerCase(); if (!words.every(w => hay.includes(w))) return null; return { x, score: t.startsWith(q) ? 0 : t.split(/[^a-z0-9]+/).some(w => w.startsWith(words[0])) ? 1 : 2 }; })
+      .filter(Boolean).sort((a, b) => a.score - b.score || (a.x.e.title || "").localeCompare(b.x.e.title || "")).slice(0, 8).map(h => h.x);
+    if (lkSel >= hits.length) lkSel = 0;
+    box.hidden = false;
+    box.innerHTML = hits.length ? hits.map((x, i) => `<button type="button" role="option" class="lk-hit${i === lkSel ? " on" : ""}" aria-selected="${i === lkSel}" data-lkadd="${esc(x.e.id)}"><span class="lchip${lkCls(x)}">${lkIn(x)}</span><span class="lk-kind">${esc(TYPE[x.type].singular[0].toUpperCase() + TYPE[x.type].singular.slice(1))}</span></button>`).join("")
+      : `<div class="lk-none">No entry matches “${esc(inp.value.trim())}”. Use the menu below to create a new one.</div>`;
+  }
+  function addLinkFromSearch(id) {
+    if (!id || draft.links.includes(id)) return;
+    draft.links.push(id); renderLinkEditor();
+    const inp = $("ed-linkq"); if (inp) { inp.value = ""; inp.focus(); } lkSel = 0; renderLinkSearch();
+  }
+  $("edFields").addEventListener("input", e => { if (e.target.id === "ed-linkq") { lkSel = 0; renderLinkSearch(); } });
+  $("edFields").addEventListener("keydown", e => {
+    if (e.target.id !== "ed-linkq") return;
+    const hits = [...document.querySelectorAll("#ed-linkres [data-lkadd]")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (!hits.length) return; lkSel = (lkSel + (e.key === "ArrowDown" ? 1 : hits.length - 1)) % hits.length; renderLinkSearch(); return; }
+    if (e.key === "Enter") { e.preventDefault(); const h = hits[lkSel] || hits[0]; if (h) addLinkFromSearch(h.dataset.lkadd); return; }
+    if (e.key === "Escape" && e.target.value) { e.preventDefault(); e.stopPropagation(); e.target.value = ""; renderLinkSearch(); }
+  });
+  $("edFields").addEventListener("mousedown", e => { const h = e.target.closest("[data-lkadd]"); if (h) { e.preventDefault(); addLinkFromSearch(h.dataset.lkadd); } });
   $("edFields").addEventListener("keydown", e => { if (e.target.id === "ed-tag-new" && e.key === "Enter") { e.preventDefault(); addDraftTag(); } });
   $("edFields").addEventListener("keydown", e => { if (e.target.id === "ed-title" && e.key === "Enter") e.preventDefault(); });
   $("edFields").addEventListener("keydown", e => { if (e.target.matches && e.target.matches("[data-ttext]") && e.key === "Enter") { e.preventDefault(); $("ed-task-blank") && $("ed-task-blank").click(); } });
