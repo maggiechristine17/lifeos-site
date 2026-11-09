@@ -290,6 +290,11 @@ tr.group td { background: var(--bg); font-size: 13px; font-weight: 600; color: v
 .lchips { display: flex; flex-wrap: wrap; gap: 4px; }
 .lchip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 1px 7px; font-size: 12px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .lchip:hover { border-color: var(--accent); color: var(--accent); }
+.lk-emo { margin-right: 4px; font-size: 1.05em; }
+.lchip.lk-c { border-color: color-mix(in srgb, var(--ec) 60%, var(--line)); background: color-mix(in srgb, var(--ec) 16%, var(--bg)); color: color-mix(in srgb, var(--ec) 55%, var(--ink)); }
+.lchip.lk-c:hover { border-color: var(--ec); color: var(--ink); background: color-mix(in srgb, var(--ec) 26%, var(--bg)); }
+.link-edit .lchip.lk-c .go:hover { color: var(--ink); }
+.lk-li.lk-c { border-left: 3px solid var(--ec); padding-left: 6px; border-radius: 3px; background: color-mix(in srgb, var(--ec) 10%, transparent); }
 td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .links-open td[data-label="Links"] { white-space: normal; overflow: visible; }
 .links-open td .lchips { flex-wrap: wrap; overflow: visible; }
@@ -2102,6 +2107,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const typeOfEntry = (e) => (byId.get(e && e.id) || {}).type || "";
   const emojiOf = (e, type) => (e && typeof e.emoji === "string" && e.emoji.trim()) ? e.emoji.trim() : autoEmoji(e && e.title, type || typeOfEntry(e));
   const emo = (e, type) => `<span class="emo" aria-hidden="true">${esc(emojiOf(e, type))}</span>`;
+  // Link chips: tinted in the linked entry's color, with its emoji
+  const lkCls = (x) => { const c = x.type === "routines" ? "purple" : colorOf(x.e); return " lk-c ec-" + (c || "white"); };
+  const lkIn = (x) => `<span class="lk-emo" aria-hidden="true">${esc(emojiOf(x.e, x.type))}</span>${esc(x.e.title || "Untitled")}`;
 
   // ---------- Entry colors ----------
   const COLORS = ["red", "orange", "yellow", "green", "blue"];
@@ -2432,7 +2440,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       },
       cell: (e) => {
         const ls = linksOf(e.id);
-        return ls.length ? `<span class="lchips">${ls.map(x => `<button type="button" class="lchip" data-open="${esc(x.e.id)}"><i class="tdot t-${x.type}" aria-hidden="true"></i>${esc(x.e.title || "Untitled")}</button>`).join("")}</span>` : '<span style="color:var(--muted)">—</span>';
+        return ls.length ? `<span class="lchips">${ls.map(x => `<button type="button" class="lchip${lkCls(x)}" data-open="${esc(x.e.id)}">${lkIn(x)}</button>`).join("")}</span>` : '<span style="color:var(--muted)">—</span>';
       },
       editHtml: (P) => `<div class="link-edit"><label for="ed-addlink">${P.label}</label><div class="lchips" id="ed-links"></div><select id="ed-addlink"></select><div class="newlink" id="ed-newlink" hidden><span class="newlink-k" id="ed-newlink-k"></span><input id="ed-newlink-t" type="text" autocomplete="off" placeholder="Title"><button type="button" class="btn primary" id="ed-newlink-go">Create &amp; link</button><button type="button" class="btn" id="ed-newlink-x">Cancel</button></div></div>`,
       read: (P, out) => { out.links = [...draft.links]; },
@@ -3124,7 +3132,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function renderLinkEditor() {
     const chips = $("ed-links"), sel = $("ed-addlink"); if (!chips) return;
     chips.innerHTML = draft.links.length
-      ? draft.links.map(id => byId.get(id)).filter(Boolean).sort(titleSort).map(x => `<span class="lchip"><i class="tdot t-${x.type}" aria-hidden="true"></i><button type="button" class="go" data-goto="${esc(x.e.id)}">${esc(x.e.title || "Untitled")}</button><button type="button" data-unlink="${esc(x.e.id)}" aria-label="Remove link to ${esc(x.e.title)}">×</button></span>`).join("")
+      ? draft.links.map(id => byId.get(id)).filter(Boolean).sort(titleSort).map(x => `<span class="lchip${lkCls(x)}"><button type="button" class="go" data-goto="${esc(x.e.id)}">${lkIn(x)}</button><button type="button" data-unlink="${esc(x.e.id)}" aria-label="Remove link to ${esc(x.e.title)}">×</button></span>`).join("")
       : `<span class="none">No links yet.</span>`;
     let any = false;
     const groups = TYPES.map(T => {
@@ -3838,7 +3846,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     box.innerHTML = `<div class="g-head"><i class="tdot t-${x.type}" aria-hidden="true"></i><b title="${esc(x.e.title || "Untitled")}">${esc(x.e.title || "Untitled")}</b><button type="button" class="btn" data-gopen>Open</button><button type="button" class="x" data-gdone aria-label="Done linking">×</button></div>
       <div class="g-tip">Tap another shape to link it. Tap a linked one to unlink it.</div>
       ${gMsg ? `<div class="g-msg" role="status">${esc(gMsg)}</div>` : ""}
-      ${ls.length ? `<ul>${ls.map(y => `<li><i class="tdot t-${y.type}" aria-hidden="true"></i><span>${esc(y.e.title || "Untitled")}</span><button type="button" class="tdel" data-gunlink="${esc(y.e.id)}" aria-label="Unlink ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="g-tip">No links yet.</div>'}
+      ${ls.length ? `<ul>${ls.map(y => `<li class="lk-li${lkCls(y)}"><span>${lkIn(y)}</span><button type="button" class="tdel" data-gunlink="${esc(y.e.id)}" aria-label="Unlink ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="g-tip">No links yet.</div>'}
       <select class="qe-sel" id="gLinkAdd" aria-label="Link to"><option value="">+ Link to…</option>${opts}</select>
       <div class="g-actions"><button type="button" class="btn" data-gnew>+ New linked entry</button></div>`;
     box.hidden = false;
@@ -5026,7 +5034,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "subtitle") return `<td data-label="Subtitle"><input type="text" class="db-inline db-text" data-dbedit="subtitle" ${attrs} value="${esc(e.subtitle || "")}" placeholder="—" aria-label="Subtitle for ${esc(e.title)}"${ro ? " disabled" : ""}>${subTasksHtml(e, x.type)}</td>`;
       if (k === "color") return `<td data-label="Color"><span class="db-type">${colorOf(e) ? `<i class="swatch sw-${colorOf(e)}" aria-hidden="true"></i>` : '<i class="swatch sw-white" aria-hidden="true"></i>'}<select class="db-inline" data-dbedit="color" ${attrs} aria-label="Color for ${esc(e.title)}"${ro ? " disabled" : ""}><option value=""${ownColor(e) ? "" : " selected"}>${areaColorFor(e) ? "From area (" + areaColorFor(e) + ")" : "White"}</option>${COLORS.map(c => `<option value="${c}"${ownColor(e) === c ? " selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("")}</select></span></td>`;
       if (k === "public") { const PP = TYPE[x.type] && TYPE[x.type].props.find(p => p.key === "public"); const sw = !ro && PP ? qtHtml(e, x.type, PP) : ""; return `<td data-label="Show on website">${sw || `<span class="qt qt-ro" aria-pressed="${e.public === true}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${e.public === true ? "On" : "Off"}</span></span>`}</td>`; }
-      if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}"><i class="tdot t-${y.type}" aria-hidden="true"></i>${esc(y.e.title || "Untitled")}</button>`).join("")}</span>` : dash}</td>`; }
+      if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip${lkCls(y)}" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}">${lkIn(y)}</button>`).join("")}</span>` : dash}</td>`; }
       if (k === "tasks") { const ts = taskList(e), d = ts.filter(t => t.done).length; return `<td data-label="Tasks">${ts.length ? `<span class="tprog"><span class="tbar"><i style="width:${Math.round(d / ts.length * 100)}%"></i></span><span class="num">${d}/${ts.length}</span></span>` : dash}</td>`; }
       if (k === "updated") return `<td data-label="Last edited" class="num">${e.updatedAt ? esc(fmt(e.updatedAt.slice(0, 10))) : "—"}</td>`;
       if (k === "created") return `<td data-label="Created"><input type="date" class="db-inline db-date" data-dbedit="created" ${attrs} value="${esc((e[T.props.find(P => P.kind === "date").field] || e.created || e.createdTime || "").slice(0, 10))}" aria-label="Created date for ${esc(e.title)}"${ro ? " disabled" : ""}></td>`;
@@ -5075,7 +5083,7 @@ Don't invent appointments or facts that aren't listed.`);
     if (f.kind === "links") {
       const ls = linksOf(e.id), have = new Set(ls.map(y => y.e.id));
       const opts = TYPES.filter(T => !T.archive).map(T => T.key).map(k => { const items = data[k].filter(o => o.id !== e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(k + "|" + o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
-      body = `<div class="pl-msub">Links</div>${ls.length ? `<ul class="qe-links">${ls.map(y => `<li><i class="tdot t-${y.type}" aria-hidden="true"></i><span>${esc(y.e.title || "Untitled")}</span><button type="button" class="tdel" data-dblinkx="${esc(y.type + "|" + y.e.id)}" aria-label="Remove link to ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="pl-none">No links yet.</div>'}<select class="qe-sel" id="dbLinkAdd"><option value="">+ Link a project, area or resource…</option>${opts}</select>`;
+      body = `<div class="pl-msub">Links</div>${ls.length ? `<ul class="qe-links">${ls.map(y => `<li class="lk-li${lkCls(y)}"><span>${lkIn(y)}</span><button type="button" class="tdel" data-dblinkx="${esc(y.type + "|" + y.e.id)}" aria-label="Remove link to ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="pl-none">No links yet.</div>'}<select class="qe-sel" id="dbLinkAdd"><option value="">+ Link a project, area or resource…</option>${opts}</select>`;
     }
     if (f.kind === "tags") { const lower = tagsOf(e).map(t => t.toLowerCase()); body = `<div class="pl-msub">Tags</div><div class="tag-pick">${allTags().map(t => `<button type="button" class="tag-toggle ${tagColor(t)}" aria-pressed="${lower.includes(t.toLowerCase())}" data-dbtag="${esc(t)}">${t.toLowerCase() === "now" ? PIN_SVG : ""}${esc(t)}</button>`).join("")}</div><div class="task-add"><input id="dbTagNew" type="text" placeholder="New tag…" autocomplete="off"><button type="button" class="btn" data-dbtagadd>Add</button></div>`; }
     $("dbPop").innerHTML = head + body;
