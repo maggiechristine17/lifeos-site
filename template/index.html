@@ -1293,6 +1293,29 @@ table.pr-rt { width: 100%; }
 .bd-keep { font-size: 13px; color: var(--ink); display: flex; gap: 8px; align-items: flex-start; }
 .is-public #bdBtn, .is-public #ggBtn, .is-public #ggPop { display: none !important; }
 .gg-dialog { width: min(1180px, 100%); }
+.wf-vtabs { margin: 6px 0 14px; }
+.wf-csub { margin-bottom: 8px; }
+.wf-circle { position: relative; width: 100%; max-width: 980px; aspect-ratio: 1 / .9; margin: 0 auto 10px; }
+.wf-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wf-ring path { fill: none; stroke: var(--muted); stroke-width: .35; opacity: .7; vector-effect: non-scaling-stroke; stroke-width: 2; }
+.wf-ring marker path { fill: var(--muted); stroke: none; }
+.wf-cnode { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); width: min(250px, 30%); max-height: 46%; display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; box-shadow: 0 6px 22px rgba(0,0,0,.25); z-index: 1; }
+.wf-cnode.root { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent), 0 6px 22px rgba(0,0,0,.25); }
+.wf-chead { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
+.wf-cn { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); font-size: 11px; }
+.wf-ccount { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 600; }
+.wf-csel { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: inherit; font-size: 12.5px; }
+.wf-cchips { display: flex; flex-wrap: wrap; gap: 4px; overflow-y: auto; min-height: 0; }
+.wf-cchips .lchip, .wf-cback .lchip { font-size: 12px; }
+.wf-cnone { margin: 0; font-size: 12px; color: var(--muted); }
+.wf-cback { margin: 0; font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+@media (max-width: 760px) {
+  .wf-circle { aspect-ratio: auto; display: flex; flex-direction: column; gap: 22px; }
+  .wf-ring { display: none; }
+  .wf-cnode { position: relative; left: auto; top: auto; transform: none; width: 100%; max-height: none; order: var(--o, 0); }
+  .wf-cnode:not(:last-child)::after { content: "↓"; position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%); color: var(--muted); }
+}
+
 .gg-grid { display: grid; grid-template-columns: minmax(240px, 330px) 1fr; gap: 16px; min-height: 60vh; }
 @media (max-width: 760px) { .gg-grid { grid-template-columns: 1fr; } }
 .gg-files { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -5985,7 +6008,8 @@ ${text}
   // Focus mode: a section shows only what is linked to the starred cards right above it (everything, when nothing above is starred)
   // Each section is either "all" (every entry of its kind) or "starred" (only entries linked to a starred card in the section right above).
   // Values sit at the start of the circle: in "starred" mode they follow the starred resources (section 5).
-  const wfMode = (type) => PUBLIC ? "all" : (wf.mode[type] || "all");
+  // Rule (Nov 12): no more "show everything / focus on starred" switches. Every section always shows everything.
+  const wfMode = (type) => "all";
   const wfPrev = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + WF_CHAIN.length - 1) % WF_CHAIN.length];
   const wfNext = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + 1) % WF_CHAIN.length];
   function wfShown() {
@@ -6002,6 +6026,32 @@ ${text}
     return { ...out, starred };
   }
   let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null;
+  // Workflow views: Cards (first, so it's the default) and Circle (a flow chart of what follows one entry, all the way around)
+  let wfView = "cards";
+  let wfRoot = (() => { try { const r = JSON.parse(localStorage.getItem("chevy.wf.circle") || "null"); return r && WF_CHAIN.includes(r.type) ? r : null; } catch (e) { return null; } })();
+  const WF_LBL = { values: "Values", areas: "Areas", goals: "Goals", projects: "Projects", pages: "Resources" };
+  function wfCircleHtml() {
+    const N = WF_CHAIN.length, root = wfRoot && (data[wfRoot.type] || []).some(x => x.id === wfRoot.id) ? wfRoot : null;
+    const start = root ? WF_CHAIN.indexOf(root.type) : 0;
+    // Walk the circle from the chosen entry: each section shows what links to the section before it
+    const reach = {}; let prev = root ? [(data[root.type] || []).find(x => x.id === root.id)] : [];
+    for (let k = 1; k < N && root; k++) { const type = WF_CHAIN[(start + k) % N], seen = new Set(), list = []; prev.forEach(p => wfLinked(p.id, type).forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); list.push(x); } })); reach[type] = list; prev = list; }
+    const back = root ? (() => { const seen = new Set(), out = []; prev.forEach(p => wfLinked(p.id, root.type).forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); out.push(x); } })); return out; })() : [];
+    const chip = (type, e) => `<button type="button" class="lchip${lkCls({ type, e })}" data-wfopen="${type}" data-wfid="${esc(e.id)}" title="Open ${esc(e.title || "Untitled")}">${lkIn({ type, e })}</button>`;
+    const node = (type, i) => {
+      const pos = (i - start + N) % N, ang = -Math.PI / 2 + pos * 2 * Math.PI / N, x = 50 + 38 * Math.cos(ang), y = 50 + 38 * Math.sin(ang);
+      const all = wfAll(type), isRoot = root && root.type === type, items = isRoot ? [] : (reach[type] || []);
+      const sel = `<select class="wf-csel" data-wfroot="${type}" aria-label="Start the circle from a ${TYPE[type].singular}"><option value="">${isRoot ? "Start from…" : "Start here from…"}</option>${all.map(e => `<option value="${esc(e.id)}"${isRoot && root.id === e.id ? " selected" : ""}>${esc((emojiOf(e, type) ? emojiOf(e, type) + " " : "") + (e.title || "Untitled"))}</option>`).join("")}</select>`;
+      const body = !root ? `<p class="wf-cnone">${all.length} ${all.length === 1 ? TYPE[type].singular : TYPE[type].label.toLowerCase()}</p>`
+        : isRoot ? `<div class="wf-cchips">${chip(type, (data[type] || []).find(x => x.id === root.id))}</div>${back.length ? `<p class="wf-cback">↩ Back around: ${back.map(e => chip(type, e)).join(" ")}</p>` : ""}`
+        : items.length ? `<div class="wf-cchips">${items.map(e => chip(type, e)).join("")}</div>` : `<p class="wf-cnone">Nothing connected here yet.</p>`;
+      return `<div class="wf-cnode${isRoot ? " root" : ""}" style="--x:${x.toFixed(2)}%;--y:${y.toFixed(2)}%"><div class="wf-chead"><span class="wf-cn">${i + 1}</span>${WF_LBL[type]}${root && !isRoot ? `<span class="wf-ccount">${items.length}</span>` : ""}</div>${sel}${body}</div>`;
+    };
+    // Arrows between neighbours, drawn on a ring
+    const arrows = WF_CHAIN.map((t, i) => { const a0 = -Math.PI / 2 + i * 2 * Math.PI / N + 0.42, a1 = -Math.PI / 2 + (i + 1) * 2 * Math.PI / N - 0.42, r = 44, P = a => [50 + r * Math.cos(a), 50 + r * Math.sin(a)], [x0, y0] = P(a0), [x1, y1] = P(a1); return `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" marker-end="url(#wfArr)"/>`; }).join("");
+    return `<p class="wf-sub wf-csub">${root ? `Following <b>${esc(((data[root.type] || []).find(x => x.id === root.id) || {}).title || "")}</b> around the circle. Each section shows what's connected to the section before it. Pick from any dropdown to start somewhere else.` : "Choose an entry from any section's dropdown. The next section fills with what's connected to it, then the next, all the way around the circle."}${root ? ' <button type="button" class="linkish" data-wfroot-clear>Clear</button>' : ""}</p>
+      <div class="wf-circle"><svg class="wf-ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="wfArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>${arrows}</svg>${WF_CHAIN.map(node).join("")}</div>`;
+  }
   function renderWorkflow() {
     const el = $("wfBody"); if (!el) return;
     const ro = PUBLIC ? " readonly" : "", F = !PUBLIC && WF_CHAIN.some(k => wfMode(k) === "starred");
@@ -6037,7 +6087,7 @@ ${text}
       return chips + adder + (opts.extra || "");
     };
     const titleIn = (type, e, label) => `<input class="wf-in wf-name" data-wfedit="${type}" data-wfid="${esc(e.id)}" data-wffield="title" value="${esc(e.title || "")}" aria-label="${label}" maxlength="300"${ro}>`;
-    const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div>${type ? modeSeg(type) : ""}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
+    const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div></div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
     const SEC_N = { ideas: 1, values: 2, areas: 3, goals: 4, projects: 5, pages: 6 };
     const focusNote = (type) => { if (wfMode(type) !== "starred") return ""; const above = wfPrev(type), n = (S.starred[above] || []).length, lab = TYPE[above].label.toLowerCase(); return n ? `<p class="wf-note">Showing only what comes from your ${n} starred ${n === 1 ? TYPE[above].singular : lab} in section ${SEC_N[above]}.</p>` : `<p class="wf-note">Nothing is starred in ${TYPE[above].label} (section ${SEC_N[above]}) yet. Star (☆) some there to fill this section.</p>`; };
     const modeSeg = (type) => { if (PUBLIC) return ""; const on = wfMode(type) === "starred"; return `<button type="button" class="qt wf-mtog" data-wfmtog="${type}" aria-pressed="${on}" title="${on ? "Showing only what comes from starred cards above. Click to show all." : "Showing all. Click to show only what comes from starred cards above."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "From starred" : "All"}</span></button>`; };
@@ -6064,18 +6114,19 @@ ${text}
       bottom: childPart(p, "projects", { rows: (kids) => `<div class="wf-list">${kids.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${name(r)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(p.id)}" data-wfo="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || empty("No resources yet.")}</div>` }) })).join("");
 
     // 6. Resources (from the projects above), pointing back to ideas: the circle closes
-    const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Ideas", bottom: childPart(r, "pages") })).join("");
+    const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Values", bottom: childPart(r, "pages") })).join("");
     el.innerHTML = `<div class="hm-page wf-page">
       <div class="hm-icon" aria-hidden="true">🧠</div>
       <h1 class="hm-title">Workflow</h1>
+      <div class="layout-tabs wf-vtabs" role="tablist" aria-label="Workflow views"><button type="button" role="tab" data-wfview="cards" aria-selected="${wfView === "cards"}">▦ Cards</button><button type="button" role="tab" data-wfview="circle" aria-selected="${wfView === "circle"}">◯ Circle</button></div>
+      ${wfView === "circle" ? wfCircleHtml() : `
       ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card is an entry and reads the same way: <b>From</b> on top (a dropdown of where it came from), the entry itself in the middle, and what grows out of it at the bottom.</p>`}
-      ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel">${F ? `<b>⭐ Focus on starred</b> Each section marked “From starred” shows only what comes from the starred cards in the section right above it. Values start the circle, so they show all.` : `<b>Showing everything</b> Every entry shows in its section. Turn on to focus on starred cards.`}</span></div>`}
       <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
       ${sec("values", 1, "Values", "Values start the circle. From shows the resources they came from; each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "pages")), "values")}
       ${sec("areas", 2, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
       ${sec("goals", 3, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
       ${sec("projects", 4, "Projects", "Each project is a card. Add the resources that go with it.", focusNote("projects") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")), "projects")}
-      ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}
+      ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}`}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
   }
@@ -6152,6 +6203,8 @@ ${text}
   $("wfBody").addEventListener("click", async ev => {
     const t = ev.target;
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    const vt = t.closest("[data-wfview]"); if (vt) { wfView = vt.dataset.wfview; renderWorkflow(); return; }
+    if (t.closest("[data-wfroot-clear]")) { wfRoot = null; try { localStorage.removeItem("chevy.wf.circle"); } catch (e) {} renderWorkflow(); return; }
     const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
     if (PUBLIC) return;
     if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "values" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
@@ -6183,6 +6236,7 @@ ${text}
     if (t.matches("[data-wfedit]")) { ev.preventDefault(); t.blur(); }
   });
   $("wfBody").addEventListener("change", async ev => {
+    const rs = ev.target.closest && ev.target.closest("[data-wfroot]"); if (rs) { wfRoot = rs.value ? { type: rs.dataset.wfroot, id: rs.value } : null; try { localStorage.setItem("chevy.wf.circle", JSON.stringify(wfRoot)); } catch (e) {} renderWorkflow(); return; }
     if (PUBLIC) return; const t = ev.target;
     if (t.dataset.wfkind !== undefined) { await wfPatch("ideas", t.dataset.wfkind, { wfKind: t.value }); renderWorkflow(); return; }
     if (t.dataset.wflinkto !== undefined) { if (t.value) await wfLink(t.dataset.wflinkto, t.value); renderWorkflow(); return; }
@@ -6439,6 +6493,7 @@ ${text}
     if (v !== lastView) {
       if (views[v] && views[v].openFirst) { views[v].openFirst(); if (v === "projects" && views.goals) views.goals.openFirst(); }
       if (v === "planner") { if (plKeepSub) plKeepSub = false; else { const f = "cards"; if (pl.sub !== f) { pl.sub = f; savePl(); } } }
+      if (v === "workflow") wfView = "cards";
     }
     lastView = v;
     const HOME_ONLY = ["inventory", "meals"]; // opened from the Home page only, never in the top bar
