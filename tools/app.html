@@ -1908,6 +1908,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function sweepDone() {
     ["archive"].forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !archiving.has(e.id) && !(Array.isArray(e.layers) && e.layers.length)).forEach(e => { saveEntry(k, e).catch(() => {}); }); });
     ["ideas", "values", "goals"].forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !layerOk(k, e)).forEach(e => { saveEntry(k, e).catch(() => {}); }); });
+    // Rule (Nov 12): Ideas were folded into Values. Any idea still saved becomes a value (same id, links and stars).
+    if (!PUBLIC && loaded.ideas && loaded.values) data.ideas.filter(e => !e._pub && !archiving.has(e.id)).forEach(e => {
+      archiving.add(e.id);
+      const now = new Date().toISOString(), body = { ...e, layers: ["9"], updatedAt: now }; delete body.wfKind;
+      if (!body.createdTime && body.created) body.createdTime = body.created;
+      saveEntry("values", body).then(() => deleteEntry("ideas", e.id)).catch(err => notice(err.message)).finally(() => archiving.delete(e.id));
+      try { if (typeof wf !== "undefined" && wf.stars && Array.isArray(wf.stars.ideas) && wf.stars.ideas.includes(e.id) && !wf.stars.values.includes(e.id)) { wf.stars.values.push(e.id); saveWf(); } } catch (x) {}
+    });
     LIVE.forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !archiving.has(e.id) && (e.status === "Done" || !layerOk(k, e) || (!FIXED_LAYER[k] && !(Array.isArray(e.layers) && e.layers.length)))).forEach(e => { saveEntry(k, e).catch(err => notice(err.message)); }); });
   }
   async function saveEntryRaw(type, e) {
@@ -5500,7 +5508,7 @@ Don't invent appointments or facts that aren't listed.`);
         <div class="sc-node sc-db"><span class="sc-big">🗃 Master database</span><span>${all} entr${all === 1 ? "y" : "ies"}. It is one database, seen five different ways:</span></div>
         <div class="sc-arrow" aria-hidden="true">↓</div>
         <div class="sc-views">
-          ${view("🔄", "Workflow", "Ideas → values → areas → goals → projects → resources, in a circle")}
+          ${view("🔄", "Workflow", "Values → areas → goals → projects → resources, in a circle")}
           ${view("🗓", "Planner", "Cards, calendar, routines and weekly planning")}
           ${view("🗂", "Obsidian", "Folders and notes")}
           ${view("🧱", "Layers", "The typical database table, L0–L9")}
@@ -5511,7 +5519,7 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="sc-cols">
         <section class="sc-panel">
           <h4>1 · By type of information</h4>
-          <div class="sc-type"><b>📚 Resources</b><div class="sc-kids">${kid("Resources", n("pages"))}${kid("Ideas", n("ideas"), "t-i")}${kid("Values", n("values"), "t-v")}</div></div>
+          <div class="sc-type"><b>📚 Resources</b><div class="sc-kids">${kid("Resources", n("pages"))}${kid("Values", n("values"), "t-v")}</div></div>
           <div class="sc-type"><b>📌 Projects</b><div class="sc-kids">${kid("Projects", n("projects"))}${kid("Goals", n("goals"), "t-g")}${kid("Routines", rt, "t-r")}</div></div>
           <div class="sc-type"><b>🧭 Areas</b><div class="sc-kids">${kid("Areas", n("areas"))}${kid("Sub-areas", "—")}</div></div>
           <div class="sc-type sc-arch"><b>🗄 Archive</b><div class="sc-kids">${kid("Archived", n("archive"))}</div><p>⇅ Any entry can move into the Archive and back out to any type, at any time.</p></div>
@@ -5690,7 +5698,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("ggPop").addEventListener("keydown", e => { if (e.target.id === "ggIn" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ggSend(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("ggPop").hidden) ggOpen(false); });
   // ---------- 🧠 Brain dump: paste a pile of text, Claude turns it into entries (nothing is left out) ----------
-  const BD_TYPES = [["projects", "Project"], ["areas", "Area"], ["pages", "Resource"], ["archive", "Archive"], ["ideas", "Idea"], ["values", "Value"], ["goals", "Goal"], ["routines", "Routine"]];
+  const BD_TYPES = [["projects", "Project"], ["areas", "Area"], ["pages", "Resource"], ["archive", "Archive"], ["values", "Value"], ["goals", "Goal"], ["routines", "Routine"]];
   const BD_TYPE_KEYS = BD_TYPES.map(x => x[0]);
   const bd = { text: "", items: [], busy: false, msg: "", bad: false, keepNote: true };
   try { bd.text = localStorage.getItem("chevy.braindump.draft") || ""; } catch (e) {}
@@ -5725,8 +5733,6 @@ Goals:
 ${list("goals")}
 Values:
 ${list("values")}
-Ideas:
-${list("ideas")}
 
 Rules:
 - Use EVERY word of the brain dump. Each entry's "body" holds the exact original words it came from (copy them, don't summarize). Together, the bodies must cover the whole text. Keep my wording in titles where possible.
@@ -5886,7 +5892,7 @@ ${text}
   // A view over real entries: ideas, values, areas, goals, projects and resources, chained by their two-way links.
   // Each card: From (linked entries of the section above) · the entry · its children (linked entries of the next kind).
   // settings/workflow keeps only the card order, the stars and the focus switch.
-  const WF_CHAIN = ["ideas", "values", "areas", "goals", "projects", "pages"];
+  const WF_CHAIN = ["values", "areas", "goals", "projects", "pages"];
   const WF_SEC = { ideas: "sources", values: "values", areas: "areas", goals: "projects", projects: "resources" };
   const SRC_KINDS = ["Religion", "Politics", "Society", "Past experience", "Other"];
   const GOAL_SEP = " · ";
@@ -5896,7 +5902,7 @@ ${text}
     const st = d.stars && typeof d.stars === "object" ? d.stars : {}, od = d.order && typeof d.order === "object" ? d.order : {};
     const md = d.mode && typeof d.mode === "object" ? d.mode : null;
     return {
-      mode: Object.fromEntries(WF_CHAIN.map(k => [k, md ? (md[k] === "starred" ? "starred" : "all") : (d.focus && k !== "ideas" ? "starred" : "all")])),
+      mode: Object.fromEntries(WF_CHAIN.map(k => [k, md ? (md[k] === "starred" ? "starred" : "all") : (d.focus && k !== "values" ? "starred" : "all")])),
       stars: Object.fromEntries(WF_CHAIN.map(k => [k, arr(st[k])])),
       order: Object.fromEntries(WF_CHAIN.map(k => [k, arr(od[k])])),
     };
@@ -5914,7 +5920,7 @@ ${text}
   const isStar = (type, id) => (wf.stars[type] || []).includes(id);
   // Focus mode: a section shows only what is linked to the starred cards right above it (everything, when nothing above is starred)
   // Each section is either "all" (every entry of its kind) or "starred" (only entries linked to a starred card in the section right above).
-  // Ideas sit at the start of the circle: in "starred" mode they follow the starred resources (section 6).
+  // Values sit at the start of the circle: in "starred" mode they follow the starred resources (section 5).
   const wfMode = (type) => PUBLIC ? "all" : (wf.mode[type] || "all");
   const wfPrev = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + WF_CHAIN.length - 1) % WF_CHAIN.length];
   const wfNext = (type) => WF_CHAIN[(WF_CHAIN.indexOf(type) + 1) % WF_CHAIN.length];
@@ -5974,11 +5980,6 @@ ${text}
     const addCard = (type, ph, btn, above) => PUBLIC ? "" : `<div class="wf-c wf-addc">${type === "ideas" ? `<select class="wf-fsel" id="wfKind-new" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option>${k}</option>`).join("")}</select>` : ""}${above ? (() => { const st = wfMode(type) === "starred" ? S.starred[above] : null; const list = wfAll(above); return list.length ? `<select class="wf-fsel" id="wfFrom-${type}" aria-label="From"><option value="">From: none</option>${list.map(x => `<option value="${esc(x.id)}"${st && st[0] === x ? " selected" : ""}>From: ${name(x)}</option>`).join("")}</select>` : ""; })() : ""}<input class="wf-in" id="wfNew-${type}" placeholder="${ph}" maxlength="200" aria-label="${ph}">${type === "areas" ? `<input class="wf-in" id="wfNewGoal" placeholder="Its first goal (optional)" maxlength="200" aria-label="First goal">` : ""}<button type="button" class="btn primary" data-wfadd="${type}">${btn}</button></div>`;
     const empty = (t) => `<p class="wf-empty">${t}</p>`;
 
-    // 0. What I'm working with (ideas)
-    const ideaCards = S.ideas.map(e => card("ideas", e, {
-      top: fromPart(e, "ideas"),
-      mid: `${titleIn("ideas", e, "Idea")}${openBtn("ideas", e.id)}${del("ideas", e.id)}<span class="wf-break"></span>${PUBLIC ? (e.wfKind ? `<span class="wf-meta wf-mdate">${esc(e.wfKind)}</span>` : "") : `<select class="wf-kind wf-mdate${e.wfKind ? "" : " empty"}" data-wfkind="${esc(e.id)}" aria-label="Kind of idea"><option value="">Kind of idea…</option>${SRC_KINDS.map(k => `<option${e.wfKind === k ? " selected" : ""}>${k}</option>`).join("")}</select>`}`, label: "Values", bottom: childPart(e, "ideas"),
-    })).join("");
     // 1. Values
     const valueCards = S.values.map(e => card("values", e, { top: fromPart(e, "values"), mid: `${titleIn("values", e, "Value")}${openBtn("values", e.id)}${del("values", e.id)}`, label: "Areas", bottom: childPart(e, "values") })).join("");
     // 2. Areas with goals (goals are entries; together they make up the area's subtitle)
@@ -6004,14 +6005,13 @@ ${text}
       <div class="hm-icon" aria-hidden="true">🧠</div>
       <h1 class="hm-title">Workflow</h1>
       ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card is an entry and reads the same way: <b>From</b> on top (a dropdown of where it came from), the entry itself in the middle, and what grows out of it at the bottom.</p>`}
-      ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel">${F ? `<b>⭐ Focus on starred</b> Each section marked “From starred” shows only what comes from the starred cards in the section right above it. Ideas start the circle, so they show all.` : `<b>Showing everything</b> Every entry shows in its section. Turn on to focus on starred cards.`}</span></div>`}
-      <nav class="wf-jump" aria-label="Jump to a section">${[["ideas", "Ideas"], ["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
-      ${sec("ideas", 1, "Ideas", "Ideas I'm drawing from: religion, politics, society, my past experience. From shows the resources they came from; each idea points to the values it shapes.", focusNote("ideas") + board("ideas", ideaCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("ideas", "An idea I'm drawing from", "Add idea", "pages")), "ideas")}
-      ${sec("values", 2, "Values", "Each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "ideas")), "values")}
-      ${sec("areas", 3, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
-      ${sec("goals", 4, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
-      ${sec("projects", 5, "Projects", "Each project is a card. Add the resources that go with it.", focusNote("projects") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")), "projects")}
-      ${sec("resources", 6, "Resources", "Each resource is a card. Choose the ideas it feeds, and they show it under From back in “Ideas”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}
+      ${PUBLIC ? "" : `<div class="wf-focus"><button type="button" class="qt" data-wffocus aria-pressed="${F}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${F ? "On" : "Off"}</span></button><span class="wf-flabel">${F ? `<b>⭐ Focus on starred</b> Each section marked “From starred” shows only what comes from the starred cards in the section right above it. Values start the circle, so they show all.` : `<b>Showing everything</b> Every entry shows in its section. Turn on to focus on starred cards.`}</span></div>`}
+      <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
+      ${sec("values", 1, "Values", "Values start the circle. From shows the resources they came from; each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "pages")), "values")}
+      ${sec("areas", 2, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
+      ${sec("goals", 3, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
+      ${sec("projects", 4, "Projects", "Each project is a card. Add the resources that go with it.", focusNote("projects") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")), "projects")}
+      ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
   }
@@ -6090,7 +6090,7 @@ ${text}
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
     if (PUBLIC) return;
-    if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "ideas" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
+    if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "values" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
     const mo = t.closest("[data-wfmtog]"); if (mo) { const k = mo.dataset.wfmtog; wf.mode[k] = wfMode(k) === "starred" ? "all" : "starred"; saveWf(); renderWorkflow(); return; }
     const st = t.closest("[data-wfstar]"); if (st) { const sc = st.dataset.wfstar, k = st.dataset.wfkey, l = wf.stars[sc] || []; wf.stars[sc] = l.includes(k) ? l.filter(x => x !== k) : [...l, k]; saveWf(); renderWorkflow(); return; }
     const gr = t.closest("[data-wfgrip]"); if (gr) { const k = { sec: gr.dataset.wfgrip, key: gr.dataset.wfkey }; wfMove = wfMove && wfMove.sec === k.sec && wfMove.key === k.key ? null : k; renderWorkflow(); return; }
