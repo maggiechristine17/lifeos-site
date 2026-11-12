@@ -68,7 +68,7 @@ const shim = String.raw`<script>
 })();
 </script>
 <style>
-#siteBtn, #siteBtn + .set-desc, #sitePop, .set-row:has(#siteBtn), [data-hmweb], .hm-foot { display: none !important; }
+#siteBtn, #siteBtn + .set-desc, #sitePop, #ggBtn, #ggPop, .set-row:has(#siteBtn), [data-hmweb], .hm-foot { display: none !important; }
 .mine-box { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; gap: 8px; }
 .mine-title { font-weight: 700; }
 .mine-row { display: flex; gap: 8px; flex-wrap: wrap; }
