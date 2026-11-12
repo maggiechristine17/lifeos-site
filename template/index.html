@@ -291,6 +291,8 @@ tr.group td { background: var(--bg); font-size: 13px; font-weight: 600; color: v
 .lchip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 1px 7px; font-size: 12px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .lchip:hover { border-color: var(--accent); color: var(--accent); }
 .lk-emo { margin-right: 4px; font-size: 1.05em; }
+.ro-date { padding: 7px 2px; color: var(--ink); font-size: 14px; }
+.ro-note { color: var(--muted); font-size: 12px; }
 .lk-search { position: relative; margin: 8px 0 6px; }
 .lk-search input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
 .lk-search input:focus { outline: none; border-color: var(--accent); }
@@ -2211,9 +2213,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }, true);
 
   // ---------- Edit a property right where it's shown (tables, cards, feed) ----------
-  const QE_KIND = (P) => P.kind === "tags" ? "tags" : P.key === "layers" ? "layer" : P.kind === "daterange" ? "focus" : P.kind === "color" ? "color" : P.kind === "date" ? "created" : P.kind === "links" ? "links" : P.kind === "status" ? "status" : P.kind === "dbmove" ? "type" : "";
+  const QE_KIND = (P) => P.kind === "tags" ? "tags" : P.key === "layers" ? "layer" : P.kind === "daterange" ? "focus" : P.kind === "color" ? "color" : P.kind === "links" ? "links" : P.kind === "status" ? "status" : P.kind === "dbmove" ? "type" : "";
   // Status, Database, Color, Layer and Created date change straight from a dropdown or date picker right where they're shown
-  const QE_NATIVE = (P, type) => P.kind === "status" || P.kind === "dbmove" || P.kind === "color" || P.kind === "date" || (P.key === "layers" && !FIXED_LAYER[type]);
+  const QE_NATIVE = (P, type) => P.kind === "status" || P.kind === "dbmove" || P.kind === "color" || (P.key === "layers" && !FIXED_LAYER[type]);
   function qeControl(e, P, type, cls) {
     const a = `class="${cls}" data-qn="${esc(P.key)}" data-qnt="${esc(type)}" data-qne="${esc(e.id)}" aria-label="${esc(P.label)} for ${esc(e.title || "Untitled")}"`;
     if (P.kind === "status") return `<select ${a}>${STATUSES.map(st => `<option${st.v === (e.status || "Not started") ? " selected" : ""}>${st.v}</option>`).join("")}</select>`;
@@ -2319,8 +2321,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       },
       preset: (f, key) => { const p = PAST_PRESETS.find(x => x.key === key); if (presetOn(p, f.from, f.to)) { f.from = ""; f.to = ""; } else [f.from, f.to] = p.range(); },
       cell: (e, P) => { const v = e[P.field] || e.created || e.createdTime; return `<span class="num">${v ? esc(fmt(v) + (P.withTime && fmtTime(v) ? ", " + fmtTime(v) : "")) : "—"}</span>`; },
-      editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><input id="ed-${P.key}" type="${P.withTime ? "datetime-local" : "date"}" value="${esc(P.withTime ? (e?.[P.field] || nowLocal()) : ((e?.[P.field] || e?.created || e?.createdTime || "").slice(0, 10) || today()))}">`,
-      read: (P, out) => { const v = $("ed-" + P.key).value, old = out[P.field] || out.created || out.createdTime || ""; out[P.field] = !P.withTime && v && old.slice(0, 10) === v ? old : (v || (P.withTime ? nowLocal() : today())); },
+      // Rule: the created date is set automatically when an entry is made and can't be changed
+      editHtml: (P, e) => { const v = P.withTime ? (e?.[P.field] || nowLocal()) : ((e?.[P.field] || e?.created || e?.createdTime || "").slice(0, 10) || today()); return `<label>${P.label}</label><div class="ro-date" id="ed-${P.key}" data-v="${esc(v)}" title="Set automatically when the entry was created">${esc(fmt(v))} <span class="ro-note">· set automatically</span></div>`; },
+      read: (P, out) => { const old = out[P.field] || out.created || out.createdTime || ""; out[P.field] = old || (P.withTime ? nowLocal() : today()); },
     },
     status: {
       empty: () => ({ values: [] }),
@@ -3537,7 +3540,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       case "tags": return draft.tags.length ? draft.tags.slice(0, 2).join(", ") + (draft.tags.length > 2 ? " +" + (draft.tags.length - 2) : "") : "None";
       case "multi": { const on = [...box.querySelectorAll('[aria-pressed="true"]')].map(b => b.dataset.val); return on.length ? on.map(x => "L" + x).join(" ") : "Auto"; }
       case "color": { const b = box.querySelector('[data-colorpick][aria-pressed="true"]'); const c = b && b.dataset.colorpick; if (c) return c[0].toUpperCase() + c.slice(1); const ex = editing && data[editing.type].find(x => x.id === editing.id); const ac = ex ? areaColorFor(ex) : ""; return ac ? ac[0].toUpperCase() + ac.slice(1) + " (area)" : "White"; }
-      case "date": { const x = v("input"); return x ? fmt(x) : "—"; }
+      case "date": { const r = box.querySelector(".ro-date"), x = r ? r.dataset.v : v("input"); return x ? fmt(x) : "—"; }
       case "status": return v("select") || "Not started";
       case "daterange": { const ins = box.querySelectorAll("input"), ss = box.querySelectorAll("select"); return whenText({ focusStart: ins[0] && ins[0].value, focusEnd: ins[1] && ins[1].value, timeStart: ss[0] && ss[0].value, timeEnd: ss[1] && ss[1].value }) || "None"; }
       case "tasks": { const n = draft.tasks.length, d = draft.tasks.filter(t => t.done).length; return n ? d + "/" + n + " done" : "None"; }
@@ -5102,7 +5105,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip${lkCls(y)}" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}">${lkIn(y)}</button>`).join("")}</span>` : dash}</td>`; }
       if (k === "tasks") { const ts = taskList(e), d = ts.filter(t => t.done).length; return `<td data-label="Tasks">${ts.length ? `<span class="tprog"><span class="tbar"><i style="width:${Math.round(d / ts.length * 100)}%"></i></span><span class="num">${d}/${ts.length}</span></span>` : dash}</td>`; }
       if (k === "updated") return `<td data-label="Last edited" class="num">${e.updatedAt ? esc(fmt(e.updatedAt.slice(0, 10))) : "—"}</td>`;
-      if (k === "created") return `<td data-label="Created"><input type="date" class="db-inline db-date" data-dbedit="created" ${attrs} value="${esc((e[T.props.find(P => P.kind === "date").field] || e.created || e.createdTime || "").slice(0, 10))}" aria-label="Created date for ${esc(e.title)}"${ro ? " disabled" : ""}></td>`;
+      if (k === "created") { const cv = e[T.props.find(P => P.kind === "date").field] || e.created || e.createdTime || ""; return `<td data-label="Created" class="num" title="Set automatically">${cv ? esc(fmt(String(cv).slice(0, 10))) : "—"}</td>`; }
       const inner = k === "layer" ? (layersOf(e).length ? `<span class="layers">${layersOf(e).map(l => `<span class="layer${l === dbs.layer ? " hot" : ""}">${l}</span>`).join("")}</span>` : dash)
         : k === "focus" ? (whenText(e) ? `<span class="num">${esc(whenText(e))}</span>` : dash)
         : (tagsOf(e).length ? K.tags.cell(e) : dash);
