@@ -1329,6 +1329,7 @@ input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px so
 .gm-xp { font-size: 12.5px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; flex: none; }
 .gm-mini { border: 1px solid var(--line); background: none; color: var(--ink); border-radius: 99px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer; flex: none; min-height: 30px; }
 .gm-mini.add:hover { border-color: var(--accent); color: var(--accent); }
+.gm-tag { font-size: 11px; font-weight: 600; color: var(--plan); background: var(--plan-soft); border-radius: 999px; padding: 1px 8px; white-space: nowrap; align-self: center; }
 .gm-did { display: flex; gap: 8px; margin-bottom: 8px; }
 .gm-did input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
 .gm-did input:focus { outline: none; border-color: var(--accent); }
@@ -6578,7 +6579,7 @@ ${text}
     return m;
   }
   function gmAward(xp, kind, title) {
-    const before = gmLevel(gm.xp); gm.xp += xp; gm.log.push({ d: today(), x: xp, k: kind, t: String(title || "").slice(0, 80) }); gm.log = gm.log.slice(-400);
+    const before = gmLevel(gm.xp); gm.xp += xp; gm.log.push({ d: today(), at: new Date().toISOString(), x: xp, k: kind, t: String(title || "").slice(0, 80) }); gm.log = gm.log.slice(-400);
     const after = gmLevel(gm.xp);
     gmToast = after > before ? `🎉 Level ${after}! You're a ${GM_TITLES[Math.min(after - 1, GM_TITLES.length - 1)]}` : `+${xp} XP`;
     clearTimeout(gmToastT); gmToastT = setTimeout(() => { gmToast = ""; renderGame(); }, 2600);
@@ -6632,7 +6633,7 @@ ${text}
         <ul class="gm-list">${shown.map(q => row(q, false)).join("") || `<li class="gm-q empty">${gmFilter === "due" ? "Nothing due. Check All for more." : "No open quests. Add projects or checkboxes in LifeOS."}</li>`}</ul>
       </section>
       <section class="gm-sec"><h2>Recent wins</h2>
-        <ul class="gm-wins">${gm.log.slice(-8).reverse().map(l => `<li><span>${l.k === "plan" ? "🗓" : l.k === "perfect" ? "🏆" : l.k === "project" ? "🚩" : "✅"} ${esc(l.t)}</span><span class="gm-xp">+${l.x}</span></li>`).join("") || '<li class="gm-none">Nothing yet. Finish a quest to start your streak.</li>'}</ul>
+        <ul class="gm-wins">${(() => { const all = gm.log.map(l => ({ at: l.at || l.d + "T00:00", html: `<li><span>${l.k === "plan" ? "🗓" : l.k === "perfect" ? "🏆" : l.k === "project" ? "🚩" : "✅"} ${esc(l.t)}</span><span class="gm-xp">+${l.x}</span></li>` })).concat((gm.did || []).map(x => ({ at: x.at || x.d + "T00:00", html: `<li class="gm-logged"><span>📝 ${esc(x.t)}</span><span class="gm-tag">Logged${x.d === t ? "" : " · " + esc(fmt(x.d, false))}</span></li>` }))); return all.sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 12).map(x => x.html).join("") || '<li class="gm-none">Nothing yet. Finish a quest or log something you did.</li>'; })()}</ul>
       </section>
       <p class="gm-foot">Step = ${GM_XP.task} XP · Whole project = ${GM_XP.project} XP · Planning your 3 = ${GM_XP.plan} XP · Finishing all 3 = ${GM_XP.perfect} XP. Anything you tick off anywhere in LifeOS counts.</p>
     </div>`;
