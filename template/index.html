@@ -3876,7 +3876,6 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
   function setEmpty(html) { const el = $("graphEmpty"); el.hidden = !html; if (html) el.innerHTML = html; }
 
-  const G_X = 560, G_Y = 400; // a drag can't take anything farther than this from the middle
   function renderGraph() {
     $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>` + `<span><i class="tdot t-ideas" style="width:11px;height:11px;margin:0"></i>Idea</span><span><i class="tdot t-values" style="width:11px;height:11px;margin:0"></i>Value</span><span><i class="tdot t-goals" style="width:11px;height:11px;margin:0"></i>Goal</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
@@ -3909,7 +3908,6 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         .force("x", d3.forceX(0).strength(0.06))
         .force("y", d3.forceY(0).strength(0.06))
         .force("collide", d3.forceCollide().radius(d => radius(d) + 6))
-        .force("leash", () => { gNodes.forEach(n => { n.x = Math.max(-G_X, Math.min(G_X, n.x)); n.y = Math.max(-G_Y, Math.min(G_Y, n.y)); }); })
         .on("tick", () => { draw(); if (!fitted && sim.alpha() < 0.12) { fitted = true; fitGraph(); } })
         .on("end", () => { if (!settledFit) { settledFit = true; fitGraph(); } });
     }
@@ -3989,7 +3987,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       .container(canvas)
       .subject(e => nodeAt(e.x, e.y))
       .on("start", e => { dragMoved = false; if (!e.active) sim.alphaTarget(0.25).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; hoverId = e.subject.id; draw(); })
-      .on("drag", e => { dragMoved = true; let [x, y] = toGraph(e.x, e.y); x = Math.max(-G_X, Math.min(G_X, x)); y = Math.max(-G_Y, Math.min(G_Y, y));
+      .on("drag", e => { dragMoved = true; let [x, y] = toGraph(e.x, e.y); const k = transform.k, m = 14 / k; x = Math.max(-transform.x / k + m, Math.min((W - transform.x) / k - m, x)); y = Math.max(-transform.y / k + m, Math.min((H - transform.y) / k - m, y)); // anywhere on the visible board, never off it
         e.subject.fx = x; e.subject.fy = y; })
       .on("end", e => {
         if (!e.active) sim.alphaTarget(0);
