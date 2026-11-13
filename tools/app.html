@@ -1265,6 +1265,15 @@ input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px so
 .gm-xp { font-size: 12.5px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; flex: none; }
 .gm-mini { border: 1px solid var(--line); background: none; color: var(--ink); border-radius: 99px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer; flex: none; min-height: 30px; }
 .gm-mini.add:hover { border-color: var(--accent); color: var(--accent); }
+.gm-did { display: flex; gap: 8px; margin-bottom: 8px; }
+.gm-did input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
+.gm-did input:focus { outline: none; border-color: var(--accent); }
+.gm-dayh { font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 2px; }
+.gm-dl { list-style: none; margin: 0; padding: 0; display: grid; }
+.gm-dl li { display: flex; align-items: baseline; gap: 8px; font-size: 14px; padding: 6px 2px; border-bottom: 1px solid var(--line); }
+.gm-dl .tm { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; min-width: 58px; }
+.gm-dl .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.gm-dl .x { font-size: 14px; }
 .gm-wins li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 2px; border-bottom: 1px solid var(--line); }
 .gm-none { color: var(--muted); border: 0 !important; }
 .gm-foot { font-size: 12px; color: var(--muted); margin: 0; }
@@ -6477,7 +6486,7 @@ ${text}
   // Progress lives in settings/game. It is private: never published to the website.
   const GM_XP = { task: 100, project: 100, plan: 150, perfect: 300 };
   const GM_TITLES = ["Starter", "Planner", "Doer", "Finisher", "Closer", "Pro", "Master", "Legend"];
-  const gmNorm = (g) => ({ xp: Number(g && g.xp) || 0, log: Array.isArray(g && g.log) ? g.log.slice(-400) : [], seen: Array.isArray(g && g.seen) ? g.seen.map(String) : [], picks: (g && g.picks && typeof g.picks === "object") ? g.picks : {}, planned: (g && g.planned) || {}, perfect: (g && g.perfect) || {}, pn: (g && g.pn) || {}, based: !!(g && g.based) });
+  const gmNorm = (g) => ({ xp: Number(g && g.xp) || 0, log: Array.isArray(g && g.log) ? g.log.slice(-400) : [], seen: Array.isArray(g && g.seen) ? g.seen.map(String) : [], picks: (g && g.picks && typeof g.picks === "object") ? g.picks : {}, planned: (g && g.planned) || {}, perfect: (g && g.perfect) || {}, pn: (g && g.pn) || {}, based: !!(g && g.based), did: Array.isArray(g && g.did) ? g.did.filter(x => x && x.t).slice(-1000) : [] });
   let gm = gmNorm(recall("chevy.game")), gmReady = false, gmFilter = "due", gmDateEd = "", gmArm = null, gmToast = "", gmToastT = null;
   async function saveGm() {
     store("chevy.game", gm);
@@ -6551,6 +6560,10 @@ ${text}
         <p class="gm-hint">${picks.length < 3 ? `Pick ${3 - picks.length} more below to plan your day and earn <b>+${GM_XP.plan} XP</b>.` : doneN === 3 ? "All three done. Perfect day! 🎉" : `Finish all three for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
         <ul class="gm-list">${picks.map(slot).join("")}${Array.from({ length: 3 - picks.length }, () => '<li class="gm-q empty">Empty slot</li>').join("")}</ul>
       </section>
+      <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged</span></h2>
+        <form class="gm-did" data-gmdidform><input type="text" id="gmDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
+        ${(() => { const L = (gm.did || []).slice().reverse(); if (!L.length) return '<p class="gm-hint">Nothing logged yet. These are just for your record: they are not added as entries.</p>'; const days = [...new Set(L.map(x => x.d))]; return days.map(d => `<div class="gm-dayh">${d === t ? "Today" : esc(fmt(d))}</div><ul class="gm-dl">${L.filter(x => x.d === d).map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-gmdeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>`).join(""); })()}
+      </section>
       <section class="gm-sec"><h2>Quest board</h2>
         <div class="gm-chips" role="group" aria-label="Which quests"><button type="button" class="chip" data-gmfilter="due" aria-pressed="${gmFilter === "due"}">Due or overdue (${due.length})</button><button type="button" class="chip" data-gmfilter="all" aria-pressed="${gmFilter === "all"}">All (${pool.length})</button></div>
         <ul class="gm-list">${shown.map(q => row(q, false)).join("") || `<li class="gm-q empty">${gmFilter === "due" ? "Nothing due. Check All for more." : "No open quests. Add projects or checkboxes in LifeOS."}</li>`}</ul>
@@ -6563,6 +6576,7 @@ ${text}
   }
   $("gmBody").addEventListener("click", async ev => {
     const t = ev.target, d = today();
+    const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
     const dt = t.closest("[data-gmdate]"); if (dt) { gmDateEd = dt.dataset.gmdate; renderGame(); const i = $("gmBody").querySelector(`[data-gmdateinp="${CSS.escape(gmDateEd)}"]`); if (i) { i.focus(); try { i.showPicker && i.showPicker(); } catch (e) {} } return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (l.length < 3 && !l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
@@ -6574,6 +6588,13 @@ ${text}
       gmArm = null; const e = data.projects.find(x => x.id === q.id); if (!e) return;
       try { await saveEntry("projects", { ...e, status: "Done", updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); }
     }
+  });
+  $("gmBody").addEventListener("submit", ev => {
+    const f = ev.target.closest && ev.target.closest("[data-gmdidform]"); if (!f) return; ev.preventDefault();
+    const inp = f.querySelector("input"), v = inp.value.trim(); if (!v) return;
+    const n = new Date(), h = n.getHours();
+    gm.did = (gm.did || []).concat({ id: "d" + n.getTime().toString(36) + Math.random().toString(36).slice(2, 5), d: iso(n), tm: ((h + 11) % 12 + 1) + ":" + pad(n.getMinutes()) + (h < 12 ? " AM" : " PM"), t: v.slice(0, 300), at: n.toISOString() });
+    saveGm(); renderGame(); const i2 = $("gmDidIn"); if (i2) i2.focus();
   });
   $("gmBody").addEventListener("change", async ev => {
     const i = ev.target.closest && ev.target.closest("[data-gmdateinp]"); if (!i) return;
