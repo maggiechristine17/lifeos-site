@@ -1259,6 +1259,9 @@ table.pr-rt { width: 100%; }
 .gm-qn { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .gm-qs { font-size: 12px; color: var(--muted); }
 .gm-due.late { color: #f08a8a; } .gm-due.now { color: var(--accent); }
+button.gm-due { border: 0; border-bottom: 1px dashed currentColor; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; }
+button.gm-due.late { color: #f08a8a; } button.gm-due.now { color: var(--accent); } button.gm-due:hover { color: var(--ink); }
+input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px solid var(--accent); border-radius: 5px; background: var(--bg); color: var(--ink); color-scheme: dark; }
 .gm-xp { font-size: 12.5px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; flex: none; }
 .gm-mini { border: 1px solid var(--line); background: none; color: var(--ink); border-radius: 99px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer; flex: none; min-height: 30px; }
 .gm-mini.add:hover { border-color: var(--accent); color: var(--accent); }
@@ -6467,7 +6470,7 @@ ${text}
   const GM_XP = { task: 100, project: 100, plan: 150, perfect: 300 };
   const GM_TITLES = ["Starter", "Planner", "Doer", "Finisher", "Closer", "Pro", "Master", "Legend"];
   const gmNorm = (g) => ({ xp: Number(g && g.xp) || 0, log: Array.isArray(g && g.log) ? g.log.slice(-400) : [], seen: Array.isArray(g && g.seen) ? g.seen.map(String) : [], picks: (g && g.picks && typeof g.picks === "object") ? g.picks : {}, planned: (g && g.planned) || {}, perfect: (g && g.perfect) || {}, pn: (g && g.pn) || {}, based: !!(g && g.based) });
-  let gm = gmNorm(recall("chevy.game")), gmReady = false, gmFilter = "due", gmArm = null, gmToast = "", gmToastT = null;
+  let gm = gmNorm(recall("chevy.game")), gmReady = false, gmFilter = "due", gmDateEd = "", gmArm = null, gmToast = "", gmToastT = null;
   async function saveGm() {
     store("chevy.game", gm);
     if (PUBLIC || !db) return;
@@ -6524,8 +6527,9 @@ ${text}
     const t = today(), L = gmLevel(gm.xp), lo = gmFloor(L), hi = gmFloor(L + 1), pct = Math.round((gm.xp - lo) / (hi - lo) * 100);
     const quests = gmQuests(), byKey = new Map(quests.map(q => [q.key, q])), picks = gmDay(t), seen = new Set(gm.seen);
     const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => seen.has(k)).length;
-    const dueLbl = (q) => !q.due ? "" : q.due < t ? `<span class="gm-due late">Overdue · ${esc(fmt(q.due))}</span>` : q.due === t ? '<span class="gm-due now">Today</span>' : `<span class="gm-due">${esc(fmt(q.due))}</span>`;
-    const row = (q, picked) => `<li class="gm-q${picked ? " picked" : ""}"><button type="button" class="gm-check${gmArm === q.key ? " arm" : ""}" data-gmdone="${esc(q.key)}" aria-label="Finish ${esc(q.title)}">${gmArm === q.key ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(q.emoji || "")} ${esc(q.title)}</span><span class="gm-qs">${q.sub ? esc(q.sub) + " · " : ""}${q.kind === "project" ? "Whole project" : "Step"}${q.due ? " · " : ""}${dueLbl(q)}</span></div><span class="gm-xp">+${q.xp}</span>${picked ? `<button type="button" class="gm-mini" data-gmunpick="${esc(q.key)}" aria-label="Remove from today">✕</button>` : picks.length < 3 ? `<button type="button" class="gm-mini add" data-gmpick="${esc(q.key)}">＋ Today</button>` : ""}</li>`;
+    const dueLbl = (q) => gmDateEd === q.id ? `<input type="date" class="gm-date" data-gmdateinp="${esc(q.id)}" value="${esc(q.due)}" aria-label="Date for ${esc(q.sub || q.title)}">`
+      : `<button type="button" class="gm-due${q.due && q.due < t ? " late" : q.due === t ? " now" : ""}" data-gmdate="${esc(q.id)}" title="Change the date for ${esc(q.sub || q.title)}">${!q.due ? "＋ Add date" : q.due < t ? `Overdue · ${esc(fmt(q.due))}` : q.due === t ? "Today" : esc(fmt(q.due))}</button>`;
+    const row = (q, picked) => `<li class="gm-q${picked ? " picked" : ""}"><button type="button" class="gm-check${gmArm === q.key ? " arm" : ""}" data-gmdone="${esc(q.key)}" aria-label="Finish ${esc(q.title)}">${gmArm === q.key ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(q.emoji || "")} ${esc(q.title)}</span><span class="gm-qs">${q.sub ? esc(q.sub) + " · " : ""}${q.kind === "project" ? "Whole project" : "Step"} · ${dueLbl(q)}</span></div><span class="gm-xp">+${q.xp}</span>${picked ? `<button type="button" class="gm-mini" data-gmunpick="${esc(q.key)}" aria-label="Remove from today">✕</button>` : picks.length < 3 ? `<button type="button" class="gm-mini add" data-gmpick="${esc(q.key)}">＋ Today</button>` : ""}</li>`;
     const slot = (k) => { const q = byKey.get(k); if (q) return row(q, true); return `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`; };
     const pool = quests.filter(q => !picks.includes(q.key)), due = pool.filter(q => q.due && q.due <= t), list = gmFilter === "due" ? due : pool, shown = list;
     el.innerHTML = `<div class="gm">
@@ -6551,6 +6555,7 @@ ${text}
   }
   $("gmBody").addEventListener("click", async ev => {
     const t = ev.target, d = today();
+    const dt = t.closest("[data-gmdate]"); if (dt) { gmDateEd = dt.dataset.gmdate; renderGame(); const i = $("gmBody").querySelector(`[data-gmdateinp="${CSS.escape(gmDateEd)}"]`); if (i) { i.focus(); try { i.showPicker && i.showPicker(); } catch (e) {} } return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (l.length < 3 && !l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
     const up = t.closest("[data-gmunpick]"); if (up) { gm.picks = { [d]: gmDay(d).filter(k => k !== up.dataset.gmunpick) }; saveGm(); renderGame(); return; }
@@ -6562,6 +6567,15 @@ ${text}
       try { await saveEntry("projects", { ...e, status: "Done", updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); }
     }
   });
+  $("gmBody").addEventListener("change", async ev => {
+    const i = ev.target.closest && ev.target.closest("[data-gmdateinp]"); if (!i) return;
+    const e = (data.projects || []).find(x => x.id === i.dataset.gmdateinp); gmDateEd = ""; if (!e) { renderGame(); return; }
+    const v = i.value || "", fs = (e.focusStart || "").slice(0, 10);
+    const next = { ...e, focusEnd: v, focusStart: !v ? "" : (!fs || fs > v ? v : e.focusStart), updatedAt: new Date().toISOString() };
+    try { await saveEntry("projects", next); } catch (err) { notice(err.message); }
+    renderGame();
+  });
+  $("gmBody").addEventListener("focusout", ev => { if (ev.target.closest && ev.target.closest("[data-gmdateinp]")) setTimeout(() => { if (gmDateEd && !document.activeElement.closest("[data-gmdateinp]")) { gmDateEd = ""; renderGame(); } }, 250); });
   TOOL_ICON.game = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>';
   const TABS = [{ key: "home", label: "Home", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "game", label: "Game", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
