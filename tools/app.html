@@ -1741,6 +1741,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <label class="switch"><input type="checkbox" id="gOrphans" checked> Show unlinked items</label>
       <label class="switch"><input type="checkbox" id="gDone" checked> Show done projects</label>
       <label class="switch"><input type="checkbox" id="gLabels" checked> Always show names</label>
+      <label class="switch"><input type="checkbox" id="gGroup"> Drag linked items along with the one I move</label>
     </div>
   </section>
   <div class="graph-legend" id="graphLegend"></div>
@@ -3780,8 +3781,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   let transform = { x: 0, y: 0, k: 1 };
   const gOpts = { projects: true, areas: true, pages: true, archive: true, routine: true, orphans: true, done: true, labels: true };
   try { Object.assign(gOpts, JSON.parse(localStorage.getItem("chevy.graph.opts") || "{}")); } catch (e) {}
-  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false; $("gIdeas").checked = gOpts.ideas !== false; $("gValues").checked = gOpts.values !== false; $("gGoals").checked = gOpts.goals !== false;
-  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gIdeas", "ideas"], ["gValues", "values"], ["gGoals", "goals"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
+  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gGroup").checked = !!gOpts.group; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false; $("gIdeas").checked = gOpts.ideas !== false; $("gValues").checked = gOpts.values !== false; $("gGoals").checked = gOpts.goals !== false;
+  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gIdeas", "ideas"], ["gValues", "values"], ["gGoals", "goals"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"], ["gGroup", "group"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
     gOpts[k] = e.target.checked;
     try { localStorage.setItem("chevy.graph.opts", JSON.stringify(gOpts)); } catch (err) {}
     if (k === "labels") draw(); else { fitted = false; renderGraph(); }
@@ -3812,7 +3813,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
   function setEmpty(html) { const el = $("graphEmpty"); el.hidden = !html; if (html) el.innerHTML = html; }
 
-  const G_MAX = 380; // nothing can sit farther than this from the middle
+  const G_X = 900, G_Y = 650; // a roomy box: nothing can be lost off the edge, but placement is free
   function renderGraph() {
     $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>` + `<span><i class="tdot t-ideas" style="width:11px;height:11px;margin:0"></i>Idea</span><span><i class="tdot t-values" style="width:11px;height:11px;margin:0"></i>Value</span><span><i class="tdot t-goals" style="width:11px;height:11px;margin:0"></i>Goal</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
@@ -3840,12 +3841,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!graphVisible) return;
     if (!sim) {
       sim = d3.forceSimulation()
-        .force("charge", d3.forceManyBody().strength(-260))
-        .force("link", d3.forceLink().id(d => d.id).distance(95).strength(0.6))
-        .force("x", d3.forceX(0).strength(0.06))
-        .force("y", d3.forceY(0).strength(0.06))
+        .force("charge", d3.forceManyBody().strength(-90).distanceMax(260))
+        .force("link", d3.forceLink().id(d => d.id).distance(110).strength(0.12))
+        .force("x", d3.forceX(0).strength(0.008))
+        .force("y", d3.forceY(0).strength(0.008))
         .force("collide", d3.forceCollide().radius(d => radius(d) + 6))
-        .force("leash", () => { gNodes.forEach(n => { const d = Math.hypot(n.x, n.y); if (d > G_MAX) { n.x *= G_MAX / d; n.y *= G_MAX / d; } }); })
+        .force("leash", () => { gNodes.forEach(n => { n.x = Math.max(-G_X, Math.min(G_X, n.x)); n.y = Math.max(-G_Y, Math.min(G_Y, n.y)); }); })
         .on("tick", () => { draw(); if (!fitted && sim.alpha() < 0.12) { fitted = true; fitGraph(); } })
         .on("end", () => { if (!settledFit) { settledFit = true; fitGraph(); } });
     }
@@ -3920,15 +3921,20 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   let zoom = null;
   if (window.d3) {
     const sel = d3.select(canvas);
-    let dragMoved = false;
+    let dragMoved = false, dragGrp = null, dragFrom = [0, 0];
     sel.call(d3.drag()
       .container(canvas)
       .subject(e => nodeAt(e.x, e.y))
-      .on("start", e => { dragMoved = false; if (!e.active) sim.alphaTarget(0.25).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; hoverId = e.subject.id; draw(); })
-      .on("drag", e => { dragMoved = true; let [x, y] = toGraph(e.x, e.y); const d = Math.hypot(x, y); if (d > G_MAX) { x *= G_MAX / d; y *= G_MAX / d; } e.subject.fx = x; e.subject.fy = y; })
+      .on("start", e => { dragMoved = false; if (!e.active) sim.alphaTarget(0.08).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y;
+        dragGrp = null; dragFrom = toGraph(e.x, e.y);
+        if (gOpts.group) { const nb = neighborsOf(e.subject.id); dragGrp = gNodes.filter(n => nb.has(n.id) && n.id !== e.subject.id).map(n => { n.x0 = n.x; n.y0 = n.y; return { n }; }); } hoverId = e.subject.id; draw(); })
+      .on("drag", e => { dragMoved = true; let [x, y] = toGraph(e.x, e.y); x = Math.max(-G_X, Math.min(G_X, x)); y = Math.max(-G_Y, Math.min(G_Y, y));
+        if (gOpts.group && dragGrp) dragGrp.forEach(m => { m.n.fx = Math.max(-G_X, Math.min(G_X, m.n.x0 + (x - dragFrom[0]))); m.n.fy = Math.max(-G_Y, Math.min(G_Y, m.n.y0 + (y - dragFrom[1]))); });
+        e.subject.fx = x; e.subject.fy = y; })
       .on("end", e => {
         if (!e.active) sim.alphaTarget(0);
-        e.subject.fx = null; e.subject.fy = null;
+        if (!dragMoved) { e.subject.fx = null; e.subject.fy = null; }
+        // Stay where it was dropped (a pinned item can be moved again; "Bring back to center" releases everything)
         const touch = e.sourceEvent && e.sourceEvent.pointerType && e.sourceEvent.pointerType !== "mouse";
         if (touch) hoverId = null;
         draw();
