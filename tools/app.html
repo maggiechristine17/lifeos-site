@@ -4670,7 +4670,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const qByKey = (k) => { const y = Number(String(k).slice(0, 4)), n = Number(String(k).slice(-1)); return y && n ? qList(y)[n - 1] : null; };
   const whenAutoW = (d) => { if (!d) return ""; const q = qByKey(whenAutoQ(d)); if (!q) return ""; const x = Math.max(dn(d.slice(0, 10)), q.s); return dIso(q.s + Math.floor((x - q.s) / 7) * 7); };
   const whenQOpts = (e) => { const nowQ = qOf(today()), L = qFrom(nowQ, 8); if (e && e.quarter && !L.some(q => q.key === e.quarter) && qByKey(e.quarter)) L.unshift(qByKey(e.quarter)); return L; };
-  const whenWeekOpts = (qk, cur) => { const q = qByKey(qk); if (!q) return `<option value="">Pick a quarter first</option>`; let h = `<option value="">No week</option>`, i = 1; for (let d = q.s; d <= q.e; d += 7, i++) h += `<option value="${dIso(d)}"${cur === dIso(d) ? " selected" : ""}>W${i} · ${esc(fmt(dIso(d)))} – ${esc(fmt(dIso(Math.min(d + 6, q.e))))}</option>`; return h; };
+  // Official ISO week number (weeks 1–52/53, Monday to Sunday; week 1 is the week with the year's first Thursday)
+  const isoWeek = (d) => { const x = dn(d), w = (new Date(x * 864e5).getUTCDay() + 6) % 7, th = x - w + 3, y = new Date(th * 864e5).getUTCFullYear(), j4 = dn(`${y}-01-04`), w4 = (new Date(j4 * 864e5).getUTCDay() + 6) % 7; return 1 + Math.floor((th - (j4 - w4 + 3)) / 7); };
+  const whenWeekOpts = (qk, cur) => { const q = qByKey(qk); if (!q) return `<option value="">Pick a quarter first</option>`; let h = `<option value="">No week</option>`, i = 1; for (let d = q.s; d <= q.e; d += 7, i++) h += `<option value="${dIso(d)}"${cur === dIso(d) ? " selected" : ""}>W${isoWeek(dIso(d))} · ${esc(fmt(dIso(d)))} – ${esc(fmt(dIso(Math.min(d + 6, q.e))))}</option>`; return h; };
   document.addEventListener("change", ev => {
     const t = ev.target; if (!t || !t.id || !/^ed-focus-(ts|te|s|e|wk|q)$/.test(t.id)) return;
     const g = (k) => $("ed-focus-" + k), part = t.id.slice(9);
@@ -4720,13 +4722,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const q = qOf(anchor), t = today(), weeks = []; for (let d = q.s; d <= q.e; d += 7) weeks.push(dIso(d));
     const ps = plProjects().filter(e => inQ(e, q)).sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     const wkOf = (e) => weeks.includes(e.week) ? e.week : "";
-    const sel = (e) => `<select class="pl-qsel" data-plwk="${esc(e.id)}" aria-label="Week for ${esc(e.title || "project")}"><option value="">Choose a week…</option>${weeks.map((w, i) => `<option value="${w}"${wkOf(e) === w ? " selected" : ""}>Week ${i + 1} · ${esc(fmt(w))} – ${esc(fmt(dIso(dn(w) + 6)))}</option>`).join("")}</select>`;
+    const sel = (e) => `<select class="pl-qsel" data-plwk="${esc(e.id)}" aria-label="Week for ${esc(e.title || "project")}"><option value="">Choose a week…</option>${weeks.map((w, i) => `<option value="${w}"${wkOf(e) === w ? " selected" : ""}>W${isoWeek(w)} · ${esc(fmt(w))} – ${esc(fmt(dIso(dn(w) + 6)))}</option>`).join("")}</select>`;
     const row = (e) => `<li class="pl-qrow"><button type="button" class="pl-qname" data-plopen="${esc(e.id)}">${plPName(e)}</button>${sel(e)}</li>`;
     const un = ps.filter(e => !wkOf(e));
     $("plRange").textContent = `${q.label} · ${qRange(q)}`;
     $("plBody").innerHTML = `<div class="pl-qwrap">
       <section class="pl-qsec"><h3>Not in a week yet <span>${un.length}</span></h3>${un.length ? `<ul class="pl-qlist">${un.map(row).join("")}</ul>` : `<p class="pl-qnone">${ps.length ? "Every project this quarter has a week. 🎉" : "No projects in this quarter yet. Place them in Quarters, or give them a When in this quarter."}</p>`}</section>
-      <div class="pl-wgrid">${weeks.map((w, i) => { const xs = ps.filter(e => wkOf(e) === w), now = dn(t) >= dn(w) && dn(t) <= dn(w) + 6; return `<section class="pl-wk${now ? " now" : ""}"><h4>Week ${i + 1}<span>${esc(fmt(w))} – ${esc(fmt(dIso(dn(w) + 6)))}${now ? " · this week" : ""}</span></h4>${xs.length ? `<ul class="pl-qlist">${xs.map(row).join("")}</ul>` : '<p class="pl-qnone">—</p>'}</section>`; }).join("")}</div>
+      <div class="pl-wgrid">${weeks.map((w, i) => { const xs = ps.filter(e => wkOf(e) === w), now = dn(t) >= dn(w) && dn(t) <= dn(w) + 6; return `<section class="pl-wk${now ? " now" : ""}"><h4>W${isoWeek(w)}<span>${esc(fmt(w))} – ${esc(fmt(dIso(dn(w) + 6)))}${now ? " · this week" : ""}</span></h4>${xs.length ? `<ul class="pl-qlist">${xs.map(row).join("")}</ul>` : '<p class="pl-qnone">—</p>'}</section>`; }).join("")}</div>
     </div>`;
     $("plCount").textContent = `${ps.length} project${ps.length === 1 ? "" : "s"} this quarter · ${ps.length - un.length} placed in a week`;
     $("plHint").textContent = "Projects scheduled for this quarter show here. Choose the week each one goes in. ‹ › moves a quarter at a time.";
