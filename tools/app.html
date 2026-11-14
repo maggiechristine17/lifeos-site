@@ -64,6 +64,11 @@ button, input, select { font: inherit; color: inherit; }
 .af-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
 .af-btn:hover { border-color: var(--accent); color: var(--accent); }
 .brand-wrap .set-btn { display: none !important; }
+.mode-sw { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; margin-left: 12px; vertical-align: middle; }
+.mode-sw button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 6px 14px; cursor: pointer; }
+.mode-sw button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 700; }
+.is-public .mode-sw { display: none; }
+body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: none; }
 .af-note { font-size: 12px; color: var(--muted); }
 .is-public .af-priv { display: none; }
 .set-pop > h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -1713,7 +1718,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><div class="mode-sw" role="group" aria-label="How much to show"><button type="button" data-mode="lite">✨ Streamlined</button><button type="button" data-mode="full">▦ Full page</button></div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
@@ -6964,8 +6969,15 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   $("gmBody").addEventListener("input", ev => { const t = ev.target; if (t.matches("[data-tdfield=title]")) { const b = t.closest(".td-draft").querySelector("[data-tdmaster]"); if (b) b.disabled = !t.value.trim(); } });
   TOOL_ICON.game = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/></svg>';
   TOOL_ICON.game_star = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>';
+  // Streamlined (shows only the Today tab) or Full page (everything). Remembered in this browser.
+  let uiMode = (() => { try { return localStorage.getItem("chevy.mode") === "full" ? "full" : "lite"; } catch (e) { return "lite"; } })();
+  const applyMode = () => { const lite = !PUBLIC && uiMode === "lite"; document.body.classList.toggle("mode-lite", lite); document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === uiMode))); if (lite && location.hash && !["#game", "#today", ""].includes(location.hash)) location.hash = "game"; };
+  document.querySelector(".mode-sw").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (!b) return; uiMode = b.dataset.mode; try { localStorage.setItem("chevy.mode", uiMode); } catch (er) {} applyMode(); });
+  // A link to another tab (like a routine opening in Planner) switches to Full page so it can show
+  window.addEventListener("hashchange", () => { if (!PUBLIC && uiMode === "lite" && !["#game", "#today", ""].includes(location.hash)) { uiMode = "full"; try { localStorage.setItem("chevy.mode", uiMode); } catch (er) {} applyMode(); } });
   const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
+  applyMode();
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   mountProjectSections();
   let lastView = null, plKeepSub = false;
