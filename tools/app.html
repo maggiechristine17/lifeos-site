@@ -69,7 +69,7 @@ button, input, select { font: inherit; color: inherit; }
 .mode-sw button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 700; }
 .is-public .mode-sw { display: none; }
 body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: none; }
-.pil-dialog { width: min(1100px, 100%); }
+.pil-dialog { width: min(1100px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
 .pil-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: end; }
 .pil { --c: var(--ec-red); display: flex; flex-direction: column; gap: 4px; }
 .pil-cap { height: 14px; background: var(--c); border-radius: 10px 10px 3px 3px; margin: 0 -4px; }
@@ -80,6 +80,19 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-sub { display: none; position: absolute; z-index: 5; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); background: var(--bg); border: 2px solid var(--c); border-radius: 8px; padding: 6px; grid-template-columns: repeat(5, 34px); gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .pil-cat:hover .pil-sub, .pil-cat:focus-within .pil-sub, .pil-cat.open .pil-sub { display: grid; }
 .pil-sub span { background: color-mix(in srgb, var(--c) 18%, var(--surface)); border-radius: 4px; padding: 4px 0; font-size: 12px; text-align: center; }
+.pil-top { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
+.pil-how { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--surface); font-size: 13.5px; line-height: 1.5; margin-bottom: 10px; }
+.pil-how h4 { margin: 0 0 6px; } .pil-how p { margin: 6px 0; } .pil-how ol { margin: 4px 0; padding-left: 20px; } .pil-how code { background: var(--bg); padding: 0 4px; border-radius: 4px; }
+.pil-cat { min-height: 50px; } .pil-num { display: block; } .pil-nm { display: block; min-height: 13px; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pil-cat.sel { outline: 2px solid var(--c); }
+.pil-sub { grid-template-columns: repeat(2, minmax(110px, 1fr)) !important; width: max-content; max-width: 280px; }
+.pil-sub span { text-align: left !important; padding: 3px 6px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.pil-ed { margin-top: 12px; border: 2px solid var(--c); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
+.pil-ed h4 { margin: 0 0 8px; display: flex; justify-content: space-between; color: var(--c); }
+.pil-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.pil-fl { display: grid; gap: 3px; font-size: 12px; color: var(--muted); } .pil-fl.main { grid-column: 1 / -1; } .pil-fl.main span { color: var(--c); font-weight: 700; }
+.pil-fl input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); }
+.pil-fl input:focus { outline: none; border-color: var(--c); }
 .pil-base { height: 12px; background: var(--c); border-radius: 3px 3px 6px 6px; margin: 0 -4px; }
 @media (max-width: 640px) { .pil-row { gap: 4px; } .pil-name { font-size: 10px; letter-spacing: 0; } .pil-cat { font-size: 12px; padding: 6px 2px; } .pil-sub { grid-template-columns: repeat(2, 30px); } }
 .af-note { font-size: 12px; color: var(--muted); }
@@ -1775,7 +1788,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><div class="mode-sw" role="group" aria-label="How much to show"><button type="button" data-mode="lite">✨ Streamlined</button><button type="button" data-mode="full">▦ Full page</button></div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
-  <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><p class="pa-intro">Five pillars, one per entry color. Each stacks categories 00 at the bottom up to 90 at the top. Hover over (or tap) a category to see its ten sub-categories.</p><div class="pil-row" id="pilBody"></div></div></div>
+  <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -5973,13 +5986,36 @@ Don't invent appointments or facts that aren't listed.`);
   $("scPop").addEventListener("click", e => { if (e.target.closest("[data-scclose]") || e.target === $("scPop")) scOpen(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scPop").hidden) scOpen(false); });
 
-  // ---------- 🏛 Pillars: five colored columns (Personal, Circle, People, Money, Universe), categories 00–90, each with 10 sub-categories ----------
+  // ---------- 🏛 Pillars: five colored columns (Personal, Circle, People, Money, Universe), categories 00–90, each with 10 areas ----------
+  // Names are saved in settings/pillars as { names: { "1.10": "Health", "1.12": "Sleep", … } } (private).
   const PILLARS = [["red", "Personal"], ["orange", "Circle"], ["yellow", "People"], ["green", "Money"], ["blue", "Universe"]];
   const pad2 = (n) => String(n).padStart(2, "0");
-  $("pilBody").innerHTML = PILLARS.map(([c, n]) => `<div class="pil" style="--c:var(--ec-${c})"><div class="pil-name">${n}</div><div class="pil-cap"></div><div class="pil-cats">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map(k => `<button type="button" class="pil-cat" aria-label="${n} ${pad2(k)}">${pad2(k)}<span class="pil-sub">${Array.from({ length: 10 }, (_, i) => `<span>${pad2(k + i)}</span>`).join("")}</span></button>`).join("")}</div><div class="pil-base"></div></div>`).join("");
+  let pilNames = recall("chevy.pillars") || {}, pilSel = "";
+  const pilSave = () => { store("chevy.pillars", pilNames); if (!PUBLIC && db && !local) db.doc("settings/pillars").set({ names: pilNames, updatedAt: new Date().toISOString() }).catch(() => notice("Couldn't save the pillar names.")); };
+  const pilName = (code) => pilNames[code] || "";
+  $("pilHow").innerHTML = `<h4>How the pillars and codes work</h4>
+    <p><b>Five pillars</b>, one per entry color: <b style="color:var(--ec-red)">1 Personal</b> (red), <b style="color:var(--ec-orange)">2 Circle</b> (orange), <b style="color:var(--ec-yellow)">3 People</b> (yellow), <b style="color:var(--ec-green)">4 Money</b> (green), <b style="color:var(--ec-blue)">5 Universe</b> (blue).</p>
+    <p>Each pillar stacks ten <b>categories</b>, 00 at the bottom up to 90 at the top (00, 10, 20 … 90). Each category holds ten numbers: the category itself (a multiple of 10) and nine <b>areas</b> inside it (for category 10: 11, 12 … 19).</p>
+    <p>Every entry in the master database gets a <b>code</b>, parts separated by periods:</p>
+    <ol><li><b>Pillar</b>, 1 digit: 1–5.</li><li><b>Category or area</b>, 2 digits: a multiple of 10 is a broad category; any other number (11, 12, 13…) is an area within that category.</li><li><b>Project, goal or routine</b>, 3 characters: a project is 3 digits starting at 001; a goal is G + 2 digits (G01); a routine is R + 2 digits (R01). Each kind counts up on its own, so 001, G01 and R01 can all exist in the same area.</li><li><b>Resource</b>, 3 digits (001), added after the project, goal or routine it belongs to.</li></ol>
+    <p>Examples: <code>1.10</code> Personal category 10 · <code>1.12</code> an area inside it · <code>1.12.001</code> first project there · <code>1.12.G01</code> a goal · <code>1.12.R01</code> a routine · <code>1.12.001.001</code>, <code>1.12.G01.001</code>, <code>1.12.R01.001</code> resources.</p>
+    <p><b>Values don't get a code.</b> Auto-numbering starts only once I say "auto number".</p>`;
+  function pilRender() {
+    $("pilBody").innerHTML = PILLARS.map(([c, n], pi) => `<div class="pil" style="--c:var(--ec-${c})"><div class="pil-name">${pi + 1} ${n}</div><div class="pil-cap"></div><div class="pil-cats">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map(k => { const code = `${pi + 1}.${pad2(k)}`; return `<button type="button" class="pil-cat${pilSel === code ? " sel" : ""}" data-pilcat="${code}" aria-label="${n} ${pad2(k)}${pilName(code) ? ": " + esc(pilName(code)) : ""}"><span class="pil-num">${pad2(k)}</span><span class="pil-nm">${esc(pilName(code))}</span><span class="pil-sub">${Array.from({ length: 10 }, (_, i) => { const sc = `${pi + 1}.${pad2(k + i)}`; return `<span><b>${pad2(k + i)}</b>${pilName(sc) ? " " + esc(pilName(sc)) : ""}</span>`; }).join("")}</span></button>`; }).join("")}</div><div class="pil-base"></div></div>`).join("");
+    const ed = $("pilEd");
+    if (!pilSel) { ed.hidden = true; ed.innerHTML = ""; return; }
+    const [p, k] = pilSel.split("."), pc = PILLARS[Number(p) - 1], base = Number(k);
+    ed.hidden = false; ed.style.setProperty("--c", `var(--ec-${pc[0]})`);
+    ed.innerHTML = `<h4>${p} ${pc[1]} · category ${k}<button type="button" class="x" data-pilshut aria-label="Close">×</button></h4><div class="pil-form">${Array.from({ length: 10 }, (_, i) => { const sc = `${p}.${pad2(base + i)}`; return `<label class="pil-fl${i === 0 ? " main" : ""}"><span>${sc}${i === 0 ? " · category" : " · area"}</span><input type="text" data-pilname="${sc}" value="${esc(pilName(sc))}" placeholder="${i === 0 ? "Category name" : "Area name"}" maxlength="80"></label>`; }).join("")}</div><p class="pub-hint">Names save as you type (when you leave a box or press Enter).</p>`;
+  }
+  pilRender();
+  $("pilHowBtn").addEventListener("click", () => { const h = $("pilHow"); h.hidden = !h.hidden; $("pilHowBtn").setAttribute("aria-expanded", String(!h.hidden)); });
+  $("pilPop").addEventListener("change", e => { const i = e.target.closest("[data-pilname]"); if (!i) return; const v = i.value.trim().slice(0, 80); if (v) pilNames[i.dataset.pilname] = v; else delete pilNames[i.dataset.pilname]; pilSave(); const sel = pilSel; pilRender(); pilSel = sel; });
+  $("pilPop").addEventListener("keydown", e => { const i = e.target.closest && e.target.closest("[data-pilname]"); if (i && e.key === "Enter") { e.preventDefault(); i.blur(); const nx = i.closest("label").nextElementSibling; if (nx) nx.querySelector("input").focus(); } });
+  if (!PUBLIC && db && !local) db.doc("settings/pillars").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.names && typeof d.names === "object") { pilNames = d.names; store("chevy.pillars", pilNames); const a = document.activeElement; if (!(a && a.matches && a.matches("[data-pilname]"))) pilRender(); } }, () => {});
   const pilOpen = (v) => { $("pilPop").hidden = !v; };
   $("pilBtn").addEventListener("click", e => { e.stopPropagation(); pilOpen($("pilPop").hidden); });
-  $("pilPop").addEventListener("click", e => { if (e.target.closest("[data-pilclose]") || e.target === $("pilPop")) { pilOpen(false); return; } const c = e.target.closest(".pil-cat"); document.querySelectorAll(".pil-cat.open").forEach(x => { if (x !== c) x.classList.remove("open"); }); if (c) c.classList.toggle("open"); });
+  $("pilPop").addEventListener("click", e => { if (e.target.closest("[data-pilclose]") || e.target === $("pilPop")) { pilOpen(false); return; } if (e.target.closest("[data-pilshut]")) { pilSel = ""; pilRender(); return; } const c = e.target.closest("[data-pilcat]"); if (c) { pilSel = pilSel === c.dataset.pilcat ? "" : c.dataset.pilcat; pilRender(); if (pilSel) { const f = $("pilEd").querySelector("input"); if (f) { $("pilEd").scrollIntoView({ block: "nearest" }); f.focus(); } } } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pilPop").hidden) pilOpen(false); });
 
   // ---------- 📋 Planning Assistant: entries with pieces missing, grouped by what needs filling in, fixed in one click ----------
