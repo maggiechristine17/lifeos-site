@@ -63,6 +63,7 @@ button, input, select { font: inherit; color: inherit; }
 .af-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .af-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
 .af-btn:hover { border-color: var(--accent); color: var(--accent); }
+.brand-wrap .set-btn { display: none !important; }
 .af-note { font-size: 12px; color: var(--muted); }
 .is-public .af-priv { display: none; }
 .set-pop > h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -1712,7 +1713,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant<span class="pa-n" id="paN"></span></button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
@@ -1918,7 +1919,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <footer class="app-foot" aria-label="More options">
   <div class="af-row">
     <button type="button" class="af-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button>
-    <button type="button" class="af-btn af-priv" data-afclick="paBtn">📋 Planning Assistant</button>
+    <button type="button" class="af-btn af-priv" data-afclick="paBtn">📋 Planning Assistant<span class="pa-n" id="paN"></span></button>
     <button type="button" class="af-btn af-priv" data-afclick="bdBtn">🧠 Brain dump</button>
     <button type="button" class="af-btn af-priv" data-afclick="scBtn">🗺 Schematic</button>
     <button type="button" class="af-btn af-priv" data-afclick="ggBtn">🔗 Google</button>
