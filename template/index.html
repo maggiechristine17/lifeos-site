@@ -1357,6 +1357,13 @@ input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px so
 .wf-csel { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: inherit; font-size: 12.5px; }
 .wf-cchips { display: flex; flex-wrap: wrap; gap: 4px; overflow-y: auto; min-height: 0; }
 .wf-cchips .lchip, .wf-cback .lchip { font-size: 12px; }
+.wf-pickw { display: inline-flex; align-items: center; max-width: 100%; }
+.wf-pick { cursor: pointer; white-space: normal; text-align: left; }
+.wf-pick.on { box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }
+.wf-pop { border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 0 3px; }
+.wf-pop:hover { color: var(--accent); }
+.wf-cstart { align-self: flex-start; padding: 5px 12px; font-size: 13px; }
+.wf-csub .btn { padding: 3px 10px; font-size: 12.5px; margin-left: 6px; }
 .wf-cnone { margin: 0; font-size: 12px; color: var(--muted); }
 .wf-cback { margin: 0; font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .wf-cwrap { container-type: inline-size; width: 100%; }
@@ -6093,28 +6100,33 @@ ${text}
   let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null;
   // Workflow views: Cards (first, so it's the default) and Circle (a flow chart of what follows one entry, all the way around)
   let wfView = "cards";
-  let wfRoot = (() => { try { const r = JSON.parse(localStorage.getItem("chevy.wf.circle") || "null"); return r && WF_CHAIN.includes(r.type) ? r : null; } catch (e) { return null; } })();
+  // Circle view = a guided flow: pick a starting section, tick what you want to see, the next section fills with what connects to it, and so on around the circle.
+  let wfFlow = (() => { try { const r = JSON.parse(localStorage.getItem("chevy.wf.flow") || "null"); return r && WF_CHAIN.includes(r.start) ? { start: r.start, sel: r.sel && typeof r.sel === "object" ? r.sel : {} } : { start: null, sel: {} }; } catch (e) { return { start: null, sel: {} }; } })();
+  const wfFlowSave = () => { try { localStorage.setItem("chevy.wf.flow", JSON.stringify(wfFlow)); } catch (e) {} };
   const WF_LBL = { values: "Values", areas: "Areas", goals: "Goals", projects: "Projects", pages: "Resources" };
   function wfCircleHtml() {
-    const N = WF_CHAIN.length, root = wfRoot && (data[wfRoot.type] || []).some(x => x.id === wfRoot.id) ? wfRoot : null;
-    const start = root ? WF_CHAIN.indexOf(root.type) : 0;
-    // Walk the circle from the chosen entry: each section shows what links to the section before it
-    const reach = {}; let prev = root ? [(data[root.type] || []).find(x => x.id === root.id)] : [];
-    for (let k = 1; k < N && root; k++) { const type = WF_CHAIN[(start + k) % N], seen = new Set(), list = []; prev.forEach(p => wfLinked(p.id, type).forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); list.push(x); } })); reach[type] = list; prev = list; }
-    const back = root ? (() => { const seen = new Set(), out = []; prev.forEach(p => wfLinked(p.id, root.type).forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); out.push(x); } })); return out; })() : [];
-    const chip = (type, e) => `<button type="button" class="lchip${lkCls({ type, e })}" data-wfopen="${type}" data-wfid="${esc(e.id)}" title="Open ${esc(e.title || "Untitled")}">${lkIn({ type, e })}</button>`;
+    const N = WF_CHAIN.length, st = wfFlow.start, start = st ? WF_CHAIN.indexOf(st) : -1;
+    // Walk the circle from the chosen start. Each stage lists what connects to what was ticked in the stage before it.
+    const avail = {}, chosen = {}; let prevSel = null;
+    if (st) for (let k = 0; k < N; k++) {
+      const type = WF_CHAIN[(start + k) % N];
+      if (k === 0) avail[type] = wfAll(type);
+      else { const seen = new Set(), list = []; (prevSel || []).forEach(p => wfLinked(p.id, type).forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); list.push(x); } })); avail[type] = list; }
+      chosen[type] = avail[type].filter(x => (wfFlow.sel[type] || []).includes(x.id)); prevSel = chosen[type];
+    }
+    const chip = (type, e) => { const on = chosen[type].includes(e); return `<span class="wf-pickw"><button type="button" class="lchip wf-pick${lkCls({ type, e })}${on ? " on" : ""}" data-wfpick="${type}" data-wfid="${esc(e.id)}" aria-pressed="${on}" title="${on ? "Tap to hide what follows from this" : "Tap to show what follows from this"}">${on ? "✓ " : ""}${lkIn({ type, e })}</button><button type="button" class="wf-pop" data-wfopen="${type}" data-wfid="${esc(e.id)}" title="Open ${esc(e.title || "Untitled")}" aria-label="Open ${esc(e.title || "Untitled")}">↗</button></span>`; };
     const node = (type, i) => {
-      const pos = (i - start + N) % N, ang = -Math.PI / 2 + pos * 2 * Math.PI / N, x = 50 + 35 * Math.cos(ang), y = 53 + 36 * Math.sin(ang);
-      const all = wfAll(type), isRoot = root && root.type === type, items = isRoot ? [] : (reach[type] || []);
-      const sel = `<select class="wf-csel" data-wfroot="${type}" aria-label="Start the circle from a ${TYPE[type].singular}"><option value="">${isRoot ? "Start from…" : "Start here from…"}</option>${all.map(e => `<option value="${esc(e.id)}"${isRoot && root.id === e.id ? " selected" : ""}>${esc((emojiOf(e, type) ? emojiOf(e, type) + " " : "") + (e.title || "Untitled"))}</option>`).join("")}</select>`;
-      const body = !root ? `<p class="wf-cnone">${all.length} ${all.length === 1 ? TYPE[type].singular : TYPE[type].label.toLowerCase()}</p>`
-        : isRoot ? `<div class="wf-cchips">${chip(type, (data[type] || []).find(x => x.id === root.id))}</div>${back.length ? `<p class="wf-cback">↩ Back around: ${back.map(e => chip(type, e)).join(" ")}</p>` : ""}`
-        : items.length ? `<div class="wf-cchips">${items.map(e => chip(type, e)).join("")}</div>` : `<p class="wf-cnone">Nothing connected here yet.</p>`;
-      return `<div class="wf-cnode${isRoot ? " root" : ""}" style="--x:${x.toFixed(2)}%;--y:${y.toFixed(2)}%;--o:${pos}"><div class="wf-chead"><span class="wf-cn">${i + 1}</span>${WF_LBL[type]}${root && !isRoot ? `<span class="wf-ccount">${items.length}</span>` : ""}</div>${sel}${body}</div>`;
+      const pos = st ? (i - start + N) % N : i, ang = -Math.PI / 2 + pos * 2 * Math.PI / N, x = 50 + 35 * Math.cos(ang), y = 53 + 36 * Math.sin(ang);
+      const isStart = st === type, k = st ? pos : -1, prevType = k > 0 ? WF_CHAIN[(start + k - 1) % N] : null;
+      let body, count = "";
+      if (!st) body = `<p class="wf-cnone">${wfAll(type).length} ${wfAll(type).length === 1 ? TYPE[type].singular : TYPE[type].label.toLowerCase()}</p><button type="button" class="btn primary wf-cstart" data-wfstart="${type}">▶ Start here</button>`;
+      else if (k > 0 && !chosen[prevType].length) body = `<p class="wf-cnone">Pick one or more in ${WF_LBL[prevType]} first.</p>`;
+      else if (!avail[type].length) body = `<p class="wf-cnone">Nothing connected here yet.</p>`;
+      else { body = `<div class="wf-cchips">${avail[type].map(e => chip(type, e)).join("")}</div>`; count = `<span class="wf-ccount">${chosen[type].length} of ${avail[type].length}</span>`; }
+      return `<div class="wf-cnode${isStart ? " root" : ""}" style="--x:${x.toFixed(2)}%;--y:${y.toFixed(2)}%;--o:${pos}"><div class="wf-chead"><span class="wf-cn">${st ? k + 1 : i + 1}</span>${WF_LBL[type]}${count}</div>${body}</div>`;
     };
-    // Arrows between neighbours, drawn on a ring
     const arrows = WF_CHAIN.map((t, i) => { const a0 = -Math.PI / 2 + i * 2 * Math.PI / N + 0.42, a1 = -Math.PI / 2 + (i + 1) * 2 * Math.PI / N - 0.42, rx = 43, ry = 45, P = a => [50 + rx * Math.cos(a), 52 + ry * Math.sin(a)], [x0, y0] = P(a0), [x1, y1] = P(a1); return `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${rx} ${ry} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" marker-end="url(#wfArr)"/>`; }).join("");
-    return `<p class="wf-sub wf-csub">${root ? `Following <b>${esc(((data[root.type] || []).find(x => x.id === root.id) || {}).title || "")}</b> around the circle. Each section shows what's connected to the section before it. Pick from any dropdown to start somewhere else.` : "Choose an entry from any section's dropdown. The next section fills with what's connected to it, then the next, all the way around the circle."}${root ? ' <button type="button" class="linkish" data-wfroot-clear>Clear</button>' : ""}</p>
+    return `<p class="wf-sub wf-csub">${st ? `Starting at <b>${WF_LBL[st]}</b>. Tap the ones you want to see and the next section fills with what's connected to them, all the way around the circle. Tap again to take one off. <button type="button" class="btn" data-wfrestart>↺ Restart</button>` : "<b>Where do you want to start?</b> Press Start here on any section. You can restart at any moment and begin somewhere else."}</p>
       <div class="wf-cwrap"><div class="wf-circle"><svg class="wf-ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="wfArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>${arrows}</svg>${WF_CHAIN.map(node).join("")}</div></div>`;
   }
   function renderWorkflow() {
@@ -6269,7 +6281,9 @@ ${text}
     const t = ev.target;
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const vt = t.closest("[data-wfview]"); if (vt) { wfView = vt.dataset.wfview; renderWorkflow(); return; }
-    if (t.closest("[data-wfroot-clear]")) { wfRoot = null; try { localStorage.removeItem("chevy.wf.circle"); } catch (e) {} renderWorkflow(); return; }
+    if (t.closest("[data-wfrestart]")) { wfFlow = { start: null, sel: {} }; wfFlowSave(); renderWorkflow(); return; }
+    const fs = t.closest("[data-wfstart]"); if (fs) { wfFlow = { start: fs.dataset.wfstart, sel: {} }; wfFlowSave(); renderWorkflow(); return; }
+    const fp = t.closest("[data-wfpick]"); if (fp) { const ty = fp.dataset.wfpick, id = fp.dataset.wfid, l = wfFlow.sel[ty] || []; wfFlow.sel[ty] = l.includes(id) ? l.filter(x => x !== id) : [...l, id]; wfFlowSave(); renderWorkflow(); return; }
     const o = t.closest("[data-wfopen]"); if (o) { openEditor(o.dataset.wfopen, o.dataset.wfid); return; }
     if (PUBLIC) return;
     if (t.closest("[data-wffocus]")) { const on = WF_CHAIN.some(k => wfMode(k) === "starred"); WF_CHAIN.forEach(k => { wf.mode[k] = !on && k !== "values" ? "starred" : "all"; }); saveWf(); renderWorkflow(); return; }
@@ -6301,7 +6315,6 @@ ${text}
     if (t.matches("[data-wfedit]")) { ev.preventDefault(); t.blur(); }
   });
   $("wfBody").addEventListener("change", async ev => {
-    const rs = ev.target.closest && ev.target.closest("[data-wfroot]"); if (rs) { wfRoot = rs.value ? { type: rs.dataset.wfroot, id: rs.value } : null; try { localStorage.setItem("chevy.wf.circle", JSON.stringify(wfRoot)); } catch (e) {} renderWorkflow(); return; }
     if (PUBLIC) return; const t = ev.target;
     if (t.dataset.wfkind !== undefined) { await wfPatch("ideas", t.dataset.wfkind, { wfKind: t.value }); renderWorkflow(); return; }
     if (t.dataset.wflinkto !== undefined) { if (t.value) await wfLink(t.dataset.wflinkto, t.value); renderWorkflow(); return; }
