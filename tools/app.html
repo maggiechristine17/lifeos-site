@@ -344,6 +344,17 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .when-hero .when-grid { grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; margin-top: 4px; }
 .when-hero .when-l { font-size: 13px; font-weight: 600; color: var(--ink); }
 .when-hero .drange input, .when-hero .drange select { font-size: 15px; padding: 9px 10px; }
+.date-hid { position: absolute !important; opacity: 0; pointer-events: none; width: 1px !important; height: 1px !important; padding: 0 !important; border: 0 !important; margin: 0; }
+.date-btn { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; text-align: left; }
+.date-btn:hover { border-color: var(--accent); }
+.date-btn.empty .db-t { color: var(--muted); }
+.date-btn:disabled { opacity: .45; cursor: default; }
+.date-btn .db-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.date-btn .db-x { color: var(--muted); font-size: 12px; padding: 0 2px; }
+.date-btn .db-x:hover { color: var(--danger); }
+.drange .date-btn, .range .date-btn, .dialog .f .date-btn, .panel .f .date-btn { width: 100%; }
+.panel .date-btn, td .date-btn, .wf-when .date-btn, .gm-sec .date-btn { padding: 3px 8px; font-size: 12.5px; }
+.when-hero .date-btn { font-size: 15px; padding: 9px 10px; }
 .prop-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .prop-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 4px 10px 5px; cursor: pointer; max-width: 230px; text-align: left; }
 .prop-btn:hover { border-color: var(--panel-line); }
@@ -1265,6 +1276,7 @@ table.pr-rt { width: 100%; }
 .gm-qn { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .gm-qs { font-size: 12px; color: var(--muted); }
 .gm-due.late { color: #f08a8a; } .gm-due.now { color: var(--accent); }
+.gm-dw { position: relative; display: inline-block; }
 button.gm-due { border: 0; border-bottom: 1px dashed currentColor; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; }
 button.gm-due.late { color: #f08a8a; } button.gm-due.now { color: var(--accent); } button.gm-due:hover { color: var(--ink); }
 input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px solid var(--accent); border-radius: 5px; background: var(--bg); color: var(--ink); color-scheme: dark; }
@@ -6564,8 +6576,7 @@ ${text}
     const t = today(), L = gmLevel(gm.xp), lo = gmFloor(L), hi = gmFloor(L + 1), pct = Math.round((gm.xp - lo) / (hi - lo) * 100);
     const quests = gmQuests(), byKey = new Map(quests.map(q => [q.key, q])), picks = gmDay(t), seen = new Set(gm.seen);
     const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => seen.has(k)).length;
-    const dueLbl = (q) => gmDateEd === q.id ? `<input type="date" class="gm-date" data-gmdateinp="${esc(q.id)}" value="${esc(q.due)}" aria-label="Date for ${esc(q.sub || q.title)}">`
-      : `<button type="button" class="gm-due${q.due && q.due < t ? " late" : q.due === t ? " now" : ""}" data-gmdate="${esc(q.id)}" title="Change the date for ${esc(q.sub || q.title)}">${!q.due ? "＋ Add date" : q.due < t ? `Overdue · ${esc(fmt(q.due))}` : q.due === t ? "Today" : esc(fmt(q.due))}</button>`;
+    const dueLbl = (q) => `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-gmdateinp="${esc(q.id)}" value="${esc(q.due)}" aria-label="Date for ${esc(q.sub || q.title)}"><button type="button" class="gm-due${q.due && q.due < t ? " late" : q.due === t ? " now" : ""}" data-gmdate="${esc(q.id)}" title="Change the date for ${esc(q.sub || q.title)}">${!q.due ? "＋ Add date" : q.due < t ? `Overdue · ${esc(fmt(q.due))}` : q.due === t ? "Today" : esc(fmt(q.due))}</button></span>`;
     const row = (q, picked) => `<li class="gm-q${picked ? " picked" : ""}"><button type="button" class="gm-check${gmArm === q.key ? " arm" : ""}" data-gmdone="${esc(q.key)}" aria-label="Finish ${esc(q.title)}">${gmArm === q.key ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(q.emoji || "")} ${esc(q.title)}</span><span class="gm-qs">${q.sub ? esc(q.sub) + " · " : ""}${q.kind === "project" ? "Whole project" : "Step"} · ${dueLbl(q)}</span></div><span class="gm-xp">+${q.xp}</span>${picked ? `<button type="button" class="gm-mini" data-gmunpick="${esc(q.key)}" aria-label="Remove from today">✕</button>` : picks.length < 3 ? `<button type="button" class="gm-mini add" data-gmpick="${esc(q.key)}">＋ Today</button>` : ""}</li>`;
     const slot = (k) => { const q = byKey.get(k); if (q) return row(q, true); return `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`; };
     const pool = quests.filter(q => !picks.includes(q.key)), due = pool.filter(q => q.due && q.due <= t), list = gmFilter === "due" ? due : pool, shown = list;
@@ -6597,7 +6608,7 @@ ${text}
   $("gmBody").addEventListener("click", async ev => {
     const t = ev.target, d = today();
     const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
-    const dt = t.closest("[data-gmdate]"); if (dt) { gmDateEd = dt.dataset.gmdate; renderGame(); const i = $("gmBody").querySelector(`[data-gmdateinp="${CSS.escape(gmDateEd)}"]`); if (i) { i.focus(); try { i.showPicker && i.showPicker(); } catch (e) {} } return; }
+    const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) { try { i.showPicker(); } catch (e) { i.focus(); i.click(); } } return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (l.length < 3 && !l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
     const up = t.closest("[data-gmunpick]"); if (up) { gm.picks = { [d]: gmDay(d).filter(k => k !== up.dataset.gmunpick) }; saveGm(); renderGame(); return; }
@@ -6658,9 +6669,22 @@ ${text}
     graphVisible = v === "graph";
     if (graphVisible) { sizeCanvas(); renderGraph(); }
   }
-  // Dates are always picked from the calendar pop-up, never typed
-  document.addEventListener("click", e => { const i = e.target.closest && e.target.closest('input[type="date"]'); if (i && !i.disabled && !i.readOnly) { try { i.showPicker(); } catch (err) {} } }, true);
-  document.addEventListener("keydown", e => { const i = e.target.closest && e.target.closest('input[type="date"]'); if (!i) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); try { i.showPicker(); } catch (err) {} } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) e.preventDefault(); }, true);
+  // Dates are only ever picked from a calendar pop-up: every date field shows as a button (📅 + the chosen date), never as typeable numbers
+  (function () {
+    const fmtD = v => { if (!v) return ""; const d = new Date(v + "T12:00:00"); return isNaN(d) ? v : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, t = v ? fmtD(v) : "Pick a date"; b.disabled = inp.disabled; b.classList.toggle("empty", !v); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = !v || inp.disabled; };
+    const enhance = (inp) => {
+      if (inp._db || inp.hasAttribute("data-nodatebtn") || inp.closest("[data-nodatebtn]")) return;
+      const b = document.createElement("button"); b.type = "button"; b.className = "date-btn"; b.setAttribute("aria-label", (inp.getAttribute("aria-label") || "Date") + ": open the calendar");
+      b.innerHTML = '<span class="db-i" aria-hidden="true">📅</span><span class="db-t"></span><span class="db-x" role="button" aria-label="Clear the date" title="Clear">✕</span>';
+      inp.classList.add("date-hid"); inp.tabIndex = -1; inp.parentNode.insertBefore(b, inp); inp._db = b; sync(inp);
+      b.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); if (ev.target.closest(".db-x")) { inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); sync(inp); return; } try { inp.showPicker(); } catch (err) { inp.focus(); inp.click(); } });
+      inp.addEventListener("change", () => sync(inp)); inp.addEventListener("input", () => sync(inp));
+    };
+    const sweep = () => { document.querySelectorAll('input[type="date"]').forEach(i => { enhance(i); sync(i); }); };
+    let q = 0; new MutationObserver(() => { if (!q) q = requestAnimationFrame(() => { q = 0; sweep(); }); }).observe(document.body, { childList: true, subtree: true });
+    setInterval(sweep, 500); sweep();
+  })();
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
