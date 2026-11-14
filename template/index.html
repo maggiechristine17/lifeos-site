@@ -1382,6 +1382,25 @@ table.pr-rt { width: 100%; }
 .wf-subh { font-size: 14px; margin: 12px 0 6px; display: flex; gap: 8px; align-items: baseline; }
 .wf-subh span { font-size: 12px; color: var(--muted); font-weight: 600; }
 .wf-rtc { border-left: 4px solid var(--ec-purple, #a78bfa); }
+.td-badge { font-size: 26px; background: color-mix(in srgb, var(--accent) 30%, var(--surface)); }
+.td-sw { margin-left: auto; font-weight: 500; }
+.td-ic { width: 30px; text-align: center; font-size: 18px; flex: none; }
+.td-name { border: 0; background: none; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; padding: 0; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.td-name:hover { color: var(--accent); text-decoration: underline; }
+.td-new { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.td-new select, .td-dtop select { font: inherit; font-size: 14px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.td-new input { flex: 1; min-width: 160px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
+.td-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.td-draft { background: var(--surface); border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 14px; padding: 10px; display: grid; gap: 8px; }
+.td-dtop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.td-dtop select { padding: 4px 6px; font-size: 13px; }
+.td-hold { font-size: 11px; color: var(--muted); }
+.td-dtitle, .td-dnote { width: 100%; box-sizing: border-box; font: inherit; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); padding: 7px 9px; }
+.td-dtitle { font-size: 15px; font-weight: 600; }
+.td-dnote { font-size: 13px; resize: vertical; }
+.td-dtitle:focus, .td-dnote:focus, .td-new input:focus { outline: none; border-color: var(--accent); }
+.td-dbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.td-dbtns .btn { font-size: 13px; }
 .gm-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
 .gm-card.picked { border-color: var(--accent); }
 .gm-ph { display: flex; align-items: center; gap: 10px; min-height: 40px; }
@@ -1832,6 +1851,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
 <main id="view-game" hidden>
   <div id="gmBody"></div>
+</main>
+
+<main id="view-today" hidden>
+  <div id="tdBody"></div>
 </main>
 
 <main id="view-inventory" hidden>
@@ -6783,6 +6806,16 @@ ${text}
     while (days.has(iso(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
+  let gmDidTab = "recent";
+  // Done today log: the past 72 hours, and everything older on its own tab
+  const gmDidSplit = () => { const cut = Date.now() - 72 * 3600e3, at = (x) => Date.parse(x.at || (x.d + "T12:00:00")); const L = (gm.did || []).slice().reverse(); return { recent: L.filter(x => at(x) >= cut), older: L.filter(x => at(x) < cut) }; };
+  const gmDidList = (L, none) => { if (!L.length) return `<p class="gm-hint">${none}</p>`; const t = today(), days = [...new Set(L.map(x => x.d))]; return days.map(d => `<div class="gm-dayh">${d === t ? "Today" : esc(fmt(d))}</div><ul class="gm-dl">${L.filter(x => x.d === d).map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-gmdeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>`).join(""); };
+  function gmAddDid(v) {
+    v = (v || "").trim(); if (!v) return false;
+    const n = new Date(), h = n.getHours();
+    gm.did = (gm.did || []).concat({ id: "d" + n.getTime().toString(36) + Math.random().toString(36).slice(2, 5), d: iso(n), tm: ((h + 11) % 12 + 1) + ":" + pad(n.getMinutes()) + (h < 12 ? " AM" : " PM"), t: v.slice(0, 300), at: n.toISOString() });
+    saveGm(); renderGame(); if (typeof renderToday === "function") renderToday(); return true;
+  }
   function renderGame() {
     const el = $("gmBody"); if (!el || $("view-game").hidden) return;
     gmSync();
@@ -6820,9 +6853,10 @@ ${text}
         <p class="gm-hint">${!picks.length ? `Pick as many as you like below to plan your day and earn <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything you picked is done. Perfect day! 🎉" : `Finish everything you picked for a <b>+${GM_XP.perfect} XP</b> bonus. Add more below any time.`}</p>
         <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing picked yet</li>'}</ul>
       </section>
-      <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged</span></h2>
+      <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged today</span></h2>
         <form class="gm-did" data-gmdidform><input type="text" id="gmDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
-        ${(() => { const L = (gm.did || []).slice().reverse(); if (!L.length) return '<p class="gm-hint">Nothing logged yet. These are just for your record: they are not added as entries.</p>'; const days = [...new Set(L.map(x => x.d))]; return days.map(d => `<div class="gm-dayh">${d === t ? "Today" : esc(fmt(d))}</div><ul class="gm-dl">${L.filter(x => x.d === d).map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-gmdeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>`).join(""); })()}
+        <div class="gm-chips" role="group" aria-label="Which ones"><button type="button" class="chip" data-gmdidtab="recent" aria-pressed="${gmDidTab === "recent"}">Past 72 hours (${gmDidSplit().recent.length})</button><button type="button" class="chip" data-gmdidtab="older" aria-pressed="${gmDidTab === "older"}">Older (${gmDidSplit().older.length})</button></div>
+        ${gmDidList(gmDidTab === "older" ? gmDidSplit().older : gmDidSplit().recent, gmDidTab === "older" ? "Nothing older than 72 hours yet." : "Nothing logged in the past 72 hours. These are just for your record: they are not added as entries.")}
       </section>
       <section class="gm-sec"><h2>Quest board</h2>
         <div class="gm-chips" role="group" aria-label="Which quests"><button type="button" class="chip" data-gmfilter="due" aria-pressed="${gmFilter === "due"}">Due or overdue (${dueCards.length})</button><button type="button" class="chip" data-gmfilter="all" aria-pressed="${gmFilter === "all"}">All projects (${openP.length})</button></div>
@@ -6839,6 +6873,7 @@ ${text}
     const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
+    const dtb = t.closest("[data-gmdidtab]"); if (dtb) { gmDidTab = dtb.dataset.gmdidtab; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
     const up = t.closest("[data-gmunpick]"); if (up) { gm.picks = { [d]: gmDay(d).filter(k => k !== up.dataset.gmunpick) }; saveGm(); renderGame(); return; }
     const sp = t.closest("[data-gmstep]"); if (sp) { const [, id, tid] = sp.dataset.gmstep.split(":"); const e = (data.projects || []).find(x => x.id === id); const st = e && taskList(e).find(x => x.id === tid); if (st) await toggleTask("projects", id, tid, !st.done); return; }
@@ -6852,10 +6887,8 @@ ${text}
   });
   $("gmBody").addEventListener("submit", ev => {
     const f = ev.target.closest && ev.target.closest("[data-gmdidform]"); if (!f) return; ev.preventDefault();
-    const inp = f.querySelector("input"), v = inp.value.trim(); if (!v) return;
-    const n = new Date(), h = n.getHours();
-    gm.did = (gm.did || []).concat({ id: "d" + n.getTime().toString(36) + Math.random().toString(36).slice(2, 5), d: iso(n), tm: ((h + 11) % 12 + 1) + ":" + pad(n.getMinutes()) + (h < 12 ? " AM" : " PM"), t: v.slice(0, 300), at: n.toISOString() });
-    saveGm(); renderGame(); const i2 = $("gmDidIn"); if (i2) i2.focus();
+    const inp = f.querySelector("input"); if (!gmAddDid(inp.value)) return;
+    const i2 = $("gmDidIn"); if (i2) i2.focus();
   });
   $("gmBody").addEventListener("change", async ev => {
     const i = ev.target.closest && ev.target.closest("[data-gmdateinp]"); if (!i) return;
@@ -6867,8 +6900,98 @@ ${text}
     renderGame();
   });
   $("gmBody").addEventListener("focusout", ev => { if (ev.target.closest && ev.target.closest("[data-gmdateinp]")) setTimeout(() => { if (gmDateEd && !document.activeElement.closest("[data-gmdateinp]")) { gmDateEd = ""; renderGame(); } }, 250); });
+  // ---------- ☀️ Today: what's on today, what I did today, and a holding place to brainstorm entries before they go in the master database ----------
+  // Private (never on the website). Saved in settings/today. Holding-place ideas are NOT entries until "Add to master" is clicked.
+  const TD_KINDS = [["projects", "Project", "📌"], ["goals", "Goal", "🎯"], ["routines", "Routine", "🔁"], ["areas", "Area", "🧭"], ["values", "Value", "◆"]];
+  const TD_K = Object.fromEntries(TD_KINDS.map(k => [k[0], k]));
+  const tdNorm = (d) => ({ show: !(d && d.show === false), kind: (d && TD_K[d.kind]) ? d.kind : "projects", drafts: Array.isArray(d && d.drafts) ? d.drafts.filter(x => x && x.id && TD_K[x.type]).slice(-300) : [] });
+  let td = tdNorm(recall("chevy.today")), tdArm = null;
+  async function saveTd() {
+    store("chevy.today", td);
+    if (PUBLIC || local || !db) return;
+    try { await db.doc("settings/today").set({ ...JSON.parse(JSON.stringify(td)), v: 1, updatedAt: new Date().toISOString() }); } catch (e) { notice("Couldn't save the Today page."); }
+  }
+  // Everything scheduled today: entries whose When includes today, project steps dated today, routines planned today
+  function tdOnToday() {
+    const t = today(), out = [];
+    ["projects", "goals", "areas", "values", "pages"].forEach(type => (data[type] || []).forEach(e => {
+      if (e._pub || (type === "projects" && e.status === "Done")) return;
+      const s = (e.focusStart || "").slice(0, 10), en = (e.focusEnd || "").slice(0, 10) || s, st = s || en;
+      const inWhen = st && st <= t && t <= en;
+      const steps = taskList(e).filter(x => (x.text || "").trim() && (x.due || "").slice(0, 10) === t);
+      if (inWhen || steps.length) out.push({ type, e, inWhen, single: st === en, s: st, en, steps, time: e.timeStart || "" });
+    }));
+    routines.forEach(r => rtPlans(r).filter(x => x.date === t).forEach(x => out.push({ type: "routine", r, plan: x, time: (typeof SLOT !== "undefined" && SLOT[x.slot] ? SLOT[x.slot].label : "") })));
+    return out.sort((a, b) => (a.time || "~").localeCompare(b.time || "~"));
+  }
+  function renderToday() {
+    const el = $("tdBody"); if (!el || $("view-today").hidden) return;
+    const a = document.activeElement; if (a && el.contains(a) && a.matches("input[type=text], textarea") && a.value && !a.matches("#tdDidIn, #tdNewIn")) return; // keep what I'm typing on a card
+    const keepDid = $("tdDidIn") ? $("tdDidIn").value : "", keepNew = $("tdNewIn") ? $("tdNewIn").value : "";
+    const t = today(), dt = new Date(t + "T12:00:00"), on = td.show ? tdOnToday() : [], did = (gm.did || []).filter(x => x.d === t).slice().reverse();
+    const T2 = (type) => type === "routine" ? "Routine" : TYPE[type].singular[0].toUpperCase() + TYPE[type].singular.slice(1);
+    const onRow = (x) => x.type === "routine"
+      ? `<li class="gm-card td-on"><div class="gm-ph"><span class="td-ic" aria-hidden="true">${esc(rtEmoji(x.r))}</span><div class="gm-qt"><button type="button" class="td-name" data-tdrt="${esc(x.r.id)}">${esc(x.r.name || "Routine")}</button><span class="gm-qs">${x.time ? esc(x.time) + " · " : ""}${x.plan.status === "done" ? "✓ Done" : "Planned"}</span></div><span class="pa-type">Routine</span></div></li>`
+      : `<li class="gm-card td-on"><div class="gm-ph"><span class="td-ic" aria-hidden="true">${esc(emojiOf(x.e, x.type))}</span><div class="gm-qt"><button type="button" class="td-name" data-tdopen="${esc(x.type)}" data-tdid="${esc(x.e.id)}">${esc(x.e.title || "Untitled")}</button>${x.e.subtitle ? `<span class="gm-psub">${esc(x.e.subtitle)}</span>` : ""}<span class="gm-qs">${x.inWhen ? (x.single ? "Today" : `${esc(fmt(x.s))} – ${esc(fmt(x.en))}`) : "Has a step dated today"}${x.time ? " · " + esc(x.time) : ""}</span></div><span class="pa-type">${T2(x.type)}</span></div>${x.steps.length ? `<ul class="gm-steps">${x.steps.map(st => `<li class="gm-st${st.done ? " done" : ""}"><button type="button" class="gm-check sm${st.done ? " on" : ""}" data-tdstep="${esc(x.type)}" data-tdid="${esc(x.e.id)}" data-tdtid="${esc(st.id)}" aria-pressed="${!!st.done}" aria-label="${st.done ? "Mark not done" : "Mark done"}: ${esc(st.text)}">${st.done ? "✓" : ""}</button><div class="gm-qt"><span class="gm-stn">${esc(st.text)}</span></div></li>`).join("")}</ul>` : ""}</li>`;
+    const draft = (x) => { const k = TD_K[x.type]; return `<article class="td-draft" data-tddraft="${esc(x.id)}"><div class="td-dtop"><select data-tdtype="${esc(x.id)}" aria-label="Kind of entry">${TD_KINDS.map(([v, l, ic]) => `<option value="${v}"${v === x.type ? " selected" : ""}>${ic} ${l}</option>`).join("")}</select><span class="td-hold">Not in the master yet</span></div>
+        <input type="text" class="td-dtitle" data-tdfield="title" data-tdd="${esc(x.id)}" value="${esc(x.title || "")}" placeholder="${k[1]} name" maxlength="200" aria-label="${k[1]} name">
+        <textarea class="td-dnote" data-tdfield="note" data-tdd="${esc(x.id)}" rows="2" placeholder="Notes, steps, why it matters…" maxlength="2000" aria-label="Notes">${esc(x.note || "")}</textarea>
+        <div class="td-dbtns"><button type="button" class="btn primary" data-tdmaster="${esc(x.id)}"${(x.title || "").trim() ? "" : " disabled"}>➕ Add to master as a ${k[1].toLowerCase()}</button><button type="button" class="btn ghost" data-tddel="${esc(x.id)}">${tdArm === x.id ? "Sure? Delete" : "Discard"}</button></div></article>`; };
+    const drafts = td.drafts.slice().reverse();
+    el.innerHTML = `<div class="gm td">
+      <section class="gm-hero td-hero" aria-label="Today">
+        <div class="gm-lvl"><span class="gm-badge td-badge">☀️</span><div><div class="gm-title">${esc(dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))}</div><div class="gm-sub">${esc(String(dt.getFullYear()))}</div></div></div>
+        <div class="gm-stats"><div><b>${on.length}</b><span>on today</span></div><div><b>${did.length}</b><span>done today</span></div><div><b>${drafts.length}</b><span>in the holding place</span></div></div>
+      </section>
+      <section class="gm-sec"><h2>On today <label class="switch td-sw"><input type="checkbox" data-tdshow${td.show ? " checked" : ""}> Show what's scheduled</label></h2>
+        <p class="gm-hint">${td.show ? "Entries whose When includes today, project steps dated today, and routines planned for today. Click a name to open it." : "Turned off. Switch it on to fill this with everything scheduled for today."}</p>
+        ${td.show ? `<ul class="gm-list">${on.map(onRow).join("") || '<li class="gm-q empty">Nothing is scheduled for today.</li>'}</ul>` : ""}
+      </section>
+      <section class="gm-sec"><h2>Done today <span class="gm-count">${did.length} logged</span></h2>
+        <form class="gm-did" data-tddidform><input type="text" id="tdDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
+        ${did.length ? `<ul class="gm-dl">${did.map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-tddeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>` : '<p class="gm-hint">Only today shows here. These are short-term notes, not entries. Older ones are in Game → Done today.</p>'}
+      </section>
+      <section class="gm-sec"><h2>💡 Holding place <span class="gm-count">${drafts.length}</span></h2>
+        <p class="gm-hint">Brainstorm projects, goals, routines, areas and values here. Nothing goes into the master database until you click <b>Add to master</b> on its card.</p>
+        <form class="td-new" data-tdnewform><select id="tdKind" aria-label="Kind of entry">${TD_KINDS.map(([v, l, ic]) => `<option value="${v}"${v === td.kind ? " selected" : ""}>${ic} ${l}</option>`).join("")}</select><input type="text" id="tdNewIn" placeholder="Name an idea, then press Enter" maxlength="200" autocomplete="off" aria-label="New idea"><button type="submit" class="btn primary">Add</button></form>
+        ${drafts.length ? `<div class="td-grid">${drafts.map(draft).join("")}</div>` : '<p class="gm-hint">Nothing here yet.</p>'}
+      </section>
+    </div>`;
+    if (keepDid) $("tdDidIn").value = keepDid; if (keepNew) $("tdNewIn").value = keepNew;
+  }
+  const tdFind = (id) => td.drafts.find(x => x.id === id);
+  $("tdBody").addEventListener("submit", ev => {
+    const f = ev.target; ev.preventDefault();
+    if (f.matches("[data-tddidform]")) { const i = $("tdDidIn"), v = i.value; i.value = ""; if (gmAddDid(v)) { const i2 = $("tdDidIn"); if (i2) i2.focus(); } return; }
+    if (f.matches("[data-tdnewform]")) { const i = $("tdNewIn"), v = i.value.trim(); if (!v) return; const type = $("tdKind").value; i.value = ""; td.kind = type; td.drafts = td.drafts.concat({ id: "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type, title: v.slice(0, 200), note: "", at: new Date().toISOString() }); saveTd(); renderToday(); const i2 = $("tdNewIn"); if (i2) i2.focus(); }
+  });
+  $("tdBody").addEventListener("click", async ev => {
+    const t = ev.target;
+    const dd = t.closest("[data-tddeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.tddeldid); saveGm(); renderToday(); renderGame(); return; }
+    const op = t.closest("[data-tdopen]"); if (op) { openEditor(op.dataset.tdopen, op.dataset.tdid); return; }
+    const ro = t.closest("[data-tdrt]"); if (ro) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = ro.dataset.tdrt; rtView.over[id] = true; location.hash = "planner"; return; }
+    const sp = t.closest("[data-tdstep]"); if (sp) { const e = (data[sp.dataset.tdstep] || []).find(x => x.id === sp.dataset.tdid), st = e && taskList(e).find(x => x.id === sp.dataset.tdtid); if (st) await toggleTask(sp.dataset.tdstep, e.id, st.id, !st.done); return; }
+    const del = t.closest("[data-tddel]"); if (del) { const id = del.dataset.tddel; if (tdArm !== id) { tdArm = id; renderToday(); setTimeout(() => { if (tdArm === id) { tdArm = null; renderToday(); } }, 3500); return; } tdArm = null; td.drafts = td.drafts.filter(x => x.id !== id); saveTd(); renderToday(); return; }
+    const ms = t.closest("[data-tdmaster]"); if (ms) {
+      const x = tdFind(ms.dataset.tdmaster); if (!x || !(x.title || "").trim()) return; ms.disabled = true;
+      try {
+        if (x.type === "routines") { const r = await newRoutine(x.title); if (r && x.note && !r.body) await saveRoutine({ ...r, body: x.note, updatedAt: new Date().toISOString() }); }
+        else await wfCreate(x.type, x.title.trim(), x.note ? { subtitle: x.note.split("\n")[0].slice(0, 200), body: x.note } : {});
+        td.drafts = td.drafts.filter(d => d.id !== x.id); saveTd(); notice(`Added “${x.title.trim()}” to ${x.type === "routines" ? "Routines" : TYPE[x.type].label}.`); renderAll();
+      } catch (err) { notice(err.message || "Couldn't add it."); ms.disabled = false; }
+    }
+  });
+  $("tdBody").addEventListener("change", ev => {
+    const t = ev.target;
+    if (t.matches("[data-tdshow]")) { td.show = t.checked; saveTd(); renderToday(); return; }
+    if (t.matches("[data-tdtype]")) { const x = tdFind(t.dataset.tdtype); if (x) { x.type = t.value; saveTd(); renderToday(); } return; }
+    if (t.matches("#tdKind")) { td.kind = t.value; saveTd(); return; }
+    if (t.matches("[data-tdfield]")) { const x = tdFind(t.dataset.tdd); if (x) { x[t.dataset.tdfield] = t.value.slice(0, t.dataset.tdfield === "note" ? 2000 : 200); saveTd(); renderToday(); } }
+  });
+  $("tdBody").addEventListener("input", ev => { const t = ev.target; if (t.matches("[data-tdfield=title]")) { const b = t.closest(".td-draft").querySelector("[data-tdmaster]"); if (b) b.disabled = !t.value.trim(); } });
+  TOOL_ICON.today = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/></svg>';
   TOOL_ICON.game = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>';
-  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }] : [{ key: "game", label: "Game", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
+  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }] : [{ key: "game", label: "Game", kind: "tool" }, { key: "today", label: "Today", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   mountProjectSections();
@@ -6891,7 +7014,7 @@ ${text}
     $("view-graph").hidden = v !== "graph";
     $("view-obsidian").hidden = v !== "obsidian";
     $("view-planner").hidden = v !== "planner";
-    $("view-home").hidden = v !== "home"; $("view-workflow").hidden = v !== "workflow"; if (v === "workflow") renderWorkflow(); $("view-game").hidden = v !== "game"; if (v === "game") renderGame(); $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
+    $("view-home").hidden = v !== "home"; $("view-workflow").hidden = v !== "workflow"; if (v === "workflow") renderWorkflow(); $("view-game").hidden = v !== "game"; if (v === "game") renderGame(); $("view-today").hidden = v !== "today"; if (v === "today") renderToday(); $("view-inventory").hidden = v !== "inventory"; $("view-meals").hidden = v !== "meals";
     if (v === "home") renderHome(); if (v === "inventory") renderInventory(); if (v === "meals") renderMeals();
     $("view-database").hidden = v !== "database";
     if (v === "database") renderDatabase();
@@ -6952,7 +7075,7 @@ ${text}
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
-  function renderAll() { buildAdj(); renderHome(); renderGame(); if (!wfTyping()) renderWorkflow(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (paReady) renderPA(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
+  function renderAll() { buildAdj(); renderHome(); renderGame(); renderToday(); if (!wfTyping()) renderWorkflow(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (paReady) renderPA(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
 
   // ---------- Connect to saved data ----------
   (async () => {
@@ -7004,7 +7127,8 @@ ${text}
     db.doc("settings/mealOptions").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d) { ML_FIELDS.forEach(([k]) => { if (Array.isArray(d[k])) mealOpts[k] = d[k]; }); store("chevy.mealOpts", mealOpts); } }, () => {});
     db.doc("settings/rooms").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && Array.isArray(d.rooms)) { rooms = d.rooms; store("chevy.rooms", rooms); renderInventory(); } }, () => {});
     db.collection("braindumps").onSnapshot(applyBdHist, () => {});
-    db.doc("settings/game").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.v === 1) { gm = gmNorm(JSON.parse(JSON.stringify(d))); store("chevy.game", gm); } gmReady = true; renderGame(); }, () => { gmReady = true; renderGame(); });
+    db.doc("settings/game").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.v === 1) { gm = gmNorm(JSON.parse(JSON.stringify(d))); store("chevy.game", gm); } gmReady = true; renderGame(); renderToday(); }, () => { gmReady = true; renderGame(); renderToday(); });
+    db.doc("settings/today").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.v === 1) { td = tdNorm(JSON.parse(JSON.stringify(d))); store("chevy.today", td); } renderToday(); }, () => {});
     db.doc("settings/workflow").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.v === 2) { wf = wfNorm(JSON.parse(JSON.stringify(d))); store("chevy.workflow2", wf); if (!wfTyping()) renderWorkflow(); } }, () => {});
     db.doc("settings/home").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (d && d.web && typeof d.web === "object") { homeWeb = { ...HOME_WEB_DEFAULT, ...d.web }; store("chevy.homeWeb", homeWeb); renderHome(); } }, () => {});
     db.doc("settings/site").onSnapshot(snap => {
