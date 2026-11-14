@@ -2470,9 +2470,18 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // "Scheduled" is a kind of project: it lives in Projects with a Scheduled tag
   const isSched = (e, type) => type === "projects" && !!(e && e.scheduled);
   const SCHED_TAG = '<span class="sched-tag">Scheduled</span>';
-  const dbOptions = (cur, sched) => TYPES.map(Y => Y.key === "projects"
-    ? `<option value="projects"${cur === "projects" && !sched ? " selected" : ""}>Projects</option><option value="projects|s"${cur === "projects" && sched ? " selected" : ""}>Projects · Scheduled</option>`
+  // Database choices: Projects · One time, Projects · Scheduled, Projects · Routines (turns it into a routine), then the rest. No Ideas.
+  const dbOptions = (cur, sched) => TYPES.filter(Y => Y.key !== "ideas" || cur === "ideas").map(Y => Y.key === "projects"
+    ? `<option value="projects"${cur === "projects" && !sched ? " selected" : ""}>Projects · One time</option><option value="projects|s"${cur === "projects" && sched ? " selected" : ""}>Projects · Scheduled</option>${PUBLIC ? "" : `<option value="routine">Projects · Routines</option>`}`
     : `<option value="${Y.key}"${Y.key === cur ? " selected" : ""}>${Y.label}</option>`).join("");
+  // Moving an entry to Projects · Routines makes it a routine (same name and notes) and removes the entry
+  async function entryToRoutine(from, e, body) {
+    const r = await newRoutine(e.title || "Untitled routine"); if (!r) return false;
+    const notes = body != null ? body : e.body; if (notes && !r.body) await saveRoutine({ ...r, body: notes, updatedAt: new Date().toISOString() });
+    if (from && data[from] && data[from].some(x => x.id === e.id)) await deleteEntry(from, e.id);
+    notice(`“${e.title || "Untitled"}” is now a routine. Find it in Projects → Routines and Planner → Routine reports.`);
+    return true;
+  }
   // Checkboxes that live in the subtitle line (saved as the entry's tasks)
   // Subtitle in a table's title cell: click it to edit right there
   const subEdHtml = (e, type) => e.subtitle ? `<span class="t-sub${PUBLIC || e._pub ? "" : " t-sub-ed"}"${PUBLIC || e._pub ? "" : ` data-subed="${esc(e.id)}" data-subet="${esc(type)}" tabindex="0" role="button" title="Click to edit the subtitle"`}>${esc(e.subtitle)}</span>` : "";
@@ -3833,7 +3842,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const existing = data[type].find(x => x.id === id);
     const out = { ...(existing || editing.extra || {}), id };
     for (const P of T.props) { const err = K[P.kind].read(P, out); if (err) { $("eErr").textContent = err; return false; } }
-    const dest = TYPE[out._moveTo] ? out._moveTo : type; delete out._moveTo;
+    const toRoutine = out._moveTo === "routine";
+    const dest = TYPE[out._moveTo] ? out._moveTo : type; delete out._moveTo; if (toRoutine) out._moveTo = "routine";
     if (dest !== type) {
       if (TYPE[dest].archive) { out.archivedFrom = type; out.archivedAt = new Date().toISOString(); }
       else { delete out.archivedFrom; delete out.archivedAt; if (TYPE[type].archive && out.status === "Done") out.status = "Active"; }
@@ -3841,6 +3851,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (!out.createdTime && out.created) out.createdTime = out.created;
     }
     out.body = draft.tabs[0].body;
+    if (out._moveTo === "routine") { delete out._moveTo; const ok = await entryToRoutine(isNew ? "" : type, out, out.body); if (ok) { editing = { ...editing, isNew: true }; } return !!ok; }
     out.files = draft.tabs[0].files.map(f => ({ ...f }));
     out.noteTabs = draft.tabs.slice(1).map(t => ({ id: t.id, name: t.name.trim() || "Notes", body: t.body, files: t.files.map(f => ({ ...f })) }));
     // [[links]] written in any notes tab become links too
@@ -3902,6 +3913,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   async function moveEntryTo(from, id, to0) {
     const to = String(to0).split("|")[0], sched = to0 === "projects|s";
     const e = data[from].find(x => x.id === id); if (!e) return;
+    if (to === "routine") { await entryToRoutine(from, e); return; }
     if (from === to) { if (!!e.scheduled !== sched) await saveEntry(from, { ...e, scheduled: sched, updatedAt: new Date().toISOString() }); return; }
     const now = new Date().toISOString(), body = { ...e, updatedAt: now, scheduled: sched };
     if (TYPE[to].archive) { body.archivedFrom = from; body.archivedAt = now; }
