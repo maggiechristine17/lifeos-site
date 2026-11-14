@@ -157,6 +157,14 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-fl { display: grid; gap: 3px; font-size: 12px; color: var(--muted); } .pil-fl.main { grid-column: 1 / -1; } .pil-fl.main span { color: var(--c); font-weight: 700; }
 .pil-fl input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); }
 .pil-fl input:focus { outline: none; border-color: var(--c); }
+.pil-btns { display: flex; gap: 6px; }
+.pil-re { border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; background: var(--surface); margin-bottom: 10px; font-size: 13.5px; }
+.pil-re h4 { margin: 0 0 6px; display: flex; justify-content: space-between; }
+.pil-relist { margin: 4px 0 10px; padding-left: 18px; display: grid; gap: 3px; max-height: 260px; overflow: auto; }
+.pil-relist code { background: var(--bg); padding: 0 4px; border-radius: 4px; } .pil-relist code.new { color: var(--accent); font-weight: 700; }
+.pil-rea { font-size: 11.5px; color: var(--muted); }
+.code-pill { font-family: ui-monospace, monospace; font-size: 12.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+.code-pill.bad { border-color: #ef6b6b; color: #ef6b6b; }
 .pil-base { height: 12px; background: var(--c); border-radius: 3px 3px 6px 6px; margin: 0 -4px; }
 @media (max-width: 640px) { .pil-row { gap: 4px; } .pil-name { font-size: 10px; letter-spacing: 0; } .pil-cat { font-size: 12px; padding: 6px 2px; } .pil-sub { grid-template-columns: repeat(2, 30px); } }
 .af-note { font-size: 12px; color: var(--muted); }
@@ -1854,7 +1862,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="brand-wrap"><div class="brand">LifeOS</div><div class="mode-sw" role="group" aria-label="How much to show"><button type="button" data-mode="lite">✨ Streamlined</button><button type="button" data-mode="full">▦ Full page</button></div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
-  <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
+  <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><span class="pil-btns"><button type="button" class="btn primary" id="pilRecodeBtn">🔁 Recode</button><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></span></div><div class="pil-re" id="pilRe" hidden></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -2154,9 +2162,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Each type lists its properties once; Sort by, Filter and Columns all follow this order.
   // Projects, Areas, Resources and Archive all share the same properties in the same order,
   // so every entry window looks the same. Only the saved field for the created date differs.
+  // Entry code shape: Pillar(1–5).Category/area(2 digits)[.Project 001 | Goal G01 | Routine R01][.Resource 001]
+  const codeParse = (c) => { const m = /^([1-5])\.(\d{2})(?:\.(\d{3}|G\d{2}|R\d{2}))?(?:\.(\d{3}))?$/.exec(String(c || "").trim()); return m ? { prefix: `${m[1]}.${m[2]}`, item: m[3] || "", res: m[4] || "" } : null; };
+  const pilNameOf = (prefix) => { try { const n = JSON.parse(localStorage.getItem("chevy.pillars") || "{}"); return (n && n[prefix]) || ""; } catch (e) { return ""; } };
   const sharedProps = (createdField) => [
     { key: "title", kind: "title", label: "Title", field: "title", width: 380 },
     { key: "subtitle", kind: "subtitle", label: "Subtitle", field: "subtitle", width: 260, hidden: true },
+    { key: "code", kind: "code", label: "Code", field: "code", width: 140 },
     { key: "database", kind: "dbmove", label: "Database", width: 200, noFilter: true, noSort: true },
     { key: "links", kind: "links", label: "Links", width: 240 },
     { key: "tags", kind: "tags", label: "Tags", field: "tags", width: 190 },
@@ -2183,7 +2195,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     { key: "archive", label: "Archive", singular: "archived entry", idPrefix: "x", settingsDoc: "settings/archiveView", defaultSort: { key: "created", dir: "desc" }, props: (() => { const ps = sharedProps("created"), i = ps.findIndex(P => P.key === "database"); ps.splice(i + 1, 0, { key: "origin", kind: "origin", label: "Came from", width: 190 }); return ps; })(), groups: sharedGroups("created"), archive: true },
     // Workflow entries: real entries (Layer 9) seen in Planner, Obsidian, Layers, Graph and Workflow. No top-bar tab.
     { key: "ideas", label: "Ideas", singular: "idea", idPrefix: "i", settingsDoc: "settings/ideasView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime"), wf: true },
-    { key: "values", label: "Values", singular: "value", idPrefix: "vl", settingsDoc: "settings/valuesView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime"), wf: true },
+    { key: "values", label: "Values", singular: "value", idPrefix: "vl", settingsDoc: "settings/valuesView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime").filter(P => P.key !== "code"), groups: sharedGroups("createdTime"), wf: true }, // values don't get a code
     { key: "goals", label: "Goals", singular: "goal", idPrefix: "o", settingsDoc: "settings/goalsView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime"), wf: true },
   ];
   const LIVE = ["projects", "areas", "pages"];
@@ -2649,6 +2661,19 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       },
       editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><div class="title-row"><button type="button" id="ed-emoji" class="emoji-btn" aria-haspopup="dialog" aria-label="Choose an emoji" title="Choose an emoji"></button><textarea id="ed-${P.key}" class="title-ta" rows="1" autocomplete="off" spellcheck="true">${esc(e?.title || "")}</textarea></div>`,
       read: (P, out) => { out.title = $("ed-" + P.key).value.replace(/\s*\n+\s*/g, " ").trim(); if (!out.title) return "Give it a title."; out.emoji = draft.emoji || ""; },
+    },
+    // Entry code (like 1.12.001): text, checked for the right shape. Remembers the area's name so Recode can follow it if the area moves.
+    code: {
+      empty: () => ({ q: "" }),
+      active: f => !!f.q.trim(),
+      test: (e, P, f) => !f.q.trim() || (e.code || "").toLowerCase().startsWith(f.q.trim().toLowerCase()),
+      sortVal: (e) => (e.code || "~").replace(/\d+/g, d => d.padStart(4, "0")),
+      search: (e) => e.code || "",
+      filterHtml: (P, id) => `<label for="${id}">${P.label}</label><input id="${id}" type="text" placeholder="Starts with… (like 1.1)" data-part="q">`,
+      sync: (box, f) => { const i = box.querySelector('[data-part="q"]'); if (document.activeElement !== i) i.value = f.q; },
+      cell: (e) => e.code ? `<span class="code-pill${codeParse(e.code) ? "" : " bad"}">${esc(e.code)}</span>` : '<span style="color:var(--muted)">—</span>',
+      editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><input id="ed-${P.key}" type="text" autocomplete="off" placeholder="like 1.12.001" value="${esc(e?.code || "")}" maxlength="20"><div class="pub-hint">Pillar.Category or area.Project (001), Goal (G01) or Routine (R01).Resource (001). See Pillars → How this works.</div>`,
+      read: (P, out) => { const v = $("ed-" + P.key).value.trim().toUpperCase(); out.code = v; const pr = codeParse(v); out.codeArea = pr ? (pilNameOf(pr.prefix) || out.codeArea || "") : ""; },
     },
     text: {
       empty: () => ({ q: "" }),
@@ -6074,6 +6099,45 @@ Don't invent appointments or facts that aren't listed.`);
     ed.hidden = false; ed.style.setProperty("--c", `var(--ec-${pc[0]})`);
     ed.innerHTML = `<h4>${p} ${pc[1]} · category ${k}<button type="button" class="x" data-pilshut aria-label="Close">×</button></h4><div class="pil-form">${Array.from({ length: 10 }, (_, i) => { const sc = `${p}.${pad2(base + i)}`; return `<label class="pil-fl${i === 0 ? " main" : ""}"><span>${sc}${i === 0 ? " · category" : " · area"}</span><input type="text" data-pilname="${sc}" value="${esc(pilName(sc))}" placeholder="${i === 0 ? "Category name" : "Area name"}" maxlength="80"></label>`; }).join("")}</div><p class="pub-hint">Names save as you type (when you leave a box or press Enter).</p>`;
   }
+  // ----- 🔁 Recode: after I move or rename categories/areas in Pillars, make every entry's code fit again -----
+  // 1) Each coded entry follows its area by NAME (remembered as codeArea): if that name now sits in another cell, the code moves there.
+  // 2) Inside each area, projects renumber 001, 002…, goals G01, G02…, keeping their old order. Areas get just the area code.
+  // 3) Resources take the code of the project or goal they're linked to, plus .001, .002…. Values are never coded.
+  function pilRecodePlan() {
+    const cellOf = (name) => { if (!name) return ""; const hits = Object.keys(pilNames).filter(k => pilNames[k].trim().toLowerCase() === name.trim().toLowerCase()); return hits.length === 1 ? hits[0] : ""; };
+    const items = [];
+    ["areas", "goals", "projects", "pages"].forEach(type => (data[type] || []).forEach(e => { if (e._pub || !e.code) return; items.push({ type, e, old: e.code, p: codeParse(e.code) }); }));
+    const out = [], problems = [];
+    items.forEach(x => { if (!x.p) { problems.push({ ...x, why: "Code isn't in the right shape" }); return; } const moved = cellOf(x.e.codeArea); x.prefix = moved || x.p.prefix; x.areaName = pilName(x.prefix) || x.e.codeArea || ""; });
+    const ok = items.filter(x => x.p);
+    ok.filter(x => x.type === "areas").forEach(x => { x.neu = x.prefix; });
+    ["projects", "goals"].forEach(type => { const by = new Map(); ok.filter(x => x.type === type).forEach(x => { if (!by.has(x.prefix)) by.set(x.prefix, []); by.get(x.prefix).push(x); });
+      by.forEach((L, pre) => { L.sort((a, b) => (a.p.item || "~").localeCompare(b.p.item || "~") || (a.e.title || "").localeCompare(b.e.title || "")); L.forEach((x, i) => { x.neu = `${pre}.${type === "goals" ? "G" + pad2(i + 1) : String(i + 1).padStart(3, "0")}`; }); }); });
+    const newById = new Map(ok.filter(x => x.neu).map(x => [x.e.id, x.neu]));
+    const byParent = new Map();
+    ok.filter(x => x.type === "pages").forEach(x => { const par = [...wfLinked(x.e.id, "projects"), ...wfLinked(x.e.id, "goals")].map(o => newById.get(o.id) || (codeParse(o.code || "") && o.code)).filter(c => c && codeParse(c) && codeParse(c).item).sort()[0];
+      const key = par || (x.p.item ? `${x.prefix}.${x.p.item}` : ""); if (!key) { problems.push({ ...x, why: "Resource isn't linked to a coded project or goal" }); return; } if (!byParent.has(key)) byParent.set(key, []); byParent.get(key).push(x); });
+    byParent.forEach((L, par) => { L.sort((a, b) => (a.p.res || "~").localeCompare(b.p.res || "~") || (a.e.title || "").localeCompare(b.e.title || "")); L.forEach((x, i) => { x.neu = `${par}.${String(i + 1).padStart(3, "0")}`; }); });
+    ok.filter(x => x.neu).forEach(x => { if (x.neu !== x.old || (x.areaName && x.areaName !== (x.e.codeArea || ""))) out.push(x); });
+    return { changes: out, problems, total: items.length };
+  }
+  function pilRecodeShow() {
+    const P = pilRecodePlan(), el = $("pilRe"); el.hidden = false;
+    const ch = P.changes.filter(x => x.neu !== x.old);
+    el.innerHTML = `<h4>🔁 Recode<button type="button" class="x" data-pilreshut aria-label="Close">×</button></h4>
+      <p class="pa-intro">${P.total ? `Checked ${P.total} coded entr${P.total === 1 ? "y" : "ies"}. ${ch.length ? `${ch.length} code${ch.length === 1 ? "" : "s"} should change to fit the pillars now:` : "Every code already fits the pillars. 🎉"}` : "No entries have a code yet. Give entries a Code (in the entry window) and Recode will keep them in order."}</p>
+      ${ch.length ? `<ul class="pil-relist">${ch.map(x => `<li><span class="pa-type">${esc(TYPE[x.type].singular)}</span> ${esc(x.e.title || "Untitled")}: <code>${esc(x.old)}</code> → <code class="new">${esc(x.neu)}</code>${x.areaName ? ` <span class="pil-rea">${esc(x.areaName)}</span>` : ""}</li>`).join("")}</ul>` : ""}
+      ${P.problems.length ? `<p class="pa-intro"><b>Needs a look (${P.problems.length}):</b></p><ul class="pil-relist">${P.problems.map(x => `<li>${esc(x.e.title || "Untitled")} <code>${esc(x.old)}</code>: ${esc(x.why)}</li>`).join("")}</ul>` : ""}
+      ${P.changes.length ? `<button type="button" class="btn primary" data-pilapply>Apply ${ch.length ? ch.length + " change" + (ch.length === 1 ? "" : "s") : "(remember area names)"}</button>` : ""}`;
+  }
+  $("pilRecodeBtn").addEventListener("click", pilRecodeShow);
+  $("pilPop").addEventListener("click", async e => {
+    if (e.target.closest("[data-pilreshut]")) { $("pilRe").hidden = true; return; }
+    const ap = e.target.closest("[data-pilapply]"); if (!ap) return; ap.disabled = true;
+    const P = pilRecodePlan(), now = new Date().toISOString(); let n = 0;
+    for (const x of P.changes) { try { await saveEntry(x.type, { ...x.e, code: x.neu, codeArea: x.areaName || x.e.codeArea || "", updatedAt: now }); n++; } catch (err) { notice(err.message); } }
+    notice(`Recoded ${n} entr${n === 1 ? "y" : "ies"}.`); pilRecodeShow();
+  });
   pilRender();
   $("pilHowBtn").addEventListener("click", () => { const h = $("pilHow"); h.hidden = !h.hidden; $("pilHowBtn").setAttribute("aria-expanded", String(!h.hidden)); });
   $("pilPop").addEventListener("change", e => { const i = e.target.closest("[data-pilname]"); if (!i) return; const v = i.value.trim().slice(0, 80); if (v) pilNames[i.dataset.pilname] = v; else delete pilNames[i.dataset.pilname]; pilSave(); const sel = pilSel; pilRender(); pilSel = sel; });
