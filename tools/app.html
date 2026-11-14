@@ -1283,6 +1283,9 @@ table.pr-rt { width: 100%; }
 .gm-q.picked { border-color: var(--accent); }
 .gm-q.empty { border-style: dashed; color: var(--muted); font-size: 13px; justify-content: center; background: none; }
 .gm-q.done { opacity: .7; }
+.wf-subh { font-size: 14px; margin: 12px 0 6px; display: flex; gap: 8px; align-items: baseline; }
+.wf-subh span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.wf-rtc { border-left: 4px solid var(--ec-purple, #a78bfa); }
 .gm-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
 .gm-card.picked { border-color: var(--accent); }
 .gm-ph { display: flex; align-items: center; gap: 10px; min-height: 40px; }
@@ -5158,11 +5161,12 @@ Don't invent appointments or facts that aren't listed.`);
     const prMain = views.projects && views.projects.main, gMain = views.goals && views.goals.main; if (!prMain || !gMain) return;
     gMain.classList.add("pr-sec"); gMain.id = "view-goals";
     const jump = document.createElement("nav"); jump.className = "pr-jump"; jump.id = "prJump"; jump.hidden = true; jump.setAttribute("aria-label", "Sections on this tab");
-    jump.innerHTML = [["view-projects", "Projects"], ["view-goals", "Goals"], ["view-prt", "Routines"]].map(([id, l]) => `<button type="button" class="wf-jbtn" data-prjump="${id}">${l}</button>`).join("");
-    prMain.parentNode.insertBefore(jump, prMain);
+    jump.innerHTML = [["view-goals", "Goals"], ["view-projects", "Projects"], ["view-prt", "Routines"]].map(([id, l]) => `<button type="button" class="wf-jbtn" data-prjump="${id}">${l}</button>`).join("");
+    // Order, left to right and top to bottom: Goals, Projects, Routines
+    prMain.before(gMain);
+    gMain.parentNode.insertBefore(jump, gMain);
     const rt = document.createElement("main"); rt.id = "view-prt"; rt.className = "pr-sec"; rt.hidden = true;
-    gMain.after(rt);
-    prMain.after(gMain);
+    prMain.after(rt);
     jump.addEventListener("click", e => { const b = e.target.closest("[data-prjump]"); if (b) { const t = $(b.dataset.prjump); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); } });
     rt.addEventListener("click", async e => {
       const ro2 = e.target.closest("[data-prrt]"); if (ro2) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = ro2.dataset.prrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
@@ -6176,6 +6180,9 @@ ${text}
     const resCards = S.projects.map(p => card("projects", p, { top: fromPart(p, "projects"), mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
       bottom: childPart(p, "projects", { rows: (kids) => `<div class="wf-list">${kids.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${name(r)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(p.id)}" data-wfo="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || empty("No resources yet.")}</div>` }) })).join("");
 
+    // 4b. Routines sit with projects in section 4 (always purple; open them in Planner → Routines)
+    const rtCards = routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(r => { const tn = dn(today()), done = rtPlans(r).filter(x => x.status === "done"), w = done.filter(x => dn(x.date) > tn - 7 && dn(x.date) <= tn).length, nx = rtPlans(r).filter(x => x.status !== "done" && x.date >= today()).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return `<article class="wf-c wf-rtc ec-purple"><div class="wf-mid"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><button type="button" class="wf-ptitle" data-wfrt="${esc(r.id)}" title="Open in Planner → Routines">${esc(r.name || "Untitled routine")}</button></div><div class="wf-bot"><span class="wf-plabel">Routine</span><span class="wf-meta">${w} done in the last 7 days · ${done.length} all time${nx ? ` · next ${esc(fmt(nx.date))}` : ""}</span></div></article>`; }).join("");
     // 6. Resources (from the projects above), pointing back to ideas: the circle closes
     const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Values", bottom: childPart(r, "pages") })).join("");
     el.innerHTML = `<div class="hm-page wf-page">
@@ -6184,11 +6191,11 @@ ${text}
       <div class="layout-tabs wf-vtabs" role="tablist" aria-label="Workflow views"><button type="button" role="tab" data-wfview="cards" aria-selected="${wfView === "cards"}">▦ Cards</button><button type="button" role="tab" data-wfview="circle" aria-selected="${wfView === "circle"}">◯ Circle</button></div>
       ${wfView === "circle" ? wfCircleHtml() : `
       ${PUBLIC ? "" : `<p class="hm-sub">Start here when brainstorming. Every card is an entry and reads the same way: <b>From</b> on top (a dropdown of where it came from), the entry itself in the middle, and what grows out of it at the bottom.</p>`}
-      <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
+      <nav class="wf-jump" aria-label="Jump to a section">${[["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects and routines"], ["resources", "Resources"]].map(([k, l], i) => `<button type="button" class="wf-jbtn" data-wfjump="${k}"><span>${i + 1}</span>${l}</button>`).join("")}</nav>
       ${sec("values", 1, "Values", "Values start the circle. From shows the resources they came from; each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "pages")), "values")}
       ${sec("areas", 2, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
       ${sec("goals", 3, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
-      ${sec("projects", 4, "Projects", "Each project is a card. Add the resources that go with it.", focusNote("projects") + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")), "projects")}
+      ${sec("projects", 4, "Projects and routines", "Each project is a card. Add the resources that go with it. Your routines are here too.", focusNote("projects") + `<h3 class="wf-subh">📌 Projects <span>${S.projects.length}</span></h3>` + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")) + `<h3 class="wf-subh">🔁 Routines <span>${routines.length}</span></h3>` + (routines.length ? `<div class="wf-board">${rtCards}</div>` : empty(PUBLIC ? "Nothing here yet." : "No routines yet. Add one in Projects → Routines or in Planner.")), "projects")}
       ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}`}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
@@ -6265,6 +6272,7 @@ ${text}
   }
   $("wfBody").addEventListener("click", async ev => {
     const t = ev.target;
+    const wr = t.closest("[data-wfrt]"); if (wr) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = wr.dataset.wfrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const vt = t.closest("[data-wfview]"); if (vt) { wfView = vt.dataset.wfview; renderWorkflow(); return; }
     if (t.closest("[data-wfrestart]")) { wfFlow = { start: null, sel: {} }; wfFlowSave(); renderWorkflow(); return; }
@@ -6796,6 +6804,7 @@ ${text}
     db.collection("routines").onSnapshot(snap => {
       routines = snap.docs.map(d => ({ id: d.id, ...JSON.parse(JSON.stringify(d.data())) }));
       const a = document.activeElement; if (!(a && (a.matches("[data-rtname]") || a.id === "rtNewName" || a.id === "plRNew"))) renderPlanner(); renderDatabase();
+      if (!(a && a.closest && a.closest("#wfBody") && a.matches("input, textarea, select"))) renderWorkflow();
     }, () => {});
     db.collection("plnotes").onSnapshot(snap => {
       plNotes = new Map(snap.docs.map(d => [d.id, d.data()]));
