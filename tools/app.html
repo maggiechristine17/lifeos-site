@@ -344,7 +344,7 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .when-hero .when-grid { grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; margin-top: 4px; }
 .when-hero .when-l { font-size: 13px; font-weight: 600; color: var(--ink); }
 .when-hero .drange input, .when-hero .drange select { font-size: 15px; padding: 9px 10px; }
-.cal-pop { position: fixed; z-index: 60; width: 288px; background: var(--surface); border: 1px solid var(--panel-line); border-top: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.6); padding: 10px 12px 12px; display: grid; gap: 6px; }
+.cal-pop { position: fixed; z-index: 95; width: 288px; background: var(--surface); border: 1px solid var(--panel-line); border-top: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.6); padding: 10px 12px 12px; display: grid; gap: 6px; }
 .cal-pop[hidden] { display: none; }
 .cal-h { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-display); font-size: 15px; }
 .cal-nav { border: 0; background: var(--bg); color: var(--ink); width: 32px; height: 32px; border-radius: 8px; font-size: 20px; cursor: pointer; line-height: 1; }
@@ -1214,7 +1214,39 @@ table.pr-rt { width: 100%; }
 .sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
-.is-public #scBtn { display: none; }
+.is-public #scBtn, .is-public #paBtn, .is-public #paPop { display: none !important; }
+.pa-dialog { width: min(980px, 100%); }
+.pa-n { margin-left: 6px; background: var(--accent); color: var(--bg); border-radius: 99px; padding: 0 7px; font-size: 11px; font-weight: 800; }
+.pa-n:empty { display: none; }
+.pa-intro { margin: 0; font-size: 13.5px; color: var(--muted); }
+.pa-sum { display: flex; flex-wrap: wrap; gap: 6px; }
+.pa-sum button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 99px; padding: 5px 11px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.pa-sum button b { color: var(--accent); margin-left: 4px; }
+.pa-sum button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.pa-grp { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.pa-grp > summary { cursor: pointer; padding: 10px 12px; font-weight: 700; font-size: 15px; display: flex; gap: 8px; align-items: baseline; list-style: none; }
+.pa-grp > summary::-webkit-details-marker { display: none; }
+.pa-grp > summary::before { content: "▸"; color: var(--muted); }
+.pa-grp[open] > summary::before { content: "▾"; }
+.pa-grp > summary .c { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pa-gdesc { margin: -4px 12px 6px 30px; font-size: 12.5px; color: var(--muted); }
+.pa-subh { margin: 8px 12px 2px 30px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.pa-list { list-style: none; margin: 0; padding: 0 12px 10px 30px; display: grid; gap: 4px; }
+.pa-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.pa-name { border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; text-align: left; padding: 0; min-width: 0; overflow-wrap: anywhere; flex: 1 1 200px; }
+.pa-name:hover { color: var(--accent); text-decoration: underline; }
+.pa-type { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 0 7px; flex: none; }
+.pa-fix { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.pa-chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 99px; padding: 3px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+.pa-chip:hover { border-color: var(--accent); color: var(--accent); }
+.pa-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.pa-dot:hover { border-color: var(--ink); }
+.pa-fix select, .pa-fix input[type=text] { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); max-width: 260px; }
+.pa-fix input[type=text]:focus, .pa-fix select:focus { outline: none; border-color: var(--accent); }
+.pa-skip { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; flex: none; }
+.pa-skip:hover { color: var(--ink); }
+.pa-none { padding: 4px 12px 12px 30px; font-size: 13px; color: var(--muted); margin: 0; }
+.pa-allgood { text-align: center; padding: 24px; color: var(--muted); }
 .ai-box { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; display: grid; gap: 6px; }
 .ai-title { font-weight: 700; }
 .ai-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1650,8 +1682,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant<span class="pa-n" id="paN"></span></button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
+  <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -5694,6 +5727,83 @@ Don't invent appointments or facts that aren't listed.`);
   $("scBtn").addEventListener("click", e => { e.stopPropagation(); scOpen($("scPop").hidden); });
   $("scPop").addEventListener("click", e => { if (e.target.closest("[data-scclose]") || e.target === $("scPop")) scOpen(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scPop").hidden) scOpen(false); });
+
+  // ---------- 📋 Planning Assistant: entries with pieces missing, grouped by what needs filling in, fixed in one click ----------
+  // Private (never on the website). "Not needed" choices are remembered in this browser and in settings/assistant.
+  var paReady = false;
+  const PA_TYPES = ["values", "areas", "goals", "projects", "pages"];
+  const PA_LAYER = ["System", "Narrative", "Evidence", "Authority", "Argument", "Artifacts", "To-do", "Routines", "Emotional", "Structure"];
+  let paSkip = new Set(recall("chevy.pa.skip") || []), paType = "all";
+  const paSaveSkip = () => { store("chevy.pa.skip", [...paSkip]); if (!PUBLIC && db && !local) db.doc("settings/assistant").set({ skip: [...paSkip], updatedAt: new Date().toISOString() }).catch(() => {}); };
+  const paEntries = (type) => (data[type] || []).filter(e => !e._pub && !(type === "projects" && e.status === "Done"));
+  const paIn = (type) => paType === "all" || paType === type;
+  function paGroups() {
+    const G = [], ok = (g, e) => !paSkip.has(g + ":" + e.id);
+    // 1. Workflow circle: every entry should connect to the step before it and the step after it
+    const subs = [];
+    WF_CHAIN.forEach((A, i) => { const B = WF_CHAIN[(i + 1) % WF_CHAIN.length];
+      const noB = paIn(A) ? paEntries(A).filter(e => !wfLinked(e.id, B).length && ok("ln" + B, e)) : [], noA = paIn(B) ? paEntries(B).filter(e => !wfLinked(e.id, A).length && ok("ln" + A, e)) : [];
+      if (noB.length) subs.push({ title: `${TYPE[A].label} with no ${TYPE[B].singular} after them`, items: noB.map(e => ({ type: A, e, fix: "link", other: B, g: "ln" + B })) });
+      if (noA.length) subs.push({ title: `${TYPE[B].label} with no ${TYPE[A].singular} before them`, items: noA.map(e => ({ type: B, e, fix: "link", other: A, g: "ln" + A })) });
+    });
+    G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. Pick one to link it.", subs });
+    const one = (key, icon, title, desc, types, miss, fix) => G.push({ key, icon, title, desc, subs: [{ items: types.filter(paIn).flatMap(t => paEntries(t).filter(e => miss(e, t) && ok(key, e)).map(e => ({ type: t, e, fix, g: key }))) }] });
+    one("when", "📅", "No When", "Projects and goals without a date. Click the date to pick one on the calendar.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd, "when");
+    one("status", "🚦", "No status", "Click a status to set it.", ["projects", "goals"], e => !e.status, "status");
+    one("layers", "🧩", "No layer", "Click the layer it belongs to.", PA_TYPES, e => !layersOf(e).length, "layer");
+    one("color", "🎨", "No color", "No color of its own and none from an area. Click a color.", PA_TYPES, e => !colorOf(e), "color");
+    one("subtitle", "✏️", "No subtitle or steps", "Type a subtitle and press Enter. (An area's subtitle is made from its goals, so areas are not listed.)", ["projects", "goals", "pages", "values"], e => !(e.subtitle || "").trim() && !taskList(e).length, "subtitle");
+    one("tags", "🏷️", "No tags", "Type tags separated by commas and press Enter.", PA_TYPES, e => !(Array.isArray(e.tags) && e.tags.length), "tags");
+    G.forEach(g => { g.n = g.subs.reduce((a, s) => a + s.items.length, 0); });
+    return G;
+  }
+  const paCount = () => { if (PUBLIC) return 0; const ids = new Set(); paGroups().forEach(g => g.subs.forEach(s => s.items.forEach(x => ids.add(x.e.id)))); return ids.size; };
+  function paFixHtml(x) {
+    const id = esc(x.e.id), ty = esc(x.type);
+    if (x.fix === "link") { const cand = wfAll(x.other); return cand.length ? `<select data-palink="${id}" aria-label="Link a ${TYPE[x.other].singular}"><option value="">＋ Link a ${TYPE[x.other].singular}…</option>${cand.map(o => `<option value="${esc(o.id)}">${esc(emojiOf(o, x.other))} ${esc(o.title || "Untitled")}</option>`).join("")}</select>` : `<span class="pa-type">No ${TYPE[x.other].label.toLowerCase()} yet</span>`; }
+    if (x.fix === "when") return `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" aria-label="Date for ${esc(x.e.title || "entry")}"><button type="button" class="pa-chip" data-padate>📅 Pick a date</button></span>`;
+    if (x.fix === "status") return STATUSES.filter(st => st.v !== "Done").map(st => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="status" data-paval="${esc(st.v)}">${esc(st.v)}</button>`).join("");
+    if (x.fix === "layer") return PA_LAYER.map((n, i) => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="layers" data-paval="${i}" title="Layer ${i}: ${n}">${i} ${n}</button>`).join("");
+    if (x.fix === "color") return COLORS.map(c => `<button type="button" class="pa-dot" style="background:var(--ec-${c})" data-paset="${id}" data-patype="${ty}" data-pafield="color" data-paval="${c}" title="${c}" aria-label="${c}"></button>`).join("");
+    return `<input type="text" data-patext="${id}" data-patype="${ty}" data-pafield="${x.fix}" placeholder="${x.fix === "tags" ? "tag, another tag" : "Subtitle"}" maxlength="200" aria-label="${x.fix === "tags" ? "Tags" : "Subtitle"} for ${esc(x.e.title || "entry")}"><button type="button" class="pa-chip" data-pago>Save</button>`;
+  }
+  function renderPA() {
+    const n = paCount(), nb = $("paN"); if (nb) nb.textContent = n ? String(n) : "";
+    const el = $("paBody"), pop = $("paPop"); if (!el || !pop || pop.hidden) return;
+    const a = document.activeElement; if (a && el.contains(a) && a.matches("input[type=text]") && a.value) return; // don't wipe what I'm typing
+    const G = paGroups(), total = G.reduce((s, g) => s + g.n, 0);
+    const row = (x) => `<li class="pa-row"><button type="button" class="pa-name" data-paopen="${esc(x.type)}" data-paid="${esc(x.e.id)}" title="Open the entry">${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}</button><span class="pa-type">${esc(TYPE[x.type].singular)}</span><span class="pa-fix">${paFixHtml(x)}</span><button type="button" class="pa-skip" data-paskip="${esc(x.g + ":" + x.e.id)}" title="Hide this one: it doesn't need this">Not needed ✕</button></li>`;
+    el.innerHTML = `<p class="pa-intro">Entries with a piece missing: a property not filled in, or a link missing around the Workflow circle. Fix each one right here. Click a name to open the whole entry.</p>
+      <div class="pa-sum" role="group" aria-label="Show which kind">${[["all", "All"], ...PA_TYPES.map(t => [t, TYPE[t].label])].map(([k, l]) => `<button type="button" data-patypef="${k}" aria-pressed="${paType === k}">${l}</button>`).join("")}${paSkip.size ? `<button type="button" data-paunskip title="Show the ones marked Not needed again">↺ Show ${paSkip.size} hidden</button>` : ""}</div>
+      ${total ? G.filter(g => g.n).map(g => `<details class="pa-grp" open data-pag="${g.key}"><summary>${g.icon} ${g.title} <span class="c">${g.n}</span></summary><p class="pa-gdesc">${g.desc}</p>${g.subs.filter(s => s.items.length).map(s => `${s.title ? `<div class="pa-subh">${esc(s.title)} · ${s.items.length}</div>` : ""}<ul class="pa-list">${s.items.map(row).join("")}</ul>`).join("")}</details>`).join("") : `<div class="pa-allgood">🎉 Nothing missing${paType === "all" ? "" : " in " + TYPE[paType].label}. Everything is filled in and linked.</div>`}`;
+  }
+  const paOpen = (v) => { const p = $("paPop"); p.hidden = !v; $("paBtn").setAttribute("aria-expanded", String(v)); if (v) renderPA(); };
+  $("paBtn").addEventListener("click", e => { e.stopPropagation(); paOpen($("paPop").hidden); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("paPop").hidden && !document.querySelector(".cal-pop:not([hidden])")) paOpen(false); });
+  const paDone = () => { buildAdj(); renderPA(); };
+  $("paPop").addEventListener("click", async e => {
+    const t = e.target;
+    if (t.closest("[data-paclose]") || t === $("paPop")) { paOpen(false); return; }
+    const tf = t.closest("[data-patypef]"); if (tf) { paType = tf.dataset.patypef; renderPA(); return; }
+    if (t.closest("[data-paunskip]")) { paSkip = new Set(); paSaveSkip(); renderPA(); return; }
+    const sk = t.closest("[data-paskip]"); if (sk) { paSkip.add(sk.dataset.paskip); paSaveSkip(); renderPA(); return; }
+    const op = t.closest("[data-paopen]"); if (op) { paOpen(false); openEditor(op.dataset.paopen, op.dataset.paid); return; }
+    const dt = t.closest("[data-padate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
+    const st = t.closest("[data-paset]"); if (st) { const f = st.dataset.pafield, v = st.dataset.paval; await wfPatch(st.dataset.patype, st.dataset.paset, { [f]: f === "layers" ? [v] : v }); paDone(); return; }
+    const go = t.closest("[data-pago]"); if (go) { const i = go.parentNode.querySelector("[data-patext]"); if (i) await paText(i); return; }
+  });
+  async function paText(i) {
+    const v = i.value.trim(); if (!v) return; const f = i.dataset.pafield;
+    await wfPatch(i.dataset.patype, i.dataset.patext, f === "tags" ? { tags: [...new Set(v.split(",").map(x => x.trim()).filter(Boolean))] } : { subtitle: v });
+    i.value = ""; paDone();
+  }
+  $("paPop").addEventListener("keydown", e => { const i = e.target.closest && e.target.closest("[data-patext]"); if (i && e.key === "Enter") { e.preventDefault(); paText(i); } });
+  $("paPop").addEventListener("change", async e => {
+    const t = e.target;
+    if (t.dataset.palink !== undefined) { if (t.value) { await wfLink(t.dataset.palink, t.value); paDone(); } return; }
+    if (t.dataset.padateinp !== undefined) { const v = t.value; if (v) { await wfPatch(t.dataset.patype, t.dataset.padateinp, { focusStart: v, focusEnd: v }); paDone(); } return; }
+  });
+  paReady = true;
   // ---------- 🔗 Google: look through Drive, read files, talk about them, and edit Google Docs (by typing or voice) ----------
   // Uses the viewer's own Google Drive and Google Docs connectors. Nothing from Google is saved in LifeOS or put on the website.
   const GG_KINDS = [["all", "All", ""], ["doc", "Docs", "application/vnd.google-apps.document"], ["sheet", "Sheets", "application/vnd.google-apps.spreadsheet"], ["slide", "Slides", "application/vnd.google-apps.presentation"], ["pdf", "PDFs", "application/pdf"], ["folder", "Folders", "application/vnd.google-apps.folder"]];
@@ -6778,7 +6888,7 @@ ${text}
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
-  function renderAll() { buildAdj(); renderHome(); renderGame(); if (!wfTyping()) renderWorkflow(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
+  function renderAll() { buildAdj(); renderHome(); renderGame(); if (!wfTyping()) renderWorkflow(); renderInventory(); renderMeals(); TYPES.forEach(T => views[T.key].render()); renderGraph(); renderVault(); renderPlanner(); renderDatabase(); if (paReady) renderPA(); if (editing && !$("overlay").hidden) renderLinkEditor(); }
 
   // ---------- Connect to saved data ----------
   (async () => {
