@@ -1402,6 +1402,7 @@ table.pr-rt { width: 100%; }
 .wf-kind { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; margin-right: 6px; }
 .wf-kind button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 .wf-kind button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 700; }
+.origin-sel.unset { border: 1px dashed var(--warn, #f2a65a); color: var(--warn, #f2a65a); }
 .wf-kind.ro { font-size: 11px; padding: 2px 8px; color: var(--muted); }
 .wf-subh { font-size: 14px; margin: 12px 0 6px; display: flex; gap: 8px; align-items: baseline; }
 .wf-subh span { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -2133,7 +2134,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     // Shown as "Resources"; saved under "pages" so existing entries carry over
     { key: "pages", label: "Resources", singular: "resource", idPrefix: "g", settingsDoc: "settings/pagesView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime") },
     // Archive: entries moved out of the other three keep everything and can be restored
-    { key: "archive", label: "Archive", singular: "archived entry", idPrefix: "x", settingsDoc: "settings/archiveView", defaultSort: { key: "created", dir: "desc" }, props: sharedProps("created"), groups: sharedGroups("created"), archive: true },
+    { key: "archive", label: "Archive", singular: "archived entry", idPrefix: "x", settingsDoc: "settings/archiveView", defaultSort: { key: "created", dir: "desc" }, props: (() => { const ps = sharedProps("created"), i = ps.findIndex(P => P.key === "database"); ps.splice(i + 1, 0, { key: "origin", kind: "origin", label: "Came from", width: 190 }); return ps; })(), groups: sharedGroups("created"), archive: true },
     // Workflow entries: real entries (Layer 9) seen in Planner, Obsidian, Layers, Graph and Workflow. No top-bar tab.
     { key: "ideas", label: "Ideas", singular: "idea", idPrefix: "i", settingsDoc: "settings/ideasView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime"), wf: true },
     { key: "values", label: "Values", singular: "value", idPrefix: "vl", settingsDoc: "settings/valuesView", defaultSort: { key: "createdTime", dir: "desc" }, props: sharedProps("createdTime"), groups: sharedGroups("createdTime"), wf: true },
@@ -2544,10 +2545,17 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // "Scheduled" is a kind of project: it lives in Projects with a Scheduled tag
   const isSched = (e, type) => type === "projects" && !!(e && e.scheduled);
   const SCHED_TAG = '<span class="sched-tag">Scheduled</span>';
-  // Database choices: Projects · One time, Projects · Scheduled, Projects · Routines (turns it into a routine), then the rest. No Ideas.
-  const dbOptions = (cur, sched) => TYPES.filter(Y => Y.key !== "ideas" || cur === "ideas").map(Y => Y.key === "projects"
+  // Database choices, in Workflow order: Values, Areas, Goals, Projects · One time / Scheduled / Routines, Resources, Archive. No Ideas.
+  const DB_ORDER = ["values", "areas", "goals", "projects", "pages", "archive"];
+  const dbOptions = (cur, sched) => DB_ORDER.concat(cur === "ideas" ? ["ideas"] : []).filter(k => TYPE[k]).map(k => k === "projects"
     ? `<option value="projects"${cur === "projects" && !sched ? " selected" : ""}>Projects · One time</option><option value="projects|s"${cur === "projects" && sched ? " selected" : ""}>Projects · Scheduled</option>${PUBLIC ? "" : `<option value="routine">Projects · Routines</option>`}`
-    : `<option value="${Y.key}"${Y.key === cur ? " selected" : ""}>${Y.label}</option>`).join("");
+    : `<option value="${k}"${k === cur ? " selected" : ""}>${TYPE[k].label}</option>`).join("");
+  // Archive remembers which database each entry came from ("Came from"), and I can set or change it
+  const ORIGINS = [["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects · One time"], ["projects|s", "Projects · Scheduled"], ["routine", "Projects · Routines"], ["pages", "Resources"]];
+  const originOf = (e) => !e || !e.archivedFrom ? "" : e.archivedFrom === "projects" && e.scheduled ? "projects|s" : ORIGINS.some(o => o[0] === e.archivedFrom) ? e.archivedFrom : "";
+  const originLabel = (e) => { const o = ORIGINS.find(x => x[0] === originOf(e)); return o ? o[1] : ""; };
+  const originOpts = (e) => `<option value=""${originOf(e) ? "" : " selected"}>Not set: choose…</option>${ORIGINS.map(([v, l]) => `<option value="${v}"${originOf(e) === v ? " selected" : ""}>${l}</option>`).join("")}`;
+  const originPatch = (v) => v === "projects|s" ? { archivedFrom: "projects", scheduled: true } : v ? { archivedFrom: v, scheduled: false } : { archivedFrom: "" };
   // Moving an entry to Projects · Routines makes it a routine (same name and notes) and removes the entry
   async function entryToRoutine(from, e, body) {
     const r = await newRoutine(e.title || "Untitled routine"); if (!r) return false;
@@ -2623,6 +2631,18 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       // Rule: the created date is set automatically when an entry is made and can't be changed
       editHtml: (P, e) => { const v = P.withTime ? (e?.[P.field] || nowLocal()) : ((e?.[P.field] || e?.created || e?.createdTime || "").slice(0, 10) || today()); return `<label>${P.label}</label><div class="ro-date" id="ed-${P.key}" data-v="${esc(v)}" title="Set automatically when the entry was created">${esc(fmt(v))} <span class="ro-note">· set automatically</span></div>`; },
       read: (P, out) => { const old = out[P.field] || out.created || out.createdTime || ""; out[P.field] = old || (P.withTime ? nowLocal() : today()); },
+    },
+    origin: {
+      empty: () => ({ values: [] }),
+      active: f => f.values.length > 0,
+      test: (e, P, f) => !f.values.length || f.values.includes(originOf(e) || "none"),
+      sortVal: e => { const i = ORIGINS.findIndex(o => o[0] === originOf(e)); return i < 0 ? 99 : i; },
+      search: e => originLabel(e),
+      filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="chips" data-dyn></div>`,
+      sync: (box, f) => { box.querySelector("[data-dyn]").innerHTML = [...ORIGINS, ["none", "Not set"]].map(([v, l]) => `<button type="button" class="chip" aria-pressed="${f.values.includes(v)}" data-act="origin" data-val="${esc(v)}">${esc(l)}</button>`).join(""); },
+      cell: (e, P, T) => `<select class="pill origin-sel${originOf(e) ? "" : " unset"}" data-origin-for="${esc(e.id)}" aria-label="Came from, for ${esc(e.title)}"${e._pub ? " disabled" : ""}>${originOpts(e)}</select>`,
+      editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><select id="ed-${P.key}">${originOpts(e)}</select>`,
+      read: (P, out) => { const v = $("ed-" + P.key).value; Object.assign(out, originPatch(v)); if (!v) delete out.archivedFrom; },
     },
     status: {
       empty: () => ({ values: [] }),
@@ -2854,7 +2874,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     // Default columns: Title, When, Links, Status; everything else starts hidden. Subtitle is never a column (it always shows under the title).
     const DEF_SHOW = ["title", "focus", "links", "status"];
     const colProps = T.props.filter(P => P.key !== "subtitle");
-    const defaults = [...DEF_SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !DEF_SHOW.includes(P.key))].map(P => ({ key: P.key, visible: DEF_SHOW.includes(P.key), width: P.width }));
+    const SHOW = T.archive ? ["title", "origin", ...DEF_SHOW.filter(k => k !== "title")] : DEF_SHOW; // Archive always shows "Came from"
+    const defaults = [...SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !SHOW.includes(P.key))].map(P => ({ key: P.key, visible: SHOW.includes(P.key), width: P.width }));
     const normalize = (list) => {
       const out = [];
       (Array.isArray(list) ? list : []).forEach(c => { if (c && PROP[c.key] && c.key !== "subtitle" && !out.some(o => o.key === c.key)) out.push({ key: c.key, visible: c.visible !== false, width: Math.max(90, Number(c.width) || PROP[c.key].width) }); });
@@ -2907,7 +2928,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const key = b.closest("[data-f]").dataset.f, f = ui.f[key], P = PROP[key], v = b.dataset.val;
       if (b.dataset.act === "preset") K[P.kind].preset(f, v);
       else if (b.dataset.act === "none") f.none = !f.none;
-      else if (b.dataset.act === "status") f.values = f.values.includes(v) ? f.values.filter(x => x !== v) : [...f.values, v];
+      else if (b.dataset.act === "status" || b.dataset.act === "origin") f.values = f.values.includes(v) ? f.values.filter(x => x !== v) : [...f.values, v];
       else if (b.dataset.act === "lmode") f.mode = f.mode === v ? "any" : v;
       else if (b.dataset.act === "tag") f.values = f.values.includes(v) ? f.values.filter(x => x !== v) : [...f.values, v];
       saveUi(); render();
@@ -3249,6 +3270,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const tk = e.target.closest("input[data-task][data-entry]"); if (tk) { toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); return; }
       const mv = e.target.closest("[data-move-for]");
       if (mv) { try { await moveEntryTo(T.key, mv.dataset.moveFor, mv.value); } catch (err) { notice(err.message || "Couldn't move it."); renderAll(); } return; }
+      const og = e.target.closest("[data-origin-for]"); if (og) { const it = data[T.key].find(x => x.id === og.dataset.originFor); if (!it) return; const nx = { ...it, ...originPatch(og.value), updatedAt: new Date().toISOString() }; if (!og.value) delete nx.archivedFrom; try { await saveEntry(T.key, nx); } catch (err) { notice(err.message); renderAll(); } return; }
       const sel = e.target.closest("[data-status-for]"); if (!sel) return;
       const it = data[T.key].find(x => x.id === sel.dataset.statusFor); if (!it) return;
       try { await saveEntry(T.key, { ...it, status: sel.value, updatedAt: new Date().toISOString() }); }
@@ -3822,7 +3844,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     $("eErr").textContent = "";
     $("deleteBtn").hidden = !e; $("deleteBtn").textContent = "Delete";
     $("archiveBtn").hidden = !e || !!e._pub;
-    if (e) $("archiveBtn").textContent = T.archive ? "Restore to " + (TYPE[LIVE.includes(e.archivedFrom) ? e.archivedFrom : "projects"].label) : "Move to Archive";
+    if (e) $("archiveBtn").textContent = T.archive ? "Restore to " + (originLabel(e) || "Projects · One time") : "Move to Archive";
     ["red", "orange", "yellow", "green", "blue"].forEach(c => $("editForm").classList.remove("ec-" + c));
     if (e && colorOf(e)) $("editForm").classList.add("ec-" + colorOf(e));
     $("overlay").hidden = false;
@@ -3846,6 +3868,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       case "color": { const b = box.querySelector('[data-colorpick][aria-pressed="true"]'); const c = b && b.dataset.colorpick; if (c) return c[0].toUpperCase() + c.slice(1); const ex = editing && data[editing.type].find(x => x.id === editing.id); const ac = ex ? areaColorFor(ex) : ""; return ac ? ac[0].toUpperCase() + ac.slice(1) + " (area)" : "White"; }
       case "date": { const r = box.querySelector(".ro-date"), x = r ? r.dataset.v : v("input"); return x ? fmt(x) : "—"; }
       case "status": return v("select") || "Not started";
+      case "origin": { const s2 = box.querySelector("select"); return s2 && s2.value ? s2.options[s2.selectedIndex].text : "Not set"; }
       case "daterange": { const ins = box.querySelectorAll("input"), ss = box.querySelectorAll("select"); return whenText({ focusStart: ins[0] && ins[0].value, focusEnd: ins[1] && ins[1].value, timeStart: ss[0] && ss[0].value, timeEnd: ss[1] && ss[1].value }) || "None"; }
       case "tasks": { const n = draft.tasks.length, d = draft.tasks.filter(t => t.done).length; return n ? d + "/" + n + " done" : "None"; }
       case "image": return draft.cover ? "Picture" : "None";
@@ -3919,7 +3942,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const toRoutine = out._moveTo === "routine";
     const dest = TYPE[out._moveTo] ? out._moveTo : type; delete out._moveTo; if (toRoutine) out._moveTo = "routine";
     if (dest !== type) {
-      if (TYPE[dest].archive) { out.archivedFrom = type; out.archivedAt = new Date().toISOString(); }
+      if (TYPE[dest].archive) { out.archivedFrom = type; out.archivedAt = new Date().toISOString(); out.scheduled = !!(existing && existing.scheduled); }
       else { delete out.archivedFrom; delete out.archivedAt; if (TYPE[type].archive && out.status === "Done") out.status = "Active"; }
       if (!out.created && out.createdTime) out.created = out.createdTime.slice(0, 10);
       if (!out.createdTime && out.created) out.createdTime = out.created;
@@ -3989,7 +4012,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const e = data[from].find(x => x.id === id); if (!e) return;
     if (to === "routine") { await entryToRoutine(from, e); return; }
     if (from === to) { if (!!e.scheduled !== sched) await saveEntry(from, { ...e, scheduled: sched, updatedAt: new Date().toISOString() }); return; }
-    const now = new Date().toISOString(), body = { ...e, updatedAt: now, scheduled: sched };
+    const now = new Date().toISOString(), body = { ...e, updatedAt: now, scheduled: TYPE[to].archive ? !!e.scheduled : sched };
     if (TYPE[to].archive) { body.archivedFrom = from; body.archivedAt = now; }
     else { delete body.archivedFrom; delete body.archivedAt; if (body.status === "Done") body.status = "Active"; }
     if (!body.created && body.createdTime) body.created = body.createdTime.slice(0, 10);
@@ -4000,7 +4023,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!editing || editing.isNew) return;
     if (!(await saveCurrent())) return;
     const from = editing.type, id = editing.id, e = data[from].find(x => x.id === id); if (!e) return;
-    const to = !TYPE[from].archive ? "archive" : (LIVE.includes(e.archivedFrom) ? e.archivedFrom : "projects");
+    const to = !TYPE[from].archive ? "archive" : (originOf(e) || "projects");
     try { await moveEntryTo(from, id, to); closeEditor(); notice(""); }
     catch (err) { $("eErr").textContent = err.message || "Couldn't move it. Try again."; }
   });
@@ -6504,12 +6527,12 @@ ${text}
           <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.id)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.id)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.id)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.id)}">Add</button></div></div>` }) }); }).join("");
     // 4. Resources (one card per project of the goals above)
     const kindSeg = (src, id, cur) => PUBLIC ? `<span class="wf-kind ro">${cur === "rt" ? "Routine" : cur === "sched" ? "Scheduled" : "One time"}</span>` : `<span class="wf-kind" role="group" aria-label="What kind">${[["one", "One time"], ["sched", "Scheduled"], ["rt", "Routine"]].map(([k, l]) => `<button type="button" data-wfkind="${k}" data-wfksrc="${src}" data-wfkid="${esc(id)}" aria-pressed="${cur === k}">${l}</button>`).join("")}</span>`;
-    const resCards = S.projects.map(p => card("projects", p, { top: `${kindSeg("p", p.id, p.scheduled ? "sched" : "one")}${fromPart(p, "projects")}`, mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
+    const resCards = S.projects.map(p => card("projects", p, { top: fromPart(p, "projects"), mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}<span class="wf-break"></span>${kindSeg("p", p.id, p.scheduled ? "sched" : "one")}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
       bottom: childPart(p, "projects", { rows: (kids) => `<div class="wf-list">${kids.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${name(r)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(p.id)}" data-wfo="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || empty("No resources yet.")}</div>` }) })).join("");
 
     // 4b. Routines sit with projects in section 4 (always purple; open them in Planner → Routines)
     const rtCards = routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(r => { const tn = dn(today()), done = rtPlans(r).filter(x => x.status === "done"), w = done.filter(x => dn(x.date) > tn - 7 && dn(x.date) <= tn).length, nx = rtPlans(r).filter(x => x.status !== "done" && x.date >= today()).sort((a, b) => a.date.localeCompare(b.date))[0];
-      return `<article class="wf-c wf-rtc ec-purple"><div class="wf-top">${kindSeg("r", r.id, "rt")}</div><div class="wf-mid"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><button type="button" class="wf-ptitle" data-wfrt="${esc(r.id)}" title="Open in Planner → Routines">${esc(r.name || "Untitled routine")}</button></div><div class="wf-bot"><span class="wf-plabel">Routine</span><span class="wf-meta">${w} done in the last 7 days · ${done.length} all time${nx ? ` · next ${esc(fmt(nx.date))}` : ""}</span></div></article>`; }).join("");
+      return `<article class="wf-c wf-rtc ec-purple"><div class="wf-mid"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><button type="button" class="wf-ptitle" data-wfrt="${esc(r.id)}" title="Open in Planner → Routines">${esc(r.name || "Untitled routine")}</button><span class="wf-break"></span>${kindSeg("r", r.id, "rt")}</div><div class="wf-bot"><span class="wf-plabel">Routine</span><span class="wf-meta">${w} done in the last 7 days · ${done.length} all time${nx ? ` · next ${esc(fmt(nx.date))}` : ""}</span></div></article>`; }).join("");
     // 6. Resources (from the projects above), pointing back to ideas: the circle closes
     const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Values", bottom: childPart(r, "pages") })).join("");
     el.innerHTML = `<div class="hm-page wf-page">
@@ -6522,7 +6545,7 @@ ${text}
       ${sec("values", 1, "Values", "Values start the circle. From shows the resources they came from; each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "pages")), "values")}
       ${sec("areas", 2, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
       ${sec("goals", 3, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
-      ${sec("projects", 4, "Projects and routines", "Projects and routines together, one card each. Mark each card One time, Scheduled or Routine at the top. Add the resources that go with each project.", focusNote("projects") + (S.projects.length || routines.length ? board("projects", resCards + rtCards) : empty(PUBLIC ? "Nothing here yet." : "No projects or routines yet.")), "projects")}
+      ${sec("projects", 4, "Projects and routines", "Projects and routines together, one card each. Mark each card One time, Scheduled or Routine right under its name. Add the resources that go with each project.", focusNote("projects") + (S.projects.length || routines.length ? board("projects", resCards + rtCards) : empty(PUBLIC ? "Nothing here yet." : "No projects or routines yet.")), "projects")}
       ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}`}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
