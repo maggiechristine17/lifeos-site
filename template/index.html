@@ -1404,6 +1404,8 @@ table.pr-rt { width: 100%; }
 .gm-sub { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .gm-bar { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
 .gm-bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .5s ease; }
+.gm-newp { display: none; float: right; font-size: 13px; padding: 6px 12px; margin-top: -4px; }
+body.mode-lite .gm-newp { display: inline-flex; }
 .gm-date { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
 .gm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
 .gm-stats b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
@@ -7156,7 +7158,7 @@ ${text}
     const TP = tdParts(), dDay = new Date(t + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     el.innerHTML = `<div class="gm">
       <section class="gm-hero" aria-label="Today and your progress">
-        <div class="gm-date">☀️ ${esc(dDay)}</div>
+        <div class="gm-date">☀️ ${esc(dDay)}<button type="button" class="btn primary gm-newp" data-gmnewp>＋ New project</button></div>
         <div class="gm-lvl"><span class="gm-badge">${L}</span><div><div class="gm-title">Level ${L} · ${GM_TITLES[Math.min(L - 1, GM_TITLES.length - 1)]}</div><div class="gm-sub">${gm.xp} XP · ${hi - gm.xp} to level ${L + 1}</div></div></div>
         <div class="gm-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
         <div class="gm-stats"><div><b>🔥 ${streak}</b><span>day streak</span></div><div><b>+${todayXp}</b><span>XP today</span></div><div><b>${todayP.length + onOther.length}</b><span>on today</span></div><div><b>${quests.length}</b><span>open quests</span></div></div>
@@ -7190,6 +7192,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
+    if (t.closest("[data-gmnewp]")) { openEditor("projects"); return; }
     const gt = t.closest("[data-gmtab]"); if (gt) { gmTab = gt.dataset.gmtab; try { localStorage.setItem("chevy.gm.tab", gmTab); } catch (e) {} renderGame(); return; }
     const dtb = t.closest("[data-gmdidtab]"); if (dtb) { gmDidTab = dtb.dataset.gmdidtab; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : (pk.dataset.gmname || "Pinned")) : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
