@@ -4735,7 +4735,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const whenAutoW = (d) => { if (!d) return ""; const q = qByKey(whenAutoQ(d)); if (!q) return ""; const x = Math.max(dn(d.slice(0, 10)), q.s); return dIso(q.s + Math.floor((x - q.s) / 7) * 7); };
   const whenQOpts = (e) => { const nowQ = qOf(today()), L = qFrom(nowQ, 8); if (e && e.quarter && !L.some(q => q.key === e.quarter) && qByKey(e.quarter)) L.unshift(qByKey(e.quarter)); return L; };
   // Official ISO week number (weeks 1–52/53, Monday to Sunday; week 1 is the week with the year's first Thursday)
-  const isoWeek = (d) => { const x = dn(d), w = (new Date(x * 864e5).getUTCDay() + 6) % 7, th = x - w + 3, y = new Date(th * 864e5).getUTCFullYear(), j4 = dn(`${y}-01-04`), w4 = (new Date(j4 * 864e5).getUTCDay() + 6) % 7; return 1 + Math.floor((th - (j4 - w4 + 3)) / 7); };
+  // Week number of the year (W1 = the week holding January 1, Monday to Sunday)
+  const isoWeek = (d) => { const x = dn(d), y0 = Number(d.slice(0, 4)), y = x >= firstMon(y0 + 1) ? y0 + 1 : x < firstMon(y0) ? y0 - 1 : y0; return 1 + Math.floor((x - firstMon(y)) / 7); };
   const whenWeekOpts = (qk, cur) => { const q = qByKey(qk); if (!q) return `<option value="">Pick a quarter first</option>`; let h = `<option value="">No week</option>`, i = 1; for (let d = q.s; d <= q.e; d += 7, i++) h += `<option value="${dIso(d)}"${cur === dIso(d) ? " selected" : ""}>W${isoWeek(dIso(d))} · ${esc(fmt(dIso(d)))} – ${esc(fmt(dIso(Math.min(d + 6, q.e))))}</option>`; return h; };
   document.addEventListener("change", ev => {
     const t = ev.target; if (!t || !t.id || !/^ed-focus-(ts|te|s|e|wk|q)$/.test(t.id)) return;
@@ -4768,8 +4769,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (auto) return `<button type="button" class="pl-chip auto${nt ? " has-note" : ""}${isDone(x) ? " done" : ""}${ecClass(x.e)}" draggable="false" data-plid="${esc(x.e.id)}" data-pltype="${x.type}" data-pldate="${date}" data-plslot="${slot}" title="${esc(x.e.title || "Untitled")} · placed from its When time (${esc(timeRange(x.e.timeStart, x.e.timeEnd))})"><span class="emo" aria-hidden="true">${esc(emojiOf(x.e, x.type))}</span>${isDone(x) ? '<span class="check" aria-hidden="true">✓</span>' : ""}<span class="pl-t">${esc(x.e.title || "Untitled")}</span><span class="pl-when">${esc(timeRange(x.e.timeStart, x.e.timeEnd))}</span>${noteSpan(nt)}</button>`;
     return `<button type="button" class="pl-chip${nt ? " has-note" : ""}${isDone(x) ? " done" : ""}${placed ? " placed" : ""}${ecClass(x.e)}" draggable="${x.e._pub ? "false" : "true"}" data-plid="${esc(x.e.id)}" data-pltype="${x.type}" data-pldate="${date}" data-plslot="${slot || ""}" title="${esc(x.e.title || "Untitled")}${placed ? " · already has a time block today" : ""}"><i class="tdot t-${x.type}" aria-hidden="true"></i>${isDone(x) ? '<span class="check" aria-hidden="true">✓</span>' : ""}<span class="emo" aria-hidden="true">${esc(emojiOf(x.e, x.type))}</span><span class="pl-t">${esc(x.e.title || "Untitled")}</span>${placed ? '<span class="pl-clock" aria-label="has a time block">◷</span>' : ""}${noteSpan(nt)}</button>`;
   };
-  // ----- Quarters: Q1 starts on the first Monday of the year; each quarter is 13 weeks; Q4 runs to the day before next year's first Monday -----
-  const firstMon = (y) => { const d = dn(`${y}-01-01`), w = (new Date(d * 864e5).getUTCDay() + 6) % 7; return w === 0 ? d : d + 7 - w; };
+  // ----- Quarters: Q1 starts with week 1 (the week holding Jan 1); each quarter is 13 weeks; Q4 runs to the day before next year's week 1 -----
+  // A year's week 1 is the Monday-to-Sunday week that holds January 1 (so Dec 28, 2026 – Jan 3, 2027 is W1 of 2027). Q1 starts that Monday.
+  const firstMon = (y) => { const d = dn(`${y}-01-01`), w = (new Date(d * 864e5).getUTCDay() + 6) % 7; return d - w; };
   const qList = (y) => { const s0 = firstMon(y), end = firstMon(y + 1) - 1; return [0, 1, 2, 3].map(i => { const st = s0 + 91 * i, en = i === 3 ? end : s0 + 91 * (i + 1) - 1; return { key: `${y}-Q${i + 1}`, label: `Q${i + 1} ${y}`, year: y, n: i + 1, start: dIso(st), end: dIso(en), s: st, e: en }; }); };
   const qOf = (d) => { const x = dn(d), y = Number(d.slice(0, 4)); for (const yy of [y - 1, y, y + 1]) { const q = qList(yy).find(q => x >= q.s && x <= q.e); if (q) return q; } return qList(y)[0]; };
   // The quarters from q onward, in order (crosses into next year)
@@ -4810,7 +4812,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <div class="pl-qgrid">${Q.map(q => { const xs = all.filter(e => effQ(e) === q.key), now = dn(today()) >= q.s && dn(today()) <= q.e; return `<section class="pl-qcol${now ? " now" : ""}"><h4>${q.label}<span>${esc(qRange(q))}${now ? " · now" : ""}</span></h4>${xs.length ? `<ul class="pl-qlist">${xs.map(row).join("")}</ul>` : '<p class="pl-qnone">Nothing placed yet</p>'}</section>`; }).join("")}</div>
     </div>`;
     $("plCount").textContent = `${all.length - un.length} of ${all.length} open projects in a quarter (${all.filter(e => !e.quarter && autoQ(e)).length} placed automatically from their dates)`;
-    $("plHint").textContent = "Place each project in a quarter. Projects with dates are placed automatically in the quarter their dates start in (the first one if they straddle two); choosing a quarter yourself overrides that. Q1 starts on the first Monday of the year; each quarter is 13 weeks. It starts with the current quarter; ‹ › moves one quarter (never into the past).";
+    $("plHint").textContent = "Place each project in a quarter. Projects with dates are placed automatically in the quarter their dates start in (the first one if they straddle two); choosing a quarter yourself overrides that. Q1 starts with week 1 (the Monday-to-Sunday week that holds January 1); each quarter is 13 weeks. It starts with the current quarter; ‹ › moves one quarter (never into the past).";
   }
   $("plBody").addEventListener("change", async e => {
     const q = e.target.closest("[data-plq]"), w = e.target.closest("[data-plwk]"); if (!q && !w) return;
