@@ -1442,6 +1442,21 @@ table.pr-rt { width: 100%; }
 .pl-qname:hover { color: var(--accent); }
 .pl-qsel { font: inherit; font-size: 12.5px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); max-width: 100%; }
 .pl-qauto { font-size: 11.5px; color: var(--muted); }
+.ei-wrap { display: grid; gap: 14px; }
+.ei-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ei-axis { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+.ei-q { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); min-height: 140px; }
+.ei-q h3 { margin: 0; font-size: 15px; display: flex; gap: 8px; align-items: baseline; }
+.ei-q h3 span { font-size: 12px; color: var(--muted); }
+.ei-sub { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+.ei-do { border-top: 4px solid #ef6b6b; } .ei-plan { border-top: 4px solid var(--accent); } .ei-deleg { border-top: 4px solid #f2a65a; } .ei-drop { border-top: 4px solid var(--muted); }
+.ei-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ei-item { display: grid; gap: 4px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.ei-meta { display: flex; gap: 8px; font-size: 12px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+.ei-late { color: #ef6b6b; font-weight: 700; }
+.ei-pr { display: flex; gap: 4px; flex-wrap: wrap; }
+.pa-chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--ink); font-weight: 700; }
+@media (max-width: 640px) { .ei-grid { grid-template-columns: 1fr; } .ei-axis { display: none; } }
 .pl-qnone { margin: 0; font-size: 13px; color: var(--muted); }
 .gm-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
 .gm-card.picked { border-color: var(--accent); }
@@ -1914,7 +1929,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="view-head">
     <div><h1>Planner</h1><div class="count" id="plCount"></div></div>
   </div>
-  <div class="layout-tabs" role="tablist" aria-label="Planner views" id="plSubs"><button type="button" role="tab" data-plsub="calendar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>Calendar</button><button type="button" role="tab" data-plsub="routines"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>Routine reports</button><button type="button" role="tab" data-plsub="week"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4 2.5h8M4 6h8M4 9.5h5M4 13h3"/><path d="m10.5 12 1.3 1.3L14.5 10.5"/></svg>Questions</button></div>
+  <div class="layout-tabs" role="tablist" aria-label="Planner views" id="plSubs"><button type="button" role="tab" data-plsub="calendar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>Calendar</button><button type="button" role="tab" data-plsub="routines"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 2.5V6H9.5M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13.5V10h3.5"/></svg>Routine reports</button><button type="button" role="tab" data-plsub="week"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4 2.5h8M4 6h8M4 9.5h5M4 13h3"/><path d="m10.5 12 1.3 1.3L14.5 10.5"/></svg>Questions</button><button type="button" role="tab" data-plsub="eisen" aria-selected="false">Eisenhower Matrix</button></div>
   <div class="pl-bar" id="plBar">
     <span class="chips" role="group" aria-label="Calendar view"><button type="button" class="chip" data-plview="day">Time blocked days</button><button type="button" class="chip" data-plview="week">Week</button><button type="button" class="chip" data-plview="month">Quarters</button></span>
     <span class="tl-nav"><button type="button" class="btn ghost" data-plstep="-1" aria-label="Earlier">‹</button><button type="button" class="btn ghost" data-pltoday>Today</button><button type="button" class="btn ghost" data-plstep="1" aria-label="Later">›</button></span>
@@ -2256,6 +2271,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function allTags() {
     const set = new Map();
     TYPES.forEach(T => data[T.key].forEach(e => tagsOf(e).forEach(t => { const k = t.toLowerCase(); if (k !== "now" && !set.has(k)) set.set(k, t); })));
+    ["High priority", "Low priority"].forEach(t => { if (!set.has(t.toLowerCase())) set.set(t.toLowerCase(), t); }); // always offered (Eisenhower Matrix)
     return [NOW, ...[...set.values()].sort((a, b) => a.localeCompare(b))];
   }
   const tagColor = (t) => { if (t.toLowerCase() === "now") return "tag-now"; let h = 0; for (const ch of t.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return "tag-c" + (h % 5); };
@@ -4649,7 +4665,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const SLOT = Object.fromEntries(SLOTS.map(s => [s.k, s]));
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const pl = Object.assign({ view: "week", anchor: "", types: ["projects", "areas", "pages"], sub: "calendar" }, recall("chevy.planner") || {});
-  if (!["calendar", "routines", "week"].includes(pl.sub)) pl.sub = "calendar"; // Cards tab removed
+  if (!["calendar", "routines", "week", "eisen"].includes(pl.sub)) pl.sub = "calendar"; // Cards tab removed
   // ----- Block notes: a short note on one placement. Kept only with the planner, never in the entry or its notes -----
   let plNotes = new Map();
   const noteKey = (date, slot, ref) => (date + "_" + slot + "_" + ref).replace(/[^A-Za-z0-9_\-.~:@+]/g, "-");
@@ -4821,15 +4837,41 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     renderPlanner();
   });
   $("plBody").addEventListener("click", e => { const o = e.target.closest("[data-plopen]"); if (o) openEditor("projects", o.dataset.plopen); });
+  // ----- Eisenhower Matrix: importance from my tag (High priority / Low priority), urgency worked out from dates -----
+  // Urgent = overdue, or its date (or an open step's date) is within the next 7 days.
+  const EIS_TYPES = ["projects", "goals", "pages", "areas", "values"];
+  const prioOf = (e) => { const L = tagsOf(e).map(t => t.toLowerCase()); return L.includes("high priority") ? "high" : L.includes("low priority") ? "low" : ""; };
+  const eisDate = (e) => { const ds = [(e.focusEnd || e.focusStart || "").slice(0, 10), ...taskList(e).filter(x => !x.done && x.due).map(x => x.due.slice(0, 10))].filter(Boolean).sort(); return ds[0] || ""; };
+  const isUrgent = (e) => { const d = eisDate(e); return !!d && dn(d) <= dn(today()) + 7; };
+  function renderEisen() {
+    const items = EIS_TYPES.flatMap(type => (data[type] || []).filter(e => !e._pub && e.status !== "Done").map(e => ({ type, e })));
+    const T2 = (type) => TYPE[type].singular[0].toUpperCase() + TYPE[type].singular.slice(1);
+    const row = (x) => { const p = prioOf(x.e), d = eisDate(x.e); return `<li class="ei-item"><button type="button" class="pl-qname" data-eiopen="${esc(x.type)}" data-eiid="${esc(x.e.id)}">${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}</button><span class="ei-meta"><span class="pa-type">${T2(x.type)}</span>${d ? `<span class="${dn(d) < dn(today()) ? "ei-late" : ""}">📅 ${esc(fmt(d))}</span>` : `<span>No date</span>`}</span><span class="ei-pr"><button type="button" class="pa-chip${p === "high" ? " on" : ""}" data-eiset="high" data-eitype="${esc(x.type)}" data-eiid="${esc(x.e.id)}">High priority</button><button type="button" class="pa-chip${p === "low" ? " on" : ""}" data-eiset="low" data-eitype="${esc(x.type)}" data-eiid="${esc(x.e.id)}">Low priority</button></span></li>`; };
+    const Q = [["do", "🔥 Do now", "Important and urgent", x => prioOf(x.e) === "high" && isUrgent(x.e)], ["plan", "📅 Schedule", "Important, not urgent", x => prioOf(x.e) === "high" && !isUrgent(x.e)], ["deleg", "🤝 Delegate or do quickly", "Urgent, not important", x => prioOf(x.e) === "low" && isUrgent(x.e)], ["drop", "🗑 Drop or later", "Not urgent, not important", x => prioOf(x.e) === "low" && !isUrgent(x.e)]];
+    const un = items.filter(x => !prioOf(x.e)).sort((a, b) => (a.e.title || "").localeCompare(b.e.title || ""));
+    const bySoon = (a, b) => (eisDate(a.e) || "9").localeCompare(eisDate(b.e) || "9");
+    $("cdBody").innerHTML = `<div class="ei-wrap"><p class="gm-hint">Tag each entry <b>High priority</b> or <b>Low priority</b> (here, or with Tags in the entry). Urgent is worked out from dates: overdue, or due within the next 7 days.</p>
+      <div class="ei-grid"><div class="ei-axis ei-ax-top"><span>Urgent</span><span>Not urgent</span></div>${Q.map(([k, t, sub, f]) => { const xs = items.filter(f).sort(bySoon); return `<section class="ei-q ei-${k}"><h3>${t} <span>${xs.length}</span></h3><div class="ei-sub">${sub}</div>${xs.length ? `<ul class="ei-list">${xs.map(row).join("")}</ul>` : '<p class="pl-qnone">Nothing here</p>'}</section>`; }).join("")}</div>
+      <section class="pl-qsec"><h3>Needs a priority tag <span>${un.length}</span></h3>${un.length ? `<ul class="ei-list">${un.map(row).join("")}</ul>` : '<p class="pl-qnone">Everything has a priority. 🎉</p>'}</section></div>`;
+    $("plCount").textContent = `Eisenhower Matrix · ${items.length - un.length} of ${items.length} entries have a priority`; if ($("plHint")) $("plHint").textContent = "";
+  }
+  $("cdBody").addEventListener("click", async ev => {
+    const o = ev.target.closest("[data-eiopen]"); if (o) { openEditor(o.dataset.eiopen, o.dataset.eiid); return; }
+    const b = ev.target.closest("[data-eiset]"); if (!b) return;
+    const type = b.dataset.eitype, e = (data[type] || []).find(x => x.id === b.dataset.eiid); if (!e) return;
+    const keep = tagsOf(e).filter(t => !["high priority", "low priority"].includes(t.toLowerCase())), want = b.dataset.eiset === "high" ? "High priority" : "Low priority";
+    const on = prioOf(e) === b.dataset.eiset;
+    await wfPatch(type, e.id, { tags: on ? keep : [...keep, want] }); renderEisen();
+  });
   function renderPlanner() {
     if (!$("plBody") || $("view-planner").hidden) return;
     document.querySelectorAll("[data-plsub]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.plsub === pl.sub)));
     if (PUBLIC && pl.sub === "week") pl.sub = "calendar";
-    const isRt = pl.sub === "routines", isWk = pl.sub === "week", isCd = pl.sub === "cards";
+    const isRt = pl.sub === "routines", isWk = pl.sub === "week", isCd = pl.sub === "eisen"; // the old Cards box now holds the Eisenhower Matrix
     $("plBar").hidden = isRt || isWk || isCd; $("plBody").hidden = isRt || isWk || isCd; $("rtBody").hidden = !isRt; $("wkBody").hidden = !isWk; $("cdBody").hidden = !isCd;
     if (isRt) { renderRoutines(); return; }
     if (isWk) { renderWeekPlan(); return; }
-    if (isCd) { renderCards(); return; }
+    if (isCd) { renderEisen(); return; }
     const t = today(), anchor = pl.anchor || t, pool = plPool();
     document.querySelectorAll("[data-plview]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.plview === pl.view)));
     if (pl.view === "week") { renderPlWeeks(anchor); return; }
