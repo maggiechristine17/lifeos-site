@@ -6658,6 +6658,9 @@ ${text}
     graphVisible = v === "graph";
     if (graphVisible) { sizeCanvas(); renderGraph(); }
   }
+  // Dates are always picked from the calendar pop-up, never typed
+  document.addEventListener("click", e => { const i = e.target.closest && e.target.closest('input[type="date"]'); if (i && !i.disabled && !i.readOnly) { try { i.showPicker(); } catch (err) {} } }, true);
+  document.addEventListener("keydown", e => { const i = e.target.closest && e.target.closest('input[type="date"]'); if (!i) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); try { i.showPicker(); } catch (err) {} } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) e.preventDefault(); }, true);
   $("tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) location.hash = t.dataset.view; });
   window.addEventListener("hashchange", showView);
 
