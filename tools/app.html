@@ -6540,7 +6540,7 @@ ${text}
   }
   const gmLevel = (xp) => Math.floor((1 + Math.sqrt(1 + xp / 125)) / 2);
   const gmFloor = (L) => 500 * L * (L - 1);
-  const gmDay = (d) => (gm.picks[d] || []).filter(k => typeof k === "string").slice(0, 3);
+  const gmDay = (d) => (gm.picks[d] || []).filter(k => typeof k === "string");
   // Every open quest: each unchecked checkbox in a project, or the project itself when it has none
   function gmQuests() {
     const out = [];
@@ -6572,8 +6572,8 @@ ${text}
     else done.forEach((v, k) => { if (!seen.has(k)) { seen.add(k); gmAward(GM_XP[v.kind], v.kind, v.title); changed = true; } });
     gm.seen = [...seen];
     const d = today(), picks = gmDay(d);
-    if (picks.length === 3 && !gm.planned[d]) { gm.planned[d] = true; gmAward(GM_XP.plan, "plan", "Planned today's 3"); changed = true; }
-    if (picks.length === 3 && picks.every(k => seen.has(k)) && !gm.perfect[d]) { gm.perfect[d] = true; gmAward(GM_XP.perfect, "perfect", "Finished all 3"); changed = true; }
+    if (picks.length >= 1 && !gm.planned[d]) { gm.planned[d] = true; gmAward(GM_XP.plan, "plan", "Planned today"); changed = true; }
+    if (picks.length >= 1 && picks.every(k => seen.has(k)) && !gm.perfect[d]) { gm.perfect[d] = true; gmAward(GM_XP.perfect, "perfect", "Finished everything I picked"); changed = true; }
     if (changed) saveGm();
     return changed;
   }
@@ -6590,7 +6590,7 @@ ${text}
     const quests = gmQuests(), byKey = new Map(quests.map(q => [q.key, q])), picks = gmDay(t), seen = new Set(gm.seen);
     const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => seen.has(k)).length;
     const dueLbl = (q) => `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-gmdateinp="${esc(q.id)}" value="${esc(q.due)}" aria-label="Date for ${esc(q.sub || q.title)}"><button type="button" class="gm-due${q.due && q.due < t ? " late" : q.due === t ? " now" : ""}" data-gmdate="${esc(q.id)}" title="Change the date for ${esc(q.sub || q.title)}">📅 ${!q.due ? "＋ Add date" : q.due < t ? `Overdue · ${esc(fmt(q.due))}` : q.due === t ? "Today" : esc(fmt(q.due))}</button></span>`;
-    const row = (q, picked) => `<li class="gm-q${picked ? " picked" : ""}"><button type="button" class="gm-check${gmArm === q.key ? " arm" : ""}" data-gmdone="${esc(q.key)}" aria-label="Finish ${esc(q.title)}">${gmArm === q.key ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(q.emoji || "")} ${esc(q.title)}</span><span class="gm-qs">${q.sub ? esc(q.sub) + " · " : ""}${q.kind === "project" ? "Whole project" : "Step"} · ${dueLbl(q)}</span></div><span class="gm-xp">+${q.xp}</span>${picked ? `<button type="button" class="gm-mini" data-gmunpick="${esc(q.key)}" aria-label="Remove from today">✕</button>` : picks.length < 3 ? `<button type="button" class="gm-mini add" data-gmpick="${esc(q.key)}">＋ Today</button>` : ""}</li>`;
+    const row = (q, picked) => `<li class="gm-q${picked ? " picked" : ""}"><button type="button" class="gm-check${gmArm === q.key ? " arm" : ""}" data-gmdone="${esc(q.key)}" aria-label="Finish ${esc(q.title)}">${gmArm === q.key ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(q.emoji || "")} ${esc(q.title)}</span><span class="gm-qs">${q.sub ? esc(q.sub) + " · " : ""}${q.kind === "project" ? "Whole project" : "Step"} · ${dueLbl(q)}</span></div><span class="gm-xp">+${q.xp}</span>${picked ? `<button type="button" class="gm-mini" data-gmunpick="${esc(q.key)}" aria-label="Remove from today">✕</button>` : `<button type="button" class="gm-mini add" data-gmpick="${esc(q.key)}">＋ Today</button>`}</li>`;
     const slot = (k) => { const q = byKey.get(k); if (q) return row(q, true); return `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`; };
     const pool = quests.filter(q => !picks.includes(q.key)), due = pool.filter(q => q.due && q.due <= t), list = gmFilter === "due" ? due : pool, shown = list;
     el.innerHTML = `<div class="gm">
@@ -6600,9 +6600,9 @@ ${text}
         <div class="gm-stats"><div><b>🔥 ${streak}</b><span>day streak</span></div><div><b>+${todayXp}</b><span>XP today</span></div><div><b>${quests.length}</b><span>open quests</span></div></div>
       </section>
       ${gmToast ? `<div class="gm-toast" role="status">${esc(gmToast)}</div>` : ""}
-      <section class="gm-sec"><h2>Today's 3 <span class="gm-count">${doneN} of 3 done</span></h2>
-        <p class="gm-hint">${picks.length < 3 ? `Pick ${3 - picks.length} more below to plan your day and earn <b>+${GM_XP.plan} XP</b>.` : doneN === 3 ? "All three done. Perfect day! 🎉" : `Finish all three for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
-        <ul class="gm-list">${picks.map(slot).join("")}${Array.from({ length: 3 - picks.length }, () => '<li class="gm-q empty">Empty slot</li>').join("")}</ul>
+      <section class="gm-sec"><h2>Today's plan <span class="gm-count">${doneN} of ${picks.length} done</span></h2>
+        <p class="gm-hint">${!picks.length ? `Pick as many as you like below to plan your day and earn <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything you picked is done. Perfect day! 🎉" : `Finish everything you picked for a <b>+${GM_XP.perfect} XP</b> bonus. Add more below any time.`}</p>
+        <ul class="gm-list">${picks.map(slot).join("") || '<li class="gm-q empty">Nothing picked yet</li>'}</ul>
       </section>
       <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged</span></h2>
         <form class="gm-did" data-gmdidform><input type="text" id="gmDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
@@ -6623,7 +6623,7 @@ ${text}
     const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
-    const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (l.length < 3 && !l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
+    const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
     const up = t.closest("[data-gmunpick]"); if (up) { gm.picks = { [d]: gmDay(d).filter(k => k !== up.dataset.gmunpick) }; saveGm(); renderGame(); return; }
     const dn = t.closest("[data-gmdone]"); if (dn) {
       const q = gmQuests().find(x => x.key === dn.dataset.gmdone); if (!q) return;
