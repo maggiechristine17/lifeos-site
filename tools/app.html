@@ -1392,6 +1392,7 @@ input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px so
 .gm-dl .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .gm-dl .x { font-size: 14px; }
 .gm-wins li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 2px; border-bottom: 1px solid var(--line); }
+.gm-when { display: block; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 1px; }
 .gm-none { color: var(--muted); border: 0 !important; }
 .gm-foot { font-size: 12px; color: var(--muted); margin: 0; }
 @media (prefers-reduced-motion: reduce) { .gm-toast { animation: none; } .gm-bar i { transition: none; } }
@@ -6850,7 +6851,8 @@ ${text}
         ${gmDidTab === "today" ? gmDidList((gm.did || []).filter(x => x.d === t).slice().reverse(), "Nothing logged today yet. These are short-term notes for your record: they are not added as entries.") : gmDidList(gmDidTab === "older" ? gmDidSplit().older : gmDidSplit().recent, gmDidTab === "older" ? "Nothing older than 72 hours yet." : "Nothing logged in the past 72 hours.")}
       </section>
 ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
-        <ul class="gm-wins">${(() => { const all = gm.log.map(l => ({ at: l.at || l.d + "T00:00", html: `<li><span>${l.k === "plan" ? "🗓" : l.k === "perfect" ? "🏆" : l.k === "project" ? "🚩" : "✅"} ${esc(l.t)}</span><span class="gm-xp">+${l.x}</span></li>` })).concat((gm.did || []).map(x => ({ at: x.at || x.d + "T00:00", html: `<li class="gm-logged"><span>📝 ${esc(x.t)}</span><span class="gm-tag">Logged${x.d === t ? "" : " · " + esc(fmt(x.d, false))}</span></li>` }))); return all.sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 12).map(x => x.html).join("") || '<li class="gm-none">Nothing yet. Finish a quest or log something you did.</li>'; })()}</ul>
+        <ul class="gm-wins">${(() => { const when = (at, d) => { const dt = at ? new Date(at) : null; return dt && !isNaN(dt) ? dt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : esc(fmt(d)); };
+          const all = gm.log.map(l => ({ at: l.at || l.d + "T00:00", html: `<li><span>${l.k === "plan" ? "🗓" : l.k === "perfect" ? "🏆" : l.k === "project" ? "🚩" : "✅"} ${esc(l.t)}<span class="gm-when">${when(l.at, l.d)}</span></span><span class="gm-xp">+${l.x}</span></li>` })).concat((gm.did || []).map(x => ({ at: x.at || x.d + "T00:00", html: `<li class="gm-logged"><span>📝 ${esc(x.t)}<span class="gm-when">${when(x.at, x.d)}</span></span><span class="gm-tag">Logged</span></li>` }))); return all.sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 12).map(x => x.html).join("") || '<li class="gm-none">Nothing yet. Finish a quest or log something you did.</li>'; })()}</ul>
       </section>
       <p class="gm-foot">Each step = ${GM_XP.task} XP · Finishing a project = ${GM_XP.project} XP · First pin of the day = ${GM_XP.plan} XP · Finishing everything pinned = ${GM_XP.perfect} XP. Anything you tick off anywhere in LifeOS counts.</p>
     </div>`;
