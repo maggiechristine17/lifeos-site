@@ -402,6 +402,12 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .ed-fields { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 16px; }
 .ed-fields .f.pf:not(.open) { display: none !important; }
 .ed-fields .f.pf.open { grid-column: 1 / -1; order: 0 !important; background: var(--panel-input); border: 1px solid var(--panel-line); border-radius: 10px; padding: 10px 12px; }
+.ed-fields .f.pf.when-hero { border-left: 4px solid var(--accent); background: var(--panel); padding: 10px 14px 12px; }
+.when-hero > .flabel { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--accent); }
+.when-hero > .flabel::before { content: "📅 "; }
+.when-hero .when-grid { grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; margin-top: 4px; }
+.when-hero .when-l { font-size: 13px; font-weight: 600; color: var(--ink); }
+.when-hero .drange input, .when-hero .drange select { font-size: 15px; padding: 9px 10px; }
 .prop-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .prop-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 4px 10px 5px; cursor: pointer; max-width: 230px; text-align: left; }
 .prop-btn:hover { border-color: var(--panel-line); }
@@ -3634,7 +3640,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!opts.keepStack) navStack = [];
     $("dlgTitle").innerHTML = esc((e ? "" : "New ") + T.singular) + (isSched(e, type) ? " " + SCHED_TAG : "");
     const seed = e || (opts.title || opts.preset ? { title: opts.title || "", ...(opts.preset || {}) } : null);
-    $("edFields").innerHTML = T.props.map(P => P.kind === "title" ? `<div class="f always" data-pk="${P.key}">${K[P.kind].editHtml(P, seed)}</div><div class="prop-bar" id="propBar" role="group" aria-label="Properties"></div>` : `<div class="f pf" data-pk="${P.key}">${K[P.kind].editHtml(P, seed)}</div>`).join("");
+    const WH = T.props.find(P => P.key === "focus" && P.kind === "daterange"); // When sits right under the title, always open
+    $("edFields").innerHTML = T.props.map(P => P.kind === "title" ? `<div class="f always" data-pk="${P.key}">${K[P.kind].editHtml(P, seed)}</div>${WH ? `<div class="f pf open when-hero" data-pk="${WH.key}">${K[WH.kind].editHtml(WH, seed)}</div>` : ""}<div class="prop-bar" id="propBar" role="group" aria-label="Properties"></div>` : P === WH ? "" : `<div class="f pf" data-pk="${P.key}">${K[P.kind].editHtml(P, seed)}</div>`).join("");
     draft.links = e ? linksOf(e.id).map(x => x.e.id) : (opts.linkTo ? [opts.linkTo] : []);
     const cleanFiles = (l) => (Array.isArray(l) ? l : []).filter(f => f && (f.kind === "link" ? f.url : f.id)).map(f => ({ ...f }));
     draft.tabs = [{ id: "main", name: "Notes", body: e?.body || "", files: cleanFiles(e?.files) },
@@ -3706,7 +3713,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   });
   function renderPropBar() {
     const bar = $("propBar"); if (!bar || !editing) return; const T = TYPE[editing.type];
-    bar.innerHTML = T.props.filter(P => P.kind !== "title").map(P => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
+    bar.innerHTML = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")).map(P => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
       if (!editing.ro && !PUBLIC && QE_NATIVE(P, editing.type)) return `<label class="prop-btn prop-live" data-proplive="${P.key}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))} <span class="db-caret" aria-hidden="true">▾</span></span>${propLiveControl(P)}</label>`;
       return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; }).join("");
   }
