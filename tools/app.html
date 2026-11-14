@@ -58,6 +58,13 @@ button, input, select { font: inherit; color: inherit; }
 .site-pop[hidden] { display: none; }
 .set-pop { position: fixed; z-index: 30; top: 56px; left: 12px; width: min(400px, calc(100vw - 24px)); max-height: calc(100vh - 80px); overflow-y: auto; background: var(--surface); border: 1px solid var(--panel-line); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.35); padding: 14px; display: grid; gap: 12px; font-size: 13px; }
 .set-pop[hidden] { display: none; }
+#setPop { top: auto; bottom: 76px; max-height: calc(100vh - 110px); }
+.app-foot { margin: 48px auto 0; max-width: 1100px; padding: 18px 16px 28px; border-top: 1px solid var(--line); display: grid; gap: 10px; justify-items: center; }
+.af-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.af-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.af-btn:hover { border-color: var(--accent); color: var(--accent); }
+.af-note { font-size: 12px; color: var(--muted); }
+.is-public .af-priv { display: none; }
 .set-pop > h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
 .set-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .set-desc { font-size: 12px; color: var(--muted); flex: 1; min-width: 160px; }
@@ -1705,7 +1712,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 </head>
 <body>
 <header class="appbar">
-  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant<span class="pa-n" id="paN"></span></button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
+  <div class="brand-wrap"><div class="brand">LifeOS for Maggie</div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant<span class="pa-n" id="paN"></span></button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
@@ -1908,6 +1915,17 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   </form>
 </div>
 
+<footer class="app-foot" aria-label="More options">
+  <div class="af-row">
+    <button type="button" class="af-btn" id="setBtn" aria-expanded="false" aria-controls="setPop" title="Settings">⚙ Settings</button>
+    <button type="button" class="af-btn af-priv" data-afclick="paBtn">📋 Planning Assistant</button>
+    <button type="button" class="af-btn af-priv" data-afclick="bdBtn">🧠 Brain dump</button>
+    <button type="button" class="af-btn af-priv" data-afclick="scBtn">🗺 Schematic</button>
+    <button type="button" class="af-btn af-priv" data-afclick="ggBtn">🔗 Google</button>
+    <button type="button" class="af-btn" data-aftop>↑ Back to top</button>
+  </div>
+  <div class="af-note">LifeOS for Maggie</div>
+</footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
@@ -5554,8 +5572,9 @@ Don't invent appointments or facts that aren't listed.`);
       ${siteMsg ? `<div class="sp-msg${siteBad ? " bad" : ""}">${esc(siteMsg)}</div>` : ""}
       <div class="sp-msg"><b>Backup, if the automatic update ever stops (free):</b><ol><li>Download the file (it's called index.html) and put it in a new folder, e.g. "my-website".</li><li>Go to <b>app.netlify.com/drop</b> and sign up free (or the site expires).</li><li>Drag the folder onto the page. Netlify gives you a public link.</li><li>After changes, download again, replace the file in the folder, and drag the folder onto your site's <b>Deploys</b> page.</li></ol></div>`;
   }
-  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; aiMsg = ""; renderAiBox(); renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = Math.round(r.bottom + 6) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
+  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; aiMsg = ""; renderAiBox(); renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = "auto"; p.style.bottom = Math.max(8, Math.round(window.innerHeight - r.top + 6)) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
   $("setBtn").addEventListener("click", e => { e.stopPropagation(); setOpen($("setPop").hidden); });
+  document.querySelector(".app-foot").addEventListener("click", e => { const b = e.target.closest("[data-afclick]"); if (b) { e.stopPropagation(); const o = $(b.dataset.afclick); if (o) o.click(); return; } if (e.target.closest("[data-aftop]")) window.scrollTo({ top: 0, behavior: "smooth" }); });
   $("setPop").addEventListener("click", e => { if (e.target.closest("[data-setclose]")) setOpen(false); });
   document.addEventListener("pointerdown", e => { const p = $("setPop"); if (p && !p.hidden && !e.target.closest("#setPop") && !e.target.closest("#setBtn")) setOpen(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("setPop").hidden) setOpen(false); });
