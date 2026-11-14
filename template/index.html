@@ -133,6 +133,19 @@ button, input, select { font: inherit; color: inherit; }
 .mode-sw button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 700; }
 .is-public .mode-sw { display: none; }
 body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: none; }
+.pil-dialog { width: min(1100px, 100%); }
+.pil-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.pil { --c: var(--ec-red); display: flex; flex-direction: column; gap: 4px; }
+.pil-cap { height: 14px; background: var(--c); border-radius: 10px 10px 3px 3px; margin: 0 -4px; }
+.pil-name { text-align: center; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; color: var(--c); padding: 6px 0 2px; }
+.pil-cats { display: flex; flex-direction: column-reverse; gap: 4px; }
+.pil-cat { position: relative; border: 1px solid color-mix(in srgb, var(--c) 55%, var(--line)); background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--ink); border-radius: 6px; padding: 7px 4px; font: inherit; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; text-align: center; }
+.pil-cat:hover, .pil-cat:focus-visible, .pil-cat.open { background: color-mix(in srgb, var(--c) 32%, var(--surface)); outline: none; }
+.pil-sub { display: none; position: absolute; z-index: 5; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); background: var(--bg); border: 2px solid var(--c); border-radius: 8px; padding: 6px; grid-template-columns: repeat(5, 34px); gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.pil-cat:hover .pil-sub, .pil-cat:focus-within .pil-sub, .pil-cat.open .pil-sub { display: grid; }
+.pil-sub span { background: color-mix(in srgb, var(--c) 18%, var(--surface)); border-radius: 4px; padding: 4px 0; font-size: 12px; text-align: center; }
+.pil-base { height: 12px; background: var(--c); border-radius: 3px 3px 6px 6px; margin: 0 -4px; }
+@media (max-width: 640px) { .pil-row { gap: 4px; } .pil-name { font-size: 10px; letter-spacing: 0; } .pil-cat { font-size: 12px; padding: 6px 2px; } .pil-sub { grid-template-columns: repeat(2, 30px); } }
 .af-note { font-size: 12px; color: var(--muted); }
 .is-public .af-priv { display: none; }
 .set-pop > h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -1291,7 +1304,7 @@ table.pr-rt { width: 100%; }
 .sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
-.is-public #scBtn, .is-public #paBtn, .is-public #paPop { display: none !important; }
+.is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
 .pa-dialog { width: min(980px, 100%); }
 .pa-n { margin-left: 6px; background: var(--accent); color: var(--bg); border-radius: 99px; padding: 0 7px; font-size: 11px; font-weight: 800; }
 .pa-n:empty { display: none; }
@@ -1826,6 +1839,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="brand-wrap"><div class="brand">LifeOS</div><div class="mode-sw" role="group" aria-label="How much to show"><button type="button" data-mode="lite">✨ Streamlined</button><button type="button" data-mode="full">▦ Full page</button></div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
+  <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><p class="pa-intro">Five pillars, one per entry color. Each stacks categories 00 at the bottom up to 90 at the top. Hover over (or tap) a category to see its ten sub-categories.</p><div class="pil-row" id="pilBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -2033,6 +2047,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <button type="button" class="af-btn af-priv" data-afclick="bdBtn">🧠 Brain dump</button>
     <button type="button" class="af-btn af-priv" data-afclick="scBtn">🗺 Schematic</button>
     <button type="button" class="af-btn af-priv" data-afclick="ggBtn">🔗 Google</button>
+    <button type="button" class="af-btn af-priv" id="pilBtn" aria-controls="pilPop">🏛 Pillars</button>
     <button type="button" class="af-btn" data-aftop>↑ Back to top</button>
   </div>
   <div class="af-note">LifeOS for Maggie</div>
@@ -6021,6 +6036,15 @@ Don't invent appointments or facts that aren't listed.`);
   $("scBtn").addEventListener("click", e => { e.stopPropagation(); scOpen($("scPop").hidden); });
   $("scPop").addEventListener("click", e => { if (e.target.closest("[data-scclose]") || e.target === $("scPop")) scOpen(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scPop").hidden) scOpen(false); });
+
+  // ---------- 🏛 Pillars: five colored columns (Personal, Circle, People, Money, Universe), categories 00–90, each with 10 sub-categories ----------
+  const PILLARS = [["red", "Personal"], ["orange", "Circle"], ["yellow", "People"], ["green", "Money"], ["blue", "Universe"]];
+  const pad2 = (n) => String(n).padStart(2, "0");
+  $("pilBody").innerHTML = PILLARS.map(([c, n]) => `<div class="pil" style="--c:var(--ec-${c})"><div class="pil-name">${n}</div><div class="pil-cap"></div><div class="pil-cats">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map(k => `<button type="button" class="pil-cat" aria-label="${n} ${pad2(k)}">${pad2(k)}<span class="pil-sub">${Array.from({ length: 10 }, (_, i) => `<span>${pad2(k + i)}</span>`).join("")}</span></button>`).join("")}</div><div class="pil-base"></div></div>`).join("");
+  const pilOpen = (v) => { $("pilPop").hidden = !v; };
+  $("pilBtn").addEventListener("click", e => { e.stopPropagation(); pilOpen($("pilPop").hidden); });
+  $("pilPop").addEventListener("click", e => { if (e.target.closest("[data-pilclose]") || e.target === $("pilPop")) { pilOpen(false); return; } const c = e.target.closest(".pil-cat"); document.querySelectorAll(".pil-cat.open").forEach(x => { if (x !== c) x.classList.remove("open"); }); if (c) c.classList.toggle("open"); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pilPop").hidden) pilOpen(false); });
 
   // ---------- 📋 Planning Assistant: entries with pieces missing, grouped by what needs filling in, fixed in one click ----------
   // Private (never on the website). "Not needed" choices are remembered in this browser and in settings/assistant.
