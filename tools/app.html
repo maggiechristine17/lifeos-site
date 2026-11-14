@@ -561,6 +561,8 @@ td .title-cell { align-items: flex-start; }
 .gallery .empty { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .gsize { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .gsize[hidden] { display: none; }
+.gba-sw { margin: 2px 0 -4px; font-size: 13px; }
+.gba-sw[hidden] { display: none; }
 .area-colors { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .area-colors[hidden] { display: none; }
 .ag-lbl { margin-right: 4px; }
@@ -2606,6 +2608,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         </div>
       </div>
       <div class="layout-tabs" role="tablist" aria-label="${T.label} views" data-r="layouts"><button type="button" role="tab" data-layout="cards"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2.5" width="3.5" height="11" rx="1"/><rect x="6.5" y="2.5" width="3.5" height="7" rx="1"/><rect x="11" y="2.5" width="3.5" height="9" rx="1"/></svg>Cards</button><button type="button" role="tab" data-layout="timeline"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 4h7M5 8h8M3 12h6"/></svg>Timeline</button><button type="button" role="tab" data-layout="feed"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="2" width="10" height="5" rx="1"/><rect x="3" y="9" width="10" height="5" rx="1"/></svg>Feed</button><button type="button" role="tab" data-layout="table"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M2 10h12M6 6.5V13"/></svg>Table</button></div>
+      <label class="switch gba-sw" data-r="gbaLbl" hidden><input type="checkbox" data-r="gba"> Group by area</label>
       <section class="panel" data-r="ctl" aria-label="Filter ${T.label}" hidden>
         <div class="panel-head"><span class="panel-name">Filter</span><span class="panel-tools"><button class="btn ghost" type="button" data-r="clear">Clear all</button><button class="x" type="button" data-r="ctlX" aria-label="Close filter">×</button></span></div>
         <input class="search" data-r="q" type="search" placeholder="Search ${T.label.toLowerCase()}…" aria-label="Search ${T.label.toLowerCase()}">
@@ -2632,7 +2635,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <div class="table-wrap" data-r="tableWrap"><table data-r="table"><colgroup data-r="colgroup"></colgroup><thead><tr data-r="head"></tr></thead><tbody data-r="rows"></tbody></table></div>`;
     $("views").appendChild(main);
     const R = (k) => main.querySelector(`[data-r="${k}"]`);
-    const groupByArea = T.key === "projects";
+    const isProj = T.key === "projects", gbaOn = () => isProj && ui.gba !== false; // "Group by area" is a switch (on = grouped under each area, off = one list in the Sort order)
     const PROP = Object.fromEntries(T.props.map(P => [P.key, P]));
 
     // UI state, remembered in this browser
@@ -2648,6 +2651,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (saved.tl) { if (TL_PROPS.some(P => P.key === saved.tl.by)) ui.tl.by = saved.tl.by; if (TL_ZOOM[saved.tl.zoom]) ui.tl.zoom = saved.tl.zoom; }
       if (["s", "m", "l"].includes(saved.gsize)) ui.gsize = saved.gsize;
       if (typeof saved.linksOpen === "boolean") ui.linksOpen = saved.linksOpen;
+      if (typeof saved.gba === "boolean") ui.gba = saved.gba;
       if (Array.isArray(saved.hideColors)) ui.hideColors = saved.hideColors.filter(c => COLORS.includes(c));
       if (saved.f) T.props.forEach(P => { if (saved.f[P.key]) ui.f[P.key] = { ...K[P.kind].empty(), ...saved.f[P.key] }; });
     }
@@ -2846,7 +2850,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       list.sort((a, b) => cmp(a, b) || (a.title || "").localeCompare(b.title || ""));
       return [...list.filter(isPinned), ...list.filter(e => !isPinned(e))];
     }
-    const viewColorClass = (e) => { const c = colorOf(e); return c && !(groupByArea && (ui.hideColors || []).includes(c)) ? " ec-" + c : " ec-white"; };
+    const viewColorClass = (e) => { const c = colorOf(e); return c && !(gbaOn() && (ui.hideColors || []).includes(c)) ? " ec-" + c : " ec-white"; };
     const rowHtml = (e) => `<tr class="row${hasStatus(T) && e.status === "Done" ? " done" : ""}${viewColorClass(e)}" data-id="${esc(e.id)}" tabindex="0">${shown().map(c => { const P = PROP[c.key]; return `<td data-label="${esc(P.label)}"${qeAttrs(e, P, T.key)}>${qeWrap(e, P, T.key, K[P.kind].cell(e, P, T))}</td>`; }).join("")}</tr>`;
     const hasVal = (e, P) => P.kind === "status" ? true : P.kind === "date" ? !!e[P.field] : P.kind === "daterange" ? !!(e[P.start] || e[P.end]) : P.kind === "links" ? !!(adj.get(e.id) || new Set()).size : P.kind === "tasks" ? taskList(e).length > 0 : P.kind === "tags" ? tagsOf(e).length > 0 : P.kind === "check" ? K.check.on(e, P) : P.kind === "multi" ? K.multi.vals(e, P).length > 0 : P.kind === "color" ? !!colorOf(e) : false;
     const cardCell = (e, P) => P.kind === "status" ? `<span class="pill ${statusOf(e.status).cls}">${esc(e.status || "Not started")}</span>` : P.kind === "dbmove" ? `<span class="db-sellabel">${esc(T.label)}${isSched(e, T.key) ? SCHED_TAG : ""}<span class="db-caret" aria-hidden="true">▾</span></span>` : K[P.kind].cell(e, P, T);
@@ -2993,17 +2997,18 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     function renderRows() {
       const list = visible(), total = data[T.key].length, span = shown().length, noun = (n) => n === 1 ? T.singular : T.label.toLowerCase();
       R("count").textContent = !loaded[T.key] && !total ? "Loading…" : (list.length === total ? `${total} ${noun(total)}` : `Showing ${list.length} of ${total} ${noun(total)}`);
+      R("gbaLbl").hidden = !isProj || ui.layout !== "table"; R("gba").checked = ui.gba !== false;
       const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline", cards = ui.layout === "cards";
-      R("areaColors").hidden = !groupByArea || tline || feed || cards; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("board").hidden = !cards; R("tableWrap").hidden = feed || tline || cards;
+      R("areaColors").hidden = !gbaOn() || tline || feed || cards; R("gallery").hidden = true; R("feed").hidden = !feed; R("timeline").hidden = !tline; R("board").hidden = !cards; R("tableWrap").hidden = feed || tline || cards;
       if (tline) { renderTimeline(list, total); return; }
       if (cards) { renderBoard(list, total); return; }
       if (feed) { renderFeed(list, total); return; }
       const tb = R("rows");
-      R("areaColors").hidden = !groupByArea || tline || feed;
-      if (groupByArea && !tline && !feed) renderAreaColors();
+      R("areaColors").hidden = !gbaOn() || tline || feed;
+      if (gbaOn() && !tline && !feed) renderAreaColors();
       if (!total) { tb.innerHTML = loaded[T.key] ? `<tr><td colspan="${span}" class="empty"><strong>No ${T.label.toLowerCase()} yet</strong>Add your first one with “+ New ${T.singular}”.</td></tr>` : ""; return; }
       if (!list.length) { tb.innerHTML = `<tr><td colspan="${span}" class="empty"><strong>Nothing matches</strong>Try clearing the search or filters.</td></tr>`; return; }
-      if (groupByArea) { tb.innerHTML = areaGroupsHtml(list, span); return; }
+      if (gbaOn()) { tb.innerHTML = areaGroupsHtml(list, span); return; }
       const g = null;
       if (!g || !g.fn) { tb.innerHTML = list.map(rowHtml).join(""); return; }
       const groups = new Map();
@@ -3083,7 +3088,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (P.kind === "daterange") { const s = (e[P.start] || e[P.end] || "").slice(0, 10), en = (e[P.end] || e[P.start] || "").slice(0, 10); if (!s) return null; return s <= en ? [dn(s), dn(en)] : [dn(en), dn(s)]; }
       const v = (e[P.field] || "").slice(0, 10); return v ? [dn(v), dn(v)] : null;
     };
-    const barColor = (e) => colorOf(e) && !(groupByArea && (ui.hideColors || []).includes(colorOf(e))) ? "var(--ec-" + colorOf(e) + ")" : "#f2f2ec";
+    const barColor = (e) => colorOf(e) && !(gbaOn() && (ui.hideColors || []).includes(colorOf(e))) ? "var(--ec-" + colorOf(e) + ")" : "#f2f2ec";
     const tlEditable = (e) => !e._pub;
     let tlScroll = null, tlCenter = true;
     function renderTimeline(list, total) {
@@ -3193,6 +3198,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     };
     R("timeline").addEventListener("pointerup", tlEnd);
     R("timeline").addEventListener("pointercancel", tlEnd);
+    R("gba").addEventListener("change", () => { ui.gba = R("gba").checked; saveUi(); renderRows(); });
     R("layouts").addEventListener("click", e => { const b = e.target.closest("[data-layout]"); if (b) { if (b.dataset.layout === "timeline" && ui.layout !== "timeline") tlCenter = true; ui.layout = b.dataset.layout; saveUi(); render(); } });
     R("gsize").addEventListener("click", e => { const b = e.target.closest("[data-gsize]"); if (b) { ui.gsize = b.dataset.gsize; saveUi(); render(); } });
     function renderLayout() {
