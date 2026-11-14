@@ -1329,6 +1329,16 @@ table.pr-rt { width: 100%; }
 .gm-q.picked { border-color: var(--accent); }
 .gm-q.empty { border-style: dashed; color: var(--muted); font-size: 13px; justify-content: center; background: none; }
 .gm-q.done { opacity: .7; }
+.wf-haddbtn { margin-left: auto; font-size: 12.5px; padding: 4px 10px; }
+.wf-hadd { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.wf-hadd { max-width: 560px; flex-wrap: nowrap; }
+.wf-hadd .wf-in { width: auto; flex: 1 1 200px; min-width: 140px; }
+.wf-hadd .wf-sel { width: auto; flex: none; }
+.wf-hadd .btn, .wf-hadd .wf-x { flex: none; }
+.wf-kind { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; margin-right: 6px; }
+.wf-kind button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
+.wf-kind button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 700; }
+.wf-kind.ro { font-size: 11px; padding: 2px 8px; color: var(--muted); }
 .wf-subh { font-size: 14px; margin: 12px 0 6px; display: flex; gap: 8px; align-items: baseline; }
 .wf-subh span { font-size: 12px; color: var(--muted); font-weight: 600; }
 .wf-rtc { border-left: 4px solid var(--ec-purple, #a78bfa); }
@@ -6322,7 +6332,24 @@ ${text}
     });
     return { ...out, starred };
   }
-  let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null;
+  let wfDelArm = null, wfMove = null, wfDrag = null, wfNewFor = null, wfHAdd = "";
+  // ＋ Add at the top of each Workflow section
+  async function wfHeadAdd(i) {
+    const type = i.dataset.wfhin, v = i.value.trim(); if (!v) return;
+    const k = type === "projects" ? ($("wfBody").querySelector("[data-wfhkind]") || {}).value || "one" : "";
+    if (k === "rt") await newRoutine(v); else await wfCreate(type, v, k === "sched" ? { scheduled: true } : {});
+    wfHAdd = type; buildAdj(); renderWorkflow(); renderPlanner(); wfFocus(`[data-wfhin="${type}"]`);
+  }
+  // One time / Scheduled / Routine on each card in section 4 (Routine turns a project into a routine, and back)
+  async function wfSetKind(src, id, k) {
+    if (src === "p") { const e = data.projects.find(x => x.id === id); if (!e) return;
+      if (k === "rt") await entryToRoutine("projects", e); else if (!!e.scheduled !== (k === "sched")) await wfPatch("projects", id, { scheduled: k === "sched" });
+    } else { const r = routines.find(x => x.id === id); if (!r || k === "rt") return;
+      await wfCreate("projects", r.name || "Untitled", { scheduled: k === "sched", body: r.body || "" }); await deleteRoutine(id); routines = routines.filter(x => x.id !== id);
+      notice(`“${r.name || "Untitled"}” is now a project (${k === "sched" ? "Scheduled" : "One time"}).`);
+    }
+    buildAdj(); renderWorkflow(); renderPlanner();
+  }
   // Workflow views: Cards (first, so it's the default) and Circle (a flow chart of what follows one entry, all the way around)
   let wfView = "cards";
   // Circle view = a guided flow: pick a starting section, tick what you want to see, the next section fills with what connects to it, and so on around the circle.
@@ -6389,7 +6416,7 @@ ${text}
       return chips + adder + (opts.extra || "");
     };
     const titleIn = (type, e, label) => `<input class="wf-in wf-name" data-wfedit="${type}" data-wfid="${esc(e.id)}" data-wffield="title" value="${esc(e.title || "")}" aria-label="${label}" maxlength="300"${ro}>`;
-    const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div></div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
+    const sec = (id, n, title, sub, body, type) => `<section class="wf-sec" id="wf-${id}"><div class="wf-shead"><div class="hm-label">${n}. ${title}</div>${PUBLIC ? "" : wfHAdd === type ? `<span class="wf-hadd"><input class="wf-in" data-wfhin="${type}" placeholder="New ${TYPE[type].singular}" maxlength="200" aria-label="New ${TYPE[type].singular}">${type === "projects" ? `<select class="wf-sel" data-wfhkind aria-label="Kind"><option value="one">One time</option><option value="sched">Scheduled</option><option value="rt">Routine</option></select>` : ""}<button type="button" class="btn small-go" data-wfhgo="${type}">Add</button><button type="button" class="wf-x" data-wfhadd="" aria-label="Cancel">×</button></span>` : `<button type="button" class="btn wf-haddbtn" data-wfhadd="${type}">＋ Add ${/^[aeiou]/.test(TYPE[type].singular) ? "an" : "a"} ${TYPE[type].singular}</button>`}</div>${PUBLIC ? "" : `<p class="wf-sub">${sub}</p>`}${body}</section>`;
     const SEC_N = { ideas: 1, values: 2, areas: 3, goals: 4, projects: 5, pages: 6 };
     const focusNote = (type) => { if (wfMode(type) !== "starred") return ""; const above = wfPrev(type), n = (S.starred[above] || []).length, lab = TYPE[above].label.toLowerCase(); return n ? `<p class="wf-note">Showing only what comes from your ${n} starred ${n === 1 ? TYPE[above].singular : lab} in section ${SEC_N[above]}.</p>` : `<p class="wf-note">Nothing is starred in ${TYPE[above].label} (section ${SEC_N[above]}) yet. Star (☆) some there to fill this section.</p>`; };
     const modeSeg = (type) => { if (PUBLIC) return ""; const on = wfMode(type) === "starred"; return `<button type="button" class="qt wf-mtog" data-wfmtog="${type}" aria-pressed="${on}" title="${on ? "Showing only what comes from starred cards above. Click to show all." : "Showing all. Click to show only what comes from starred cards above."}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-l">${on ? "From starred" : "All"}</span></button>`; };
@@ -6412,12 +6439,13 @@ ${text}
         bottom: childPart(g, "goals", { rows: (k) => projRows(k, g.id), inline: `<select class="wf-sel" data-wfchild="${esc(g.id)}" data-wfctype="projects" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="Projects of this goal's area">${linked.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}</select>
           <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.id)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.id)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.id)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.id)}">Add</button></div></div>` }) }); }).join("");
     // 4. Resources (one card per project of the goals above)
-    const resCards = S.projects.map(p => card("projects", p, { top: fromPart(p, "projects"), mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
+    const kindSeg = (src, id, cur) => PUBLIC ? `<span class="wf-kind ro">${cur === "rt" ? "Routine" : cur === "sched" ? "Scheduled" : "One time"}</span>` : `<span class="wf-kind" role="group" aria-label="What kind">${[["one", "One time"], ["sched", "Scheduled"], ["rt", "Routine"]].map(([k, l]) => `<button type="button" data-wfkind="${k}" data-wfksrc="${src}" data-wfkid="${esc(id)}" aria-pressed="${cur === k}">${l}</button>`).join("")}</span>`;
+    const resCards = S.projects.map(p => card("projects", p, { top: `${kindSeg("p", p.id, p.scheduled ? "sched" : "one")}${fromPart(p, "projects")}`, mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
       bottom: childPart(p, "projects", { rows: (kids) => `<div class="wf-list">${kids.map(r => `<div class="wf-row">${emo(r, "pages")}<button type="button" class="wf-ptitle" data-wfopen="pages" data-wfid="${esc(r.id)}">${name(r)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(p.id)}" data-wfo="${esc(r.id)}" title="Unlink this resource from the project (the resource stays)">×</button>`}</div>`).join("") || empty("No resources yet.")}</div>` }) })).join("");
 
     // 4b. Routines sit with projects in section 4 (always purple; open them in Planner → Routines)
     const rtCards = routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(r => { const tn = dn(today()), done = rtPlans(r).filter(x => x.status === "done"), w = done.filter(x => dn(x.date) > tn - 7 && dn(x.date) <= tn).length, nx = rtPlans(r).filter(x => x.status !== "done" && x.date >= today()).sort((a, b) => a.date.localeCompare(b.date))[0];
-      return `<article class="wf-c wf-rtc ec-purple"><div class="wf-mid"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><button type="button" class="wf-ptitle" data-wfrt="${esc(r.id)}" title="Open in Planner → Routines">${esc(r.name || "Untitled routine")}</button></div><div class="wf-bot"><span class="wf-plabel">Routine</span><span class="wf-meta">${w} done in the last 7 days · ${done.length} all time${nx ? ` · next ${esc(fmt(nx.date))}` : ""}</span></div></article>`; }).join("");
+      return `<article class="wf-c wf-rtc ec-purple"><div class="wf-top">${kindSeg("r", r.id, "rt")}</div><div class="wf-mid"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><button type="button" class="wf-ptitle" data-wfrt="${esc(r.id)}" title="Open in Planner → Routines">${esc(r.name || "Untitled routine")}</button></div><div class="wf-bot"><span class="wf-plabel">Routine</span><span class="wf-meta">${w} done in the last 7 days · ${done.length} all time${nx ? ` · next ${esc(fmt(nx.date))}` : ""}</span></div></article>`; }).join("");
     // 6. Resources (from the projects above), pointing back to ideas: the circle closes
     const resourceCards = S.pages.map(r => card("pages", r, { top: fromPart(r, "pages"), mid: `${emo(r, "pages")}${titleIn("pages", r, "Resource")}${openBtn("pages", r.id)}`, label: "Values", bottom: childPart(r, "pages") })).join("");
     el.innerHTML = `<div class="hm-page wf-page">
@@ -6430,7 +6458,7 @@ ${text}
       ${sec("values", 1, "Values", "Values start the circle. From shows the resources they came from; each value points to the areas it shapes. Add one from the dropdown, or make a new area there.", focusNote("values") + board("values", valueCards || (PUBLIC ? empty("Nothing here yet.") : ""), addCard("values", "New value, like Freedom", "Add value", "pages")), "values")}
       ${sec("areas", 2, "Areas", "Add goals to each area. Each goal is its own entry, and together they make up the area's subtitle.", focusNote("areas") + board("areas", areaCards || (PUBLIC ? empty("No areas yet.") : ""), addCard("areas", "New area, like Health", "Add area", "values")), "areas")}
       ${sec("goals", 3, "Goals", "Each goal is a card. Assign projects and set their dates.", focusNote("goals") + (S.goals.length ? board("goals", goalCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("goals") === "starred" ? "No goals come from your starred areas yet." : "Add goals to your areas in “Areas” and each one becomes a card here.")), "goals")}
-      ${sec("projects", 4, "Projects and routines", "Each project is a card. Add the resources that go with it. Your routines are here too.", focusNote("projects") + `<h3 class="wf-subh">📌 Projects <span>${S.projects.length}</span></h3>` + (S.projects.length ? board("projects", resCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("projects") === "starred" ? "No projects come from your starred goals yet." : "No projects yet.")) + `<h3 class="wf-subh">🔁 Routines <span>${routines.length}</span></h3>` + (routines.length ? `<div class="wf-board">${rtCards}</div>` : empty(PUBLIC ? "Nothing here yet." : "No routines yet. Add one in Projects → Routines or in Planner.")), "projects")}
+      ${sec("projects", 4, "Projects and routines", "Projects and routines together, one card each. Mark each card One time, Scheduled or Routine at the top. Add the resources that go with each project.", focusNote("projects") + (S.projects.length || routines.length ? board("projects", resCards + rtCards) : empty(PUBLIC ? "Nothing here yet." : "No projects or routines yet.")), "projects")}
       ${sec("resources", 5, "Resources", "Each resource is a card. Choose the values it feeds, and they show it under From back in “Values”, closing the circle.", focusNote("pages") + (S.pages.length ? board("pages", resourceCards) : empty(PUBLIC ? "Nothing here yet." : wfMode("pages") === "starred" ? "No resources come from your starred projects yet." : "No resources yet.")), "pages")}`}
     </div>`;
     if (wfNewFor) { const i = el.querySelector(`[data-wfnewin]`); if (i) i.focus(); }
@@ -6507,6 +6535,9 @@ ${text}
   }
   $("wfBody").addEventListener("click", async ev => {
     const t = ev.target;
+    const ha = t.closest("[data-wfhadd]"); if (ha) { wfHAdd = ha.dataset.wfhadd; renderWorkflow(); if (wfHAdd) wfFocus(`[data-wfhin="${wfHAdd}"]`); return; }
+    const hg = t.closest("[data-wfhgo]"); if (hg) { const i = $("wfBody").querySelector(`[data-wfhin="${hg.dataset.wfhgo}"]`); if (i) await wfHeadAdd(i); return; }
+    const kd = t.closest("[data-wfkind]"); if (kd) { await wfSetKind(kd.dataset.wfksrc, kd.dataset.wfkid, kd.dataset.wfkind); return; }
     const wr = t.closest("[data-wfrt]"); if (wr) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = wr.dataset.wfrt; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     const j = t.closest("[data-wfjump]"); if (j) { const s = $("wf-" + j.dataset.wfjump); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const vt = t.closest("[data-wfview]"); if (vt) { wfView = vt.dataset.wfview; renderWorkflow(); return; }
@@ -6533,6 +6564,8 @@ ${text}
     }
   });
   $("wfBody").addEventListener("keydown", async ev => {
+    const hi = ev.target.closest && ev.target.closest("[data-wfhin]"); if (hi && ev.key === "Enter") { ev.preventDefault(); await wfHeadAdd(hi); return; }
+    if (hi && ev.key === "Escape") { wfHAdd = ""; renderWorkflow(); return; }
     if (PUBLIC) return; const t = ev.target;
     if (ev.key === "Escape" && t.dataset.wfnewin) { wfNewFor = null; renderWorkflow(); return; }
     if (ev.key !== "Enter") return;
