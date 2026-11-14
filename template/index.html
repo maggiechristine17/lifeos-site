@@ -163,6 +163,9 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-relist { margin: 4px 0 10px; padding-left: 18px; display: grid; gap: 3px; max-height: 260px; overflow: auto; }
 .pil-relist code { background: var(--bg); padding: 0 4px; border-radius: 4px; } .pil-relist code.new { color: var(--accent); font-weight: 700; }
 .pil-rea { font-size: 11.5px; color: var(--muted); }
+.code-row { display: flex; gap: 6px; align-items: center; }
+.code-in { font-family: ui-monospace, monospace; }
+.code-in[readonly] { background: transparent; border-style: dashed; color: var(--ink); cursor: default; }
 .code-pill { font-family: ui-monospace, monospace; font-size: 12.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
 .code-pill.bad { border-color: #ef6b6b; color: #ef6b6b; }
 .pil-base { height: 12px; background: var(--c); border-radius: 3px 3px 6px 6px; margin: 0 -4px; }
@@ -2672,7 +2675,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       filterHtml: (P, id) => `<label for="${id}">${P.label}</label><input id="${id}" type="text" placeholder="Starts with… (like 1.1)" data-part="q">`,
       sync: (box, f) => { const i = box.querySelector('[data-part="q"]'); if (document.activeElement !== i) i.value = f.q; },
       cell: (e) => e.code ? `<span class="code-pill${codeParse(e.code) ? "" : " bad"}">${esc(e.code)}</span>` : '<span style="color:var(--muted)">—</span>',
-      editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><input id="ed-${P.key}" type="text" autocomplete="off" placeholder="like 1.12.001" value="${esc(e?.code || "")}" maxlength="20"><div class="pub-hint">Pillar.Category or area.Project (001), Goal (G01) or Routine (R01).Resource (001). See Pillars → How this works.</div>`,
+      // Locked until I press ✏️ Edit, so the code isn't changed by accident
+      editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><div class="code-row"><input id="ed-${P.key}" class="code-in" type="text" autocomplete="off" placeholder="No code yet" value="${esc(e?.code || "")}" maxlength="20" readonly><button type="button" class="btn small" data-codeedit>✏️ Edit</button></div><div class="pub-hint">Pillar.Category or area.Project (001), Goal (G01) or Routine (R01).Resource (001). See Pillars → How this works.</div>`,
       read: (P, out) => { const v = $("ed-" + P.key).value.trim().toUpperCase(); out.code = v; const pr = codeParse(v); out.codeArea = pr ? (pilNameOf(pr.prefix) || out.codeArea || "") : ""; },
     },
     text: {
@@ -6131,6 +6135,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${P.changes.length ? `<button type="button" class="btn primary" data-pilapply>Apply ${ch.length ? ch.length + " change" + (ch.length === 1 ? "" : "s") : "(remember area names)"}</button>` : ""}`;
   }
   $("pilRecodeBtn").addEventListener("click", pilRecodeShow);
+  document.addEventListener("click", e => { const b = e.target.closest("[data-codeedit]"); if (!b) return; const i = b.parentNode.querySelector(".code-in"); if (!i) return; if (i.readOnly) { i.readOnly = false; i.focus(); i.select(); b.textContent = "🔒 Lock"; } else { i.readOnly = true; b.textContent = "✏️ Edit"; } });
   $("pilPop").addEventListener("click", async e => {
     if (e.target.closest("[data-pilreshut]")) { $("pilRe").hidden = true; return; }
     const ap = e.target.closest("[data-pilapply]"); if (!ap) return; ap.disabled = true;
