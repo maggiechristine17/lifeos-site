@@ -4775,7 +4775,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   $("plBody").addEventListener("click", e => { const o = e.target.closest("[data-plopen]"); if (o) openEditor("projects", o.dataset.plopen); });
   // ----- Eisenhower Matrix: importance from my tag (High priority / Low priority), urgency worked out from dates -----
   // Urgent = overdue, or its date (or an open step's date) is within the next 7 days.
-  const EIS_TYPES = ["projects", "goals", "pages", "areas", "values"];
+  const EIS_TYPES = ["projects"]; // only Projects · One time and Projects · Scheduled (routines are not projects here)
   const prioOf = (e) => { const L = tagsOf(e).map(t => t.toLowerCase()); return L.includes("high priority") ? "high" : L.includes("low priority") ? "low" : ""; };
   const eisDate = (e) => { const ds = [(e.focusEnd || e.focusStart || "").slice(0, 10), ...taskList(e).filter(x => !x.done && x.due).map(x => x.due.slice(0, 10))].filter(Boolean).sort(); return ds[0] || ""; };
   const isUrgent = (e) => { const d = eisDate(e); return !!d && dn(d) <= dn(today()) + 7; };
