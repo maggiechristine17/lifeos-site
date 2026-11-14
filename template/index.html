@@ -1402,6 +1402,9 @@ table.pr-rt { width: 100%; }
 .td-dtitle:focus, .td-dnote:focus, .td-new input:focus { outline: none; border-color: var(--accent); }
 .td-dbtns { display: flex; flex-wrap: wrap; gap: 6px; }
 .td-dbtns .btn { font-size: 13px; }
+.gm-tabs { margin: 4px 0 8px; }
+.gm-tn { font-size: 11px; color: var(--muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+.gm-hint .td-sw { margin: 0 8px 0 0; }
 .gm-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
 .gm-card.picked { border-color: var(--accent); }
 .gm-ph { display: flex; align-items: center; gap: 10px; min-height: 40px; }
@@ -6786,6 +6789,14 @@ ${text}
     gmToast = after > before ? `🎉 Level ${after}! You're a ${GM_TITLES[Math.min(after - 1, GM_TITLES.length - 1)]}` : `+${xp} XP`;
     clearTimeout(gmToastT); gmToastT = setTimeout(() => { gmToast = ""; renderGame(); }, 2600);
   }
+  // A pin is done when: a project/step is finished (p:/t:), an entry is Done or gone (e:type:id), a routine plan is ticked (r:rid:pid)
+  function gmPinDone(k, seen) {
+    const [kind, a, b] = k.split(":");
+    if (kind === "p" || kind === "t") return seen.has(k);
+    if (kind === "e") { const e = (data[a] || []).find(x => x.id === b); return !e || e.status === "Done"; }
+    if (kind === "r") { const rr = routines.find(x => x.id === a), pl2 = rr && rtPlans(rr).find(x => x.id === b); return !!(pl2 && pl2.status === "done"); }
+    return false;
+  }
   function gmSync() {
     if (!gmReady || PUBLIC || !["projects", "archive"].every(k => loaded[k])) return false;
     const done = gmDoneKeys(), seen = new Set(gm.seen); let changed = false;
@@ -6793,8 +6804,8 @@ ${text}
     else done.forEach((v, k) => { if (!seen.has(k)) { seen.add(k); gmAward(GM_XP[v.kind], v.kind, v.title); changed = true; } });
     gm.seen = [...seen];
     const d = today(), picks = gmDay(d);
-    if (picks.length >= 1 && !gm.planned[d]) { gm.planned[d] = true; gmAward(GM_XP.plan, "plan", "Planned today"); changed = true; }
-    if (picks.length >= 1 && picks.every(k => seen.has(k)) && !gm.perfect[d]) { gm.perfect[d] = true; gmAward(GM_XP.perfect, "perfect", "Finished everything I picked"); changed = true; }
+    if (picks.length >= 1 && !gm.planned[d]) { gm.planned[d] = true; gmAward(GM_XP.plan, "plan", "Pinned for today"); changed = true; }
+    if (picks.length >= 1 && picks.every(k => gmPinDone(k, seen)) && !gm.perfect[d]) { gm.perfect[d] = true; gmAward(GM_XP.perfect, "perfect", "Finished everything I picked"); changed = true; }
     if (changed) saveGm();
     return changed;
   }
@@ -6804,7 +6815,7 @@ ${text}
     while (days.has(iso(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
-  let gmDidTab = "today";
+  let gmDidTab = "today", gmTab = (() => { try { return localStorage.getItem("chevy.gm.tab") || ""; } catch (e) { return ""; } })();
   // Done today log: the past 72 hours, and everything older on its own tab
   const gmDidSplit = () => { const cut = Date.now() - 72 * 3600e3, at = (x) => Date.parse(x.at || (x.d + "T12:00:00")); const L = (gm.did || []).slice().reverse(); return { recent: L.filter(x => at(x) >= cut), older: L.filter(x => at(x) < cut) }; };
   const gmDidList = (L, none) => { if (!L.length) return `<p class="gm-hint">${none}</p>`; const t = today(), days = [...new Set(L.map(x => x.d))]; return days.map(d => `<div class="gm-dayh">${d === t ? "Today" : esc(fmt(d))}</div><ul class="gm-dl">${L.filter(x => x.d === d).map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-gmdeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>`).join(""); };
@@ -6821,9 +6832,9 @@ ${text}
     gmSync();
     const t = today(), L = gmLevel(gm.xp), lo = gmFloor(L), hi = gmFloor(L + 1), pct = Math.round((gm.xp - lo) / (hi - lo) * 100);
     const quests = gmQuests(), byKey = new Map(quests.map(q => [q.key, q])), picks = gmDay(t), seen = new Set(gm.seen);
-    const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => seen.has(k)).length;
+    const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => gmPinDone(k, seen)).length;
     const dueLbl = (id, tid, due, name, done) => done ? (due ? `<span class="gm-qs">📅 ${esc(fmt(due))}</span>` : "") : `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-gmdateinp="${esc(id)}" data-gmdatetid="${esc(tid || "")}" value="${esc(due)}" aria-label="Date for ${esc(name)}"><button type="button" class="gm-due${due && due < t ? " late" : due === t ? " now" : ""}" data-gmdate="${esc(id)}" title="Change the date for ${esc(name)}">📅 ${!due ? "＋ Add date" : due < t ? `Overdue · ${esc(fmt(due))}` : due === t ? "Today" : esc(fmt(due))}</button></span>`;
-    const pickBtn = (k, name) => picks.includes(k) ? `<button type="button" class="gm-mini on" data-gmunpick="${esc(k)}" aria-label="Remove ${esc(name)} from today">✓ Today</button>` : `<button type="button" class="gm-mini add" data-gmpick="${esc(k)}" aria-label="Add ${esc(name)} to today">＋ Today</button>`;
+    const pickBtn = (k, name) => picks.includes(k) ? `<button type="button" class="gm-mini on" data-gmunpick="${esc(k)}" aria-label="Unpin ${esc(name)}">📌 Pinned</button>` : `<button type="button" class="gm-mini add" data-gmpick="${esc(k)}" data-gmname="${esc(name)}" aria-label="Pin ${esc(name)}">📌 Pin</button>`;
     // One card per project: the project on top (subtitle + its date), then every checkbox step under it with its own date.
     // onlyKeys: in Today's plan, show just the picked steps (the project heading always shows).
     const card = (e, onlyKeys) => {
@@ -6836,38 +6847,51 @@ ${text}
     const gone = (k) => `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`;
     const openP = (data.projects || []).filter(e => !e._pub && e.status !== "Done");
     const pById = new Map(openP.map(e => [e.id, e]));
-    // Today's plan: group what I picked by project, one card each; picks whose project is finished show as done lines
-    const planHtml = (() => { const ids = [], keep = new Map(), left = []; picks.forEach(k => { const id = k.split(":")[1]; if (!pById.has(id)) { left.push(k); return; } if (!keep.has(id)) { keep.set(id, new Set()); ids.push(id); } keep.get(id).add(k); }); return ids.map(id => card(pById.get(id), keep.get(id))).join("") + left.map(gone).join(""); })();
+    // Other things on today (goals, areas, values, resources, routines): one line each, pinnable
+    const T2 = (type) => type === "routine" ? "Routine" : TYPE[type].singular[0].toUpperCase() + TYPE[type].singular.slice(1);
+    const otherRow = (x, inPinned) => {
+      if (x.type === "routine") { const k = "r:" + x.r.id + ":" + x.plan.id, dn = x.plan.status === "done", nm = x.r.name || "Routine"; return `<li class="gm-card td-on${picks.includes(k) ? " picked" : ""}"><div class="gm-ph"><span class="td-ic" aria-hidden="true">${esc(rtEmoji(x.r))}</span><div class="gm-qt"><button type="button" class="td-name" data-tdrt="${esc(x.r.id)}">${esc(nm)}</button><span class="gm-qs">${x.time ? esc(x.time) + " · " : ""}${dn ? "✓ Done" : "Planned today"}</span></div><span class="pa-type">Routine</span>${pickBtn(k, nm)}</div></li>`; }
+      const k = "e:" + x.type + ":" + x.e.id, nm = x.e.title || "Untitled";
+      return `<li class="gm-card td-on${picks.includes(k) ? " picked" : ""}"><div class="gm-ph"><span class="td-ic" aria-hidden="true">${esc(emojiOf(x.e, x.type))}</span><div class="gm-qt"><button type="button" class="td-name" data-tdopen="${esc(x.type)}" data-tdid="${esc(x.e.id)}">${esc(nm)}</button>${x.e.subtitle ? `<span class="gm-psub">${esc(x.e.subtitle)}</span>` : ""}<span class="gm-qs">${x.s ? (x.single ? (x.s === t ? "Today" : esc(fmt(x.s))) : `${esc(fmt(x.s))} – ${esc(fmt(x.en))}`) : ""}</span></div><span class="pa-type">${T2(x.type)}</span>${pickBtn(k, nm)}</div></li>`;
+    };
+    const onAll = td.show ? tdOnToday() : [], onOther = onAll.filter(x => x.type !== "projects");
+    // Pinned: projects grouped one card each (only the pinned steps), then other pinned entries; finished ones show as done lines
+    const planHtml = (() => { const ids = [], keep = new Map(), left = [], others = []; picks.forEach(k => { const kind = k.split(":")[0]; if (kind === "e" || kind === "r") { others.push(k); return; } const id = k.split(":")[1]; if (!pById.has(id)) { left.push(k); return; } if (!keep.has(id)) { keep.set(id, new Set()); ids.push(id); } keep.get(id).add(k); }); return ids.map(id => card(pById.get(id), keep.get(id))).join("") + others.map(k => { const [kind, a, b] = k.split(":"); if (kind === "e") { const e = (data[a] || []).find(x => x.id === b); if (e && e.status !== "Done") return otherRow({ type: a, e, s: (e.focusStart || "").slice(0, 10), en: (e.focusEnd || e.focusStart || "").slice(0, 10), single: !e.focusEnd || e.focusEnd === e.focusStart }); } else { const rr = routines.find(x => x.id === a), pl2 = rr && rtPlans(rr).find(x => x.id === b); if (rr && pl2) return otherRow({ type: "routine", r: rr, plan: pl2, time: SLOT[pl2.slot] ? SLOT[pl2.slot].label : "" }); } return gone(k); }).join("") + left.map(gone).join(""); })();
     const pdueOf = (e) => (e.focusEnd || e.focusStart || "").slice(0, 10), stepsDue = (e) => taskList(e).filter(x => !x.done && (x.text || "").trim() && x.due).map(x => x.due.slice(0, 10));
     const firstDue = (e) => [pdueOf(e), ...stepsDue(e)].filter(Boolean).sort()[0] || "";
-    const dueCards = openP.filter(e => { const f = firstDue(e); return f && f <= t; });
-    const boardCards = (gmFilter === "due" ? dueCards : openP).slice().sort((a, b) => (firstDue(a) || "9").localeCompare(firstDue(b) || "9") || (a.title || "").localeCompare(b.title || ""));
+    // Today's projects: When includes today, a step dated today, or overdue. More projects: every other open project.
+    const onP = new Set(onAll.filter(x => x.type === "projects").map(x => x.e.id));
+    const bySoon = (a, b) => (firstDue(a) || "9").localeCompare(firstDue(b) || "9") || (a.title || "").localeCompare(b.title || "");
+    const todayP = openP.filter(e => onP.has(e.id) || (firstDue(e) && firstDue(e) < t)).sort(bySoon), moreP = openP.filter(e => !todayP.includes(e)).sort(bySoon);
+    if (!["pinned", "today", "more"].includes(gmTab)) gmTab = picks.length ? "pinned" : "today";
     const TP = tdParts(), dDay = new Date(t + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     el.innerHTML = `<div class="gm">
       <section class="gm-hero" aria-label="Today and your progress">
         <div class="gm-date">☀️ ${esc(dDay)}</div>
         <div class="gm-lvl"><span class="gm-badge">${L}</span><div><div class="gm-title">Level ${L} · ${GM_TITLES[Math.min(L - 1, GM_TITLES.length - 1)]}</div><div class="gm-sub">${gm.xp} XP · ${hi - gm.xp} to level ${L + 1}</div></div></div>
         <div class="gm-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
-        <div class="gm-stats"><div><b>🔥 ${streak}</b><span>day streak</span></div><div><b>+${todayXp}</b><span>XP today</span></div><div><b>${TP.onN}</b><span>on today</span></div><div><b>${quests.length}</b><span>open quests</span></div></div>
+        <div class="gm-stats"><div><b>🔥 ${streak}</b><span>day streak</span></div><div><b>+${todayXp}</b><span>XP today</span></div><div><b>${todayP.length + onOther.length}</b><span>on today</span></div><div><b>${quests.length}</b><span>open quests</span></div></div>
       </section>
       ${gmToast ? `<div class="gm-toast" role="status">${esc(gmToast)}</div>` : ""}
-      <section class="gm-sec"><h2>Today's plan <span class="gm-count">${doneN} of ${picks.length} done</span></h2>
-        <p class="gm-hint">${!picks.length ? `Pick as many as you like below to plan your day and earn <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything you picked is done. Perfect day! 🎉" : `Finish everything you picked for a <b>+${GM_XP.perfect} XP</b> bonus. Add more below any time.`}</p>
-        <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing picked yet</li>'}</ul>
+      <section class="gm-sec" id="gmToday"><h2>Today</h2>
+        <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${doneN}/${picks.length}</span></button><button type="button" role="tab" data-gmtab="today" aria-selected="${gmTab === "today"}">☀️ Today's projects <span class="gm-tn">${todayP.length + onOther.length}</span></button><button type="button" role="tab" data-gmtab="more" aria-selected="${gmTab === "more"}">More projects <span class="gm-tn">${moreP.length}</span></button></div>
+        ${gmTab === "pinned" ? `<p class="gm-hint">${!picks.length ? `Nothing pinned yet. Tap <b>📌 Pin</b> on any project, step or entry in the other tabs. Pinning your first one today earns <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything pinned is done. Perfect day! 🎉" : `Finish everything pinned for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
+        <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing pinned yet</li>'}</ul>`
+        : gmTab === "today" ? `<p class="gm-hint"><label class="switch td-sw"><input type="checkbox" data-tdshow${td.show ? " checked" : ""}> Show what's scheduled</label> Projects whose When includes today, with a step dated today, or overdue. Below them, everything else on today. Tap 📌 Pin to move one to Pinned.</p>
+        <ul class="gm-list">${todayP.map(e => card(e)).join("") || '<li class="gm-q empty">No projects for today.</li>'}</ul>
+        ${onOther.length ? `<h3 class="wf-subh">Also on today <span>${onOther.length}</span></h3><ul class="gm-list">${onOther.map(x => otherRow(x)).join("")}</ul>` : ""}`
+        : `<p class="gm-hint">Every other open project. Tap 📌 Pin to move one to Pinned.</p>
+        <ul class="gm-list">${moreP.map(e => card(e)).join("") || '<li class="gm-q empty">No other open projects.</li>'}</ul>`}
       </section>
-${TP.on}      <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged today</span></h2>
+      <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged today</span></h2>
         <form class="gm-did" data-gmdidform><input type="text" id="gmDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
         <div class="gm-chips" role="group" aria-label="Which ones"><button type="button" class="chip" data-gmdidtab="today" aria-pressed="${gmDidTab === "today"}">Today (${(gm.did || []).filter(x => x.d === t).length})</button><button type="button" class="chip" data-gmdidtab="recent" aria-pressed="${gmDidTab === "recent"}">Past 72 hours (${gmDidSplit().recent.length})</button><button type="button" class="chip" data-gmdidtab="older" aria-pressed="${gmDidTab === "older"}">Older (${gmDidSplit().older.length})</button></div>
         ${gmDidTab === "today" ? gmDidList((gm.did || []).filter(x => x.d === t).slice().reverse(), "Nothing logged today yet. These are short-term notes for your record: they are not added as entries.") : gmDidList(gmDidTab === "older" ? gmDidSplit().older : gmDidSplit().recent, gmDidTab === "older" ? "Nothing older than 72 hours yet." : "Nothing logged in the past 72 hours.")}
       </section>
-      <section class="gm-sec"><h2>Quest board</h2>
-        <div class="gm-chips" role="group" aria-label="Which quests"><button type="button" class="chip" data-gmfilter="due" aria-pressed="${gmFilter === "due"}">Due or overdue (${dueCards.length})</button><button type="button" class="chip" data-gmfilter="all" aria-pressed="${gmFilter === "all"}">All projects (${openP.length})</button></div>
-        <ul class="gm-list">${boardCards.map(e => card(e)).join("") || `<li class="gm-q empty">${gmFilter === "due" ? "Nothing due. Check All projects for more." : "No open projects. Add projects or checkbox steps in LifeOS."}</li>`}</ul>
-      </section>
 ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         <ul class="gm-wins">${(() => { const all = gm.log.map(l => ({ at: l.at || l.d + "T00:00", html: `<li><span>${l.k === "plan" ? "🗓" : l.k === "perfect" ? "🏆" : l.k === "project" ? "🚩" : "✅"} ${esc(l.t)}</span><span class="gm-xp">+${l.x}</span></li>` })).concat((gm.did || []).map(x => ({ at: x.at || x.d + "T00:00", html: `<li class="gm-logged"><span>📝 ${esc(x.t)}</span><span class="gm-tag">Logged${x.d === t ? "" : " · " + esc(fmt(x.d, false))}</span></li>` }))); return all.sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 12).map(x => x.html).join("") || '<li class="gm-none">Nothing yet. Finish a quest or log something you did.</li>'; })()}</ul>
       </section>
-      <p class="gm-foot">Each step = ${GM_XP.task} XP · Finishing a project = ${GM_XP.project} XP · Planning your day = ${GM_XP.plan} XP · Finishing everything you picked = ${GM_XP.perfect} XP. Anything you tick off anywhere in LifeOS counts.</p>
+      <p class="gm-foot">Each step = ${GM_XP.task} XP · Finishing a project = ${GM_XP.project} XP · First pin of the day = ${GM_XP.plan} XP · Finishing everything pinned = ${GM_XP.perfect} XP. Anything you tick off anywhere in LifeOS counts.</p>
     </div>`;
     if (keepDid && $("gmDidIn")) $("gmDidIn").value = keepDid; if (keepNew && $("tdNewIn")) $("tdNewIn").value = keepNew; if (refocus && $(refocus)) $(refocus).focus();
   }
@@ -6876,8 +6900,9 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     const dd = t.closest("[data-gmdeldid]"); if (dd) { gm.did = (gm.did || []).filter(x => x.id !== dd.dataset.gmdeldid); saveGm(); renderGame(); return; }
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
+    const gt = t.closest("[data-gmtab]"); if (gt) { gmTab = gt.dataset.gmtab; try { localStorage.setItem("chevy.gm.tab", gmTab); } catch (e) {} renderGame(); return; }
     const dtb = t.closest("[data-gmdidtab]"); if (dtb) { gmDidTab = dtb.dataset.gmdidtab; renderGame(); return; }
-    const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : "Quest") : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
+    const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : (pk.dataset.gmname || "Pinned")) : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
     const up = t.closest("[data-gmunpick]"); if (up) { gm.picks = { [d]: gmDay(d).filter(k => k !== up.dataset.gmunpick) }; saveGm(); renderGame(); return; }
     const sp = t.closest("[data-gmstep]"); if (sp) { const [, id, tid] = sp.dataset.gmstep.split(":"); const e = (data.projects || []).find(x => x.id === id); const st = e && taskList(e).find(x => x.id === tid); if (st) await toggleTask("projects", id, tid, !st.done); return; }
     const dn = t.closest("[data-gmdone]"); if (dn) {
