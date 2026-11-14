@@ -2683,13 +2683,21 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         const now = focusState(e, P) === "now" && e.status !== "Done";
         return `<span class="num">${esc(r) || "—"}</span>${now ? '<span class="now-tag" title="Today falls within When">Today</span>' : ""}`;
       },
-      editHtml: (P, e) => `<span class="flabel">${P.label}</span><div class="when-grid"><span class="when-l">Dates</span><div class="drange"><input id="ed-${P.key}-s" type="date" aria-label="${P.label} start date" value="${esc(e?.[P.start] || "")}"><input id="ed-${P.key}-e" type="date" aria-label="${P.label} end date" value="${esc(e?.[P.end] || "")}"></div><span class="when-l">Times</span><div class="drange"><select id="ed-${P.key}-ts" aria-label="${P.label} start time">${hourOpts(e?.[P.tStart] || "", "Start time")}</select><select id="ed-${P.key}-te" aria-label="${P.label} end time">${hourOpts(e?.[P.tEnd] || "", "End time")}</select></div></div><div class="pub-hint">One date or one time on its own is fine. Two make a range.</div>`,
-      read: (P, out) => {
+      // When, from narrowest to broadest: exact time → time block → dates → week (W1…) → quarter. Broader ones fill in by themselves.
+      editHtml: (P, e) => { const qs = whenQOpts(e), wq = (e && e.quarter) || whenAutoQ(e?.[P.start] || e?.[P.end] || ""); return `<span class="flabel">${P.label}</span><div class="when-grid">
+        <span class="when-l">Exact time</span><div class="drange"><select id="ed-${P.key}-ts" aria-label="${P.label} start time">${hourOpts(e?.[P.tStart] || "", "Start time")}</select><select id="ed-${P.key}-te" aria-label="${P.label} end time">${hourOpts(e?.[P.tEnd] || "", "End time")}</select></div>
+        <span class="when-l">Time block</span><div><select id="ed-${P.key}-blk" aria-label="Time block"><option value="">No time block</option>${SLOTS.map(x => `<option value="${x.k}"${(e && e.whenSlot) === x.k ? " selected" : ""}>${x.label}</option>`).join("")}</select></div>
+        <span class="when-l">Dates</span><div class="drange"><input id="ed-${P.key}-s" type="date" aria-label="${P.label} start date" value="${esc(e?.[P.start] || "")}"><input id="ed-${P.key}-e" type="date" aria-label="${P.label} end date" value="${esc(e?.[P.end] || "")}"></div>
+        <span class="when-l">Week</span><div><select id="ed-${P.key}-wk" aria-label="Week">${whenWeekOpts(wq, (e && e.week) || whenAutoW(e?.[P.start] || e?.[P.end] || ""))}</select></div>
+        <span class="when-l">Quarter</span><div><select id="ed-${P.key}-q" aria-label="Quarter"><option value="">No quarter</option>${qs.map(q => `<option value="${q.key}"${wq === q.key ? " selected" : ""}>${q.label} · ${esc(fmt(q.start))} – ${esc(fmt(q.end))}</option>`).join("")}</select></div>
+      </div><div class="pub-hint">Fill in the narrowest thing you know. A time picks its time block; dates pick their week and quarter; a week picks its quarter.</div>`; },      read: (P, out) => {
         const s = $("ed-" + P.key + "-s").value, en = $("ed-" + P.key + "-e").value;
         const ts = $("ed-" + P.key + "-ts") ? $("ed-" + P.key + "-ts").value : "", te = $("ed-" + P.key + "-te") ? $("ed-" + P.key + "-te").value : "";
         if (s && en && en < s) return "The end date in When is before the start date.";
         if (ts && te && te < ts && (!en || en === s)) return "The end time in When is before the start time.";
         out[P.start] = s; out[P.end] = en; if (P.tStart) { out[P.tStart] = ts; out[P.tEnd] = te; }
+        const blk = $("ed-" + P.key + "-blk"), wk = $("ed-" + P.key + "-wk"), q = $("ed-" + P.key + "-q");
+        if (blk) out.whenSlot = blk.value; if (wk) out.week = wk.value; if (q) out.quarter = q.value;
       },
     },
     image: {
@@ -4721,13 +4729,27 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const savePl = () => store("chevy.planner", { view: pl.view, types: pl.types, sub: pl.sub });
   const savedBlocks = (e) => (Array.isArray(e && e.blocks) ? e.blocks : []).filter(b => b && SLOT[b.slot] && /^\d{4}-\d\d-\d\d$/.test(b.date || ""));
   // Smart placement: an entry whose When has a time goes straight into the matching block(s) on its date(s)
+  // When helpers: quarter choices, week choices (W1 · dates), and the smart fill
+  const whenAutoQ = (d) => { if (!d || typeof qOf !== "function") return ""; const nowQ = qOf(today()), q = qOf(d.slice(0, 10)); return q.s < nowQ.s ? nowQ.key : q.key; };
+  const qByKey = (k) => { const y = Number(String(k).slice(0, 4)), n = Number(String(k).slice(-1)); return y && n ? qList(y)[n - 1] : null; };
+  const whenAutoW = (d) => { if (!d) return ""; const q = qByKey(whenAutoQ(d)); if (!q) return ""; const x = Math.max(dn(d.slice(0, 10)), q.s); return dIso(q.s + Math.floor((x - q.s) / 7) * 7); };
+  const whenQOpts = (e) => { const nowQ = qOf(today()), L = qFrom(nowQ, 8); if (e && e.quarter && !L.some(q => q.key === e.quarter) && qByKey(e.quarter)) L.unshift(qByKey(e.quarter)); return L; };
+  const whenWeekOpts = (qk, cur) => { const q = qByKey(qk); if (!q) return `<option value="">Pick a quarter first</option>`; let h = `<option value="">No week</option>`, i = 1; for (let d = q.s; d <= q.e; d += 7, i++) h += `<option value="${dIso(d)}"${cur === dIso(d) ? " selected" : ""}>W${i} · ${esc(fmt(dIso(d)))} – ${esc(fmt(dIso(Math.min(d + 6, q.e))))}</option>`; return h; };
+  document.addEventListener("change", ev => {
+    const t = ev.target; if (!t || !t.id || !/^ed-focus-(ts|te|s|e|wk|q)$/.test(t.id)) return;
+    const g = (k) => $("ed-focus-" + k), part = t.id.slice(9);
+    if ((part === "ts" || part === "te") && g("blk")) { const sl = slotsForTimes(g("ts").value, g("te").value); if (sl.length) g("blk").value = sl[0]; }
+    if ((part === "s" || part === "e") && g("q") && g("wk")) { const d = g("s").value || g("e").value; if (d) { const qk = whenAutoQ(d); if (![...g("q").options].some(o => o.value === qk)) g("q").insertAdjacentHTML("beforeend", `<option value="${qk}">${qByKey(qk).label}</option>`); g("q").value = qk; g("wk").innerHTML = whenWeekOpts(qk, whenAutoW(d)); } }
+    if (part === "wk" && g("q") && t.value) { const qk = whenAutoQ(t.value); if (qk && g("q").value !== qk) g("q").value = qk; }
+    if (part === "q" && g("wk")) { const keep = g("wk").value; g("wk").innerHTML = whenWeekOpts(t.value, keep); }
+  });
   const slotsForTimes = (ts, te) => {
     if (!ts && !te) return [];
     const a = Number(ts || te), b = ts && te && te > ts ? Number(te) : a + 1;
     return SLOTS.filter(s => Number(s.k) < b && Number(s.k) + 3 > a).map(s => s.k);
   };
   const whenBlocks = (e) => {
-    const slots = slotsForTimes(e && e.timeStart, e && e.timeEnd); if (!slots.length) return [];
+    let slots = slotsForTimes(e && e.timeStart, e && e.timeEnd); if (!slots.length && e && SLOT[e.whenSlot]) slots = [e.whenSlot]; if (!slots.length) return [];
     const s = e.focusStart || e.focusEnd; if (!s) return [];
     const en = e.focusEnd || e.focusStart, a = dn(s), z = Math.min(dn(en < s ? s : en), a + 62), out = [];
     for (let d = a; d <= z; d++) slots.forEach(k => out.push({ date: dIso(d), slot: k, auto: true }));
