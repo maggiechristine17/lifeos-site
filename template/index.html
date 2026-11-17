@@ -163,6 +163,10 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-relist { margin: 4px 0 10px; padding-left: 18px; display: grid; gap: 3px; max-height: 260px; overflow: auto; }
 .pil-relist code { background: var(--bg); padding: 0 4px; border-radius: 4px; } .pil-relist code.new { color: var(--accent); font-weight: 700; }
 .pil-rea { font-size: 11.5px; color: var(--muted); }
+.btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.cp-pm { margin: 8px 0; }
+.cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
+.cp-in { min-width: 90px; } .cp-chk { width: 18px; height: 18px; }
 .cp-manage { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; gap: 8px; }
 .cp-h { font-weight: 700; font-size: 13px; }
 .cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -2105,7 +2109,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Public website mode: the same page, fed with a snapshot of the entries marked "Show on website", read-only
   const PUBLIC = window.LIFEOS_PUBLIC && typeof window.LIFEOS_PUBLIC === "object" ? window.LIFEOS_PUBLIC : null;
   if (PUBLIC) { document.documentElement.classList.add("is-public"); document.body.classList.add("easy-off"); }
-  let siteAdd = recall("chevy.siteAdd") === true, siteTitle = recall("chevy.siteTitle") || "";
+  let siteAdd = recall("chevy.siteAdd") !== false, /* default ON: everything shows on the website unless I turn it off */ siteTitle = recall("chevy.siteTitle") || "";
 
   // ---------- Dates ----------
   const pad = (n) => String(n).padStart(2, "0");
@@ -2195,8 +2199,56 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function cpChange(key, list, msg) {
     CPROPS = { ...CPROPS, [key]: list }; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {}
     if (!PUBLIC && db && !local) db.doc("settings/customProps").set({ props: CPROPS, updatedAt: new Date().toISOString() }).catch(() => notice("Couldn't save the property."));
-    applyCP(); rebuildView(key, true); if (msg) notice(msg);
+    applyCP(); if (views[key]) rebuildView(key, true); else { const f = CP_PAGEDB[key]; if (f) f.render(); } if (msg) notice(msg);
   }
+  // Page databases (Inventory, Meals, and any database added later): same custom properties, shown in their own tables/dialogs.
+  // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
+  const CP_PAGEDB = {};
+  const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
+  const cpOpenMgr = {};
+  // The "Your properties" box for a page database
+  function cpMgrHtml(k, label) {
+    if (PUBLIC) return "";
+    const defs = CPROPS[k] || [], ty = (t) => (CP_TYPES.find(x => x[0] === t) || ["", t])[1], ed = cpOpenMgr[k + ":edit"], arm = cpOpenMgr[k + ":arm"];
+    return `<section class="panel cp-manage cp-pm" data-cpdb="${k}"><div class="panel-head"><span class="panel-name">Your properties for ${esc(label)}</span><button class="x" type="button" data-cpmgrx aria-label="Close">×</button></div>
+      ${defs.length ? `<ul class="cp-list">${defs.map(d => ed === d.key ? `<li class="cp-row ed"><input type="text" data-cpname value="${esc(d.label)}" maxlength="40" aria-label="Property name"><select data-cptype aria-label="Type">${CP_TYPES.map(([t, l]) => `<option value="${t}"${t === d.ptype ? " selected" : ""}>${l}</option>`).join("")}</select><input type="text" data-cpopts value="${esc((d.options || []).join(", "))}" placeholder="Options, comma separated" aria-label="Options"><button type="button" class="btn small primary" data-cpsave="${d.key}">Save</button><button type="button" class="btn small" data-cpcancel>Cancel</button></li>` : `<li class="cp-row"><span class="cp-nm">${esc(d.label)}</span><span class="pa-type">${esc(ty(d.ptype))}</span>${(d.options || []).length ? `<span class="cp-opts">${esc(d.options.join(", "))}</span>` : ""}<button type="button" class="btn small" data-cpedit="${d.key}">✏️ Edit</button><button type="button" class="btn small${arm === d.key ? " danger" : ""}" data-cpdel="${d.key}">${arm === d.key ? "Sure? Delete" : "🗑 Delete"}</button></li>`).join("")}</ul>` : '<p class="pub-hint">No properties of your own yet.</p>'}
+      <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([t, l]) => `<option value="${t}">${l}</option>`).join("")}</select><input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div></section>`;
+  }
+  // One editable control for a custom property, inline in a table cell or dialog
+  function cpInline(P, rec, k) {
+    const v = rec ? rec[P.field] : undefined, at = `data-cpi="${k}|${esc(rec.id)}|${P.key}" aria-label="${esc(P.label)}"`;
+    if (PUBLIC) return K.cprop.cell(rec, P);
+    switch (P.ptype) {
+      case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${P.ptype === "currency" ? "$" : P.ptype === "percent" ? "%" : "#"}">`;
+      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      case "check": return `<input type="checkbox" class="cp-chk" ${at}${v ? " checked" : ""}>`;
+      case "select": return `<select class="db-inline cp-in" ${at}><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+      case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="cp-multi">${(P.options || []).map(o => `<button type="button" class="chip" data-cpim="${k}|${esc(rec.id)}|${P.key}" data-val="${esc(o)}" aria-pressed="${on.includes(o)}">${esc(o)}</button>`).join("")}</span>`; }
+      case "rating": return `<span class="cp-rate">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpir="${k}|${esc(rec.id)}|${P.key}" data-n="${n}" aria-label="${n} stars" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</span>`;
+      default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+    }
+  }
+  document.addEventListener("click", e => { const b = e.target.closest("[data-cpmgr]"); if (!b) return; const k = b.dataset.cpmgr; cpOpenMgr[k] = true; if (b.hasAttribute("data-cpclose") && k === "meals") { ml.open = null; $("mlOverlay").hidden = true; } CP_PAGEDB[k].render(); setTimeout(() => { const i = document.querySelector(`[data-cpdb="${k}"] [data-cpnewname]`); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); });
+  const cpSet = async (k, id, key, val) => { const D = CP_PAGEDB[k]; if (!D) return; const rec = D.list().find(x => x.id === id); if (!rec) return; await D.save({ ...rec, [key]: val, updatedAt: new Date().toISOString() }); };
+  document.addEventListener("change", async e => {
+    const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i) return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
+    const val = P.ptype === "check" ? i.checked : ["number", "currency", "percent"].includes(P.ptype) ? (i.value === "" ? "" : Number(i.value)) : i.value.trim();
+    await cpSet(k, id, key, val);
+  });
+  document.addEventListener("click", async e => {
+    const m = e.target.closest("[data-cpim]"); if (m) { const [k, id, key] = m.dataset.cpim.split("|"), rec = CP_PAGEDB[k] && CP_PAGEDB[k].list().find(x => x.id === id); if (!rec) return; const cur = Array.isArray(rec[key]) ? rec[key] : [], v = m.dataset.val; await cpSet(k, id, key, cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v]); CP_PAGEDB[k].render(); return; }
+    const rt = e.target.closest("[data-cpir]"); if (rt) { const [k, id, key] = rt.dataset.cpir.split("|"), rec = CP_PAGEDB[k] && CP_PAGEDB[k].list().find(x => x.id === id); if (!rec) return; const n = Number(rt.dataset.n); await cpSet(k, id, key, Number(rec[key]) === n ? 0 : n); CP_PAGEDB[k].render(); return; }
+    const box = e.target.closest("[data-cpdb]"); if (!box) return; const k = box.dataset.cpdb, D = CP_PAGEDB[k], t = e.target, opts = (v) => [...new Set(String(v || "").split(",").map(x => x.trim()).filter(Boolean))].slice(0, 50);
+    if (t.closest("[data-cpmgrx]")) { cpOpenMgr[k] = false; D.render(); return; }
+    if (t.closest("[data-cpadd]")) { const nm = box.querySelector("[data-cpnewname]").value.trim(); if (!nm) { box.querySelector("[data-cpnewname]").focus(); return; } cpChange(k, [...(CPROPS[k] || []), { key: "cp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), label: nm.slice(0, 40), ptype: box.querySelector("[data-cpnewtype]").value, options: opts(box.querySelector("[data-cpnewopts]").value) }], `Added “${nm}” to ${D.label}.`); setTimeout(() => { const n = document.querySelector(`[data-cpdb="${k}"] [data-cpnewname]`); if (n) n.focus(); }, 30); return; }
+    const ed = t.closest("[data-cpedit]"); if (ed) { cpOpenMgr[k + ":edit"] = ed.dataset.cpedit; cpOpenMgr[k + ":arm"] = null; D.render(); return; }
+    if (t.closest("[data-cpcancel]")) { cpOpenMgr[k + ":edit"] = null; D.render(); return; }
+    const sv = t.closest("[data-cpsave]"); if (sv) { const row = sv.closest("li"), nm = row.querySelector("[data-cpname]").value.trim(); if (!nm) return; cpOpenMgr[k + ":edit"] = null; cpChange(k, (CPROPS[k] || []).map(d => d.key === sv.dataset.cpsave ? { ...d, label: nm.slice(0, 40), ptype: row.querySelector("[data-cptype]").value, options: opts(row.querySelector("[data-cpopts]").value) } : d), `Saved “${nm}”.`); return; }
+    const dl = t.closest("[data-cpdel]"); if (dl) { const id = dl.dataset.cpdel; if (cpOpenMgr[k + ":arm"] !== id) { cpOpenMgr[k + ":arm"] = id; D.render(); return; } cpOpenMgr[k + ":arm"] = null; const d = (CPROPS[k] || []).find(x => x.key === id); cpChange(k, (CPROPS[k] || []).filter(x => x.key !== id), `Deleted the property “${d ? d.label : ""}”.`); }
+  });
+  document.addEventListener("change", e => { const s2 = e.target.closest && e.target.closest("[data-cpdb] [data-cpnewtype]"); if (s2) s2.closest("[data-cpdb]").querySelector("[data-cpnewopts]").hidden = !["select", "multi"].includes(s2.value); });
+  document.addEventListener("keydown", e => { if (e.key !== "Enter" || !e.target.closest) return; const b = e.target.closest("[data-cpdb]"); if (b && e.target.matches("[data-cpnewname], [data-cpnewopts]")) { e.preventDefault(); b.querySelector("[data-cpadd]").click(); } if (e.target.matches("[data-cpi]")) e.target.blur(); });
   const sharedProps = (createdField) => [
     { key: "title", kind: "title", label: "Title", field: "title", width: 380 },
     { key: "subtitle", kind: "subtitle", label: "Subtitle", field: "subtitle", width: 260, hidden: true },
@@ -2317,7 +2369,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }
   async function saveEntryRaw(type, e) {
     if (PUBLIC) return;
-    if (siteAdd && e && e.public === undefined && !byId.has(e.id) && !(TYPE[type] && (TYPE[type].archive || TYPE[type].wf))) e = { ...e, public: true };
+    if (siteAdd && e && e.public === undefined && !byId.has(e.id)) e = { ...e, public: true }; // every database, by default
     const { id, ...body } = e;
     if (local || !db) {
       const list = data[type], i = list.findIndex(x => x.id === id);
@@ -2980,6 +3032,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           <button class="btn toggle" type="button" data-r="tCtl" aria-expanded="false">Filter<span class="badge" data-r="badge" hidden></span></button>
           <button class="btn toggle" type="button" data-r="tSort" aria-expanded="false">Sort<span class="badge" data-r="sbadge" hidden></span></button>
           <button class="btn toggle" type="button" data-r="tCols" aria-expanded="false"><span data-r="colsLabel">Show Properties</span></button>
+          ${PUBLIC ? "" : `<button class="btn cp-plus" type="button" data-r="tAddProp" title="Add a property of your own">＋ Add property</button>`}
           <button class="btn primary" type="button" data-r="add">+ New ${T.singular}</button>
         </div>
       </div>
@@ -3123,6 +3176,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select><input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div>
         <p class="pub-hint">Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
     }
+    const openAddProp = () => { const pn = R("colsPanel"); if (pn.hidden) R("tCols").click(); if (pn.hidden) pn.hidden = false; setTimeout(() => { const i = R("cpManage") && R("cpManage").querySelector("[data-cpnewname]"); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); };
+    if (R("tAddProp")) R("tAddProp").addEventListener("click", openAddProp);
+    main.addEventListener("click", e => { if (e.target.closest("[data-thaddprop]")) openAddProp(); });
     if (R("cpManage")) {
       R("cpManage").addEventListener("change", e => { if (e.target.matches("[data-cpnewtype]")) R("cpManage").querySelector("[data-cpnewopts]").hidden = !["select", "multi"].includes(e.target.value); });
       R("cpManage").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("[data-cpnewname], [data-cpnewopts]")) { e.preventDefault(); R("cpManage").querySelector("[data-cpadd]").click(); } });
@@ -7048,6 +7104,7 @@ ${text}
   }
   const roomOpts = (cur) => `<option value=""${cur ? "" : " selected"}>— No room —</option>${rooms.map(r => `<option value="${esc(r)}"${r === cur ? " selected" : ""}>${esc(r)}</option>`).join("")}${cur && !rooms.includes(cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : ""}<option value="__new">+ Add a room…</option>`;
   let invDel = null;
+  CP_PAGEDB.inventory = { label: "Inventory", list: () => inventory, save: (x) => saveItem(x), render: () => renderInventory() };
   function renderInventory() {
     const el = $("invBody"); if (!el) return;
     const ro = !!PUBLIC, q = inv.q.trim().toLowerCase();
@@ -7058,14 +7115,16 @@ ${text}
     el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button></div>`}
       <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
         <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
-        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button>`}</div>
+        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button>`}</div>
+      ${cpOpenMgr.inventory ? cpMgrHtml("inventory", "Inventory") : ""}
       ${!ro && inv.roomsOpen ? `<section class="panel inv-rooms"><div class="panel-head"><span class="panel-name">Rooms</span><button class="x" type="button" data-invrooms aria-label="Close rooms">×</button></div>
         <div class="chips">${rooms.length ? rooms.map(r => `<span class="inv-roomchip"><span>${esc(r)}</span><button type="button" class="tdel" data-invroomx="${esc(r)}" aria-label="Remove room ${esc(r)}">×</button></span>`).join("") : '<span class="pl-none">No rooms yet. Add your first one.</span>'}</div>
         <div class="task-add"><input id="invRoomNew" type="text" placeholder="New room, like Garage" autocomplete="off" aria-label="New room name"><button type="button" class="btn" data-invroomadd>Add room</button></div>
         <div class="hint">Removing a room keeps the items; they just show "No room" until you pick another.</div></section>` : ""}
-      ${list.length ? `<div class="table-wrap"><table class="inv-table"><thead><tr><th><button type="button" data-invsort="title" class="${inv.sort === "title" ? "on" : ""}">Item${inv.sort === "title" ? " ↑" : ""}</button></th><th><button type="button" data-invsort="room" class="${inv.sort === "room" ? "on" : ""}">Room${inv.sort === "room" ? " ↑" : ""}</button></th>${ro ? "" : "<th></th>"}</tr></thead><tbody>
+      ${list.length ? `<div class="table-wrap"><table class="inv-table"><thead><tr><th><button type="button" data-invsort="title" class="${inv.sort === "title" ? "on" : ""}">Item${inv.sort === "title" ? " ↑" : ""}</button></th><th><button type="button" data-invsort="room" class="${inv.sort === "room" ? "on" : ""}">Room${inv.sort === "room" ? " ↑" : ""}</button></th>${cpDefs("inventory").map(P => `<th>${esc(P.label)}</th>`).join("")}${ro ? "" : '<th><button type="button" class="cp-thadd" data-cpmgr="inventory" title="Add a property">＋</button></th>'}</tr></thead><tbody>
         ${list.map(x => `<tr><td data-label="Item">${ro ? esc(x.title || "Untitled") : `<input type="text" class="db-inline inv-name" data-invname="${esc(x.id)}" value="${esc(x.title || "")}" aria-label="Item name">`}</td>
           <td data-label="Room">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room for ${esc(x.title || "item")}">${roomOpts(x.room || "")}</select>`}</td>
+          ${cpDefs("inventory").map(P => `<td data-label="${esc(P.label)}">${cpInline(P, x, "inventory")}</td>`).join("")}
           ${ro ? "" : `<td class="inv-x"><button type="button" class="btn ghost danger" data-invdel="${esc(x.id)}">${invDel === x.id ? "Tap again to delete" : "Delete"}</button></td>`}</tr>`).join("")}
       </tbody></table></div>` : `<div class="empty"><strong>${inventory.length ? "Nothing matches" : "No items yet"}</strong>${inventory.length ? "Try another room or clear the search." : ro ? "" : "Type an item above, pick its room, and press Add."}</div>`}`;
   }
@@ -7128,6 +7187,7 @@ ${text}
     try { await db.doc("settings/mealOptions").set({ ...mealOpts, updatedAt: new Date().toISOString() }); } catch (e) {}
   }
   const mlChip = (v) => `<span class="ml-chip">${esc(v)}</span>`;
+  CP_PAGEDB.meals = { label: "Meals", list: () => meals, save: (x) => saveMeal(x), render: () => { renderMeals(); if (ml.open) renderMealDialog(); } };
   function renderMeals() {
     const el = $("mlBody"); if (!el) return;
     const ro = !!PUBLIC, q = ml.q.trim().toLowerCase();
@@ -7144,7 +7204,8 @@ ${text}
         <input type="search" id="mlQ" class="search" placeholder="Search meals or ingredients…" value="${esc(ml.q)}" aria-label="Search meals">
         <span class="chips" role="group" aria-label="Group by"><span class="ml-gl">Group by</span>${[["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"], ["none", "None"]].map(([k, l]) => `<button type="button" class="chip" data-mlgroup="${k}" aria-pressed="${ml.group === k}">${l}</button>`).join("")}</span>
         <label class="switch"><input type="checkbox" id="mlArch"${ml.archived ? " checked" : ""}> Show archived</label>
-        ${ro ? "" : `<button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+        ${ro ? "" : `<button type="button" class="btn cp-plus" data-cpmgr="meals">＋ Add property</button><button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+      ${cpOpenMgr.meals ? cpMgrHtml("meals", "Meals") : ""}
       <div class="ml-filters">${filt}${Object.values(ml.f).some(a => a && a.length) ? '<button type="button" class="btn ghost" data-mlclear>Clear filters</button>' : ""}</div>
       ${list.length ? groups.map(([g, l]) => `<section class="ml-group"><h2>${esc(g)} <span>${l.length}</span></h2><div class="ml-grid">${l.map(card).join("")}</div></section>`).join("") : `<div class="empty"><strong>${meals.length ? "Nothing matches" : "No meals yet"}</strong>${meals.length ? "Try another search or clear the filters." : ""}</div>`}`;
     if (ml.open) renderMealDialog();
@@ -7161,6 +7222,8 @@ ${text}
       <div class="ml-dbody">
         <div class="ml-titlerow"><button type="button" class="emoji-btn ml-emobtn" data-mlemoji${ro ? " disabled" : ""} aria-label="Change emoji">${esc(m.icon || "🍽️")}</button>${ro ? `<h2 class="ml-h">${esc(m.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-mltext="title" value="${esc(m.title || "")}" placeholder="Meal name" aria-label="Meal name">`}</div>
         ${multi("category", "Category")}${multi("menu", "Menu")}${multi("cuisine", "Cuisine")}${multi("method", "Method")}
+        ${cpDefs("meals").map(P => `<div class="ml-f"><span class="flabel">${esc(P.label)}</span>${cpInline(P, m, "meals")}</div>`).join("")}
+        ${ro ? "" : `<div class="ml-f"><button type="button" class="btn small cp-plus" data-cpmgr="meals" data-cpclose>＋ Add property</button></div>`}
         <div class="ml-f ml-row"><label><span class="flabel">Status</span>${ro ? esc(m.status || "—") : `<select data-mltext="status"><option value="">—</option>${["Not started", "In progress", "Done"].map(s => `<option${m.status === s ? " selected" : ""}>${s}</option>`).join("")}</select>`}</label>
           <label><span class="flabel">Date</span>${ro ? esc(m.date ? fmt(m.date) : "—") : `<input type="date" data-mltext="date" value="${esc(m.date || "")}">`}</label>
           <span><span class="flabel">Added</span>${esc(m.created ? fmt(m.created) : "—")}</span></div>
@@ -7628,6 +7691,12 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
       if (typeof d.addNew === "boolean") { siteAdd = d.addNew; store("chevy.siteAdd", siteAdd); }
       if (typeof d.title === "string") { siteTitle = d.title; store("chevy.siteTitle", siteTitle); }
       applySite();
+      // One time (Nov 17, 2026): turn "Show on website" ON for every existing entry in every database
+      if (d.allPublic !== 1 && !window.__allPubRun) { window.__allPubRun = true; setTimeout(async () => {
+        let n = 0; for (const T of TYPES) for (const e of (data[T.key] || []).slice()) { if (e._pub || e.public === true) continue; try { await saveEntry(T.key, { ...e, public: true }); n++; } catch (er) {} }
+        try { await db.doc("settings/site").set({ ...d, addNew: true, allPublic: 1, updatedAt: new Date().toISOString() }); } catch (er) {}
+        if (n) notice(`Turned on “Show on website” for ${n} entr${n === 1 ? "y" : "ies"}.`);
+      }, 8000); }
     }, () => {});
     db.doc("settings/welcome").onSnapshot(snap => {
       vault.welcome = snap.exists && typeof snap.data().body === "string" ? snap.data().body : null;
@@ -7644,7 +7713,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
         renderAll();
       });
-      if (T === TYPES[0]) db.doc("settings/customProps").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (!d || !d.props) return; const was = JSON.stringify(CPROPS); if (JSON.stringify(d.props) === was) return; const old = CPROPS; CPROPS = d.props; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {} applyCP(); TYPES.forEach(Y => { if (JSON.stringify(old[Y.key] || []) !== JSON.stringify(CPROPS[Y.key] || [])) rebuildView(Y.key); }); }, () => {});
+      if (T === TYPES[0]) db.doc("settings/customProps").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (!d || !d.props) return; const was = JSON.stringify(CPROPS); if (JSON.stringify(d.props) === was) return; const old = CPROPS; CPROPS = d.props; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {} applyCP(); TYPES.forEach(Y => { if (JSON.stringify(old[Y.key] || []) !== JSON.stringify(CPROPS[Y.key] || [])) rebuildView(Y.key); }); Object.values(CP_PAGEDB).forEach(D => D.render()); }, () => {});
       db.doc(`settings/board_${T.key}`).onSnapshot(snap => { if (snap.exists) views[T.key].applyBoard(snap.data()); }, () => {});
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
