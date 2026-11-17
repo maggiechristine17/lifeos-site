@@ -502,6 +502,10 @@ td .lchips { flex-wrap: nowrap; overflow: hidden; }
 .panel .date-btn, td .date-btn, .wf-when .date-btn, .gm-sec .date-btn { padding: 3px 8px; font-size: 12.5px; }
 .when-hero .date-btn { font-size: 15px; padding: 9px 10px; }
 .prop-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.prop-bar .pb-h { flex-basis: 100%; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); margin-top: 4px; }
+.prop-bar .pb-h:not(:first-child) { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 6px; }
+.prop-bar .pb-h span { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 6px; }
+.prop-bar .pb-none { font-size: 13px; color: var(--muted); align-self: center; }
 .prop-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 4px 10px 5px; cursor: pointer; max-width: 230px; text-align: left; }
 .prop-btn:hover { border-color: var(--panel-line); }
 .prop-btn.on { border-color: var(--accent); background: var(--accent-soft); }
@@ -4144,9 +4148,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   });
   function renderPropBar() {
     const bar = $("propBar"); if (!bar || !editing) return; const T = TYPE[editing.type];
-    bar.innerHTML = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")).map(P => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
+    // Two groups: "Properties" (shared by every entry in the master database) and "Specific properties" (only this section's)
+    const SHARED = new Set([...sharedProps("created").map(P => P.key), "createdTime", "created", ...(CPROPS._all || []).map(d => d.key)]);
+    const btnFor = (P) => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
       if (!editing.ro && !PUBLIC && QE_NATIVE(P, editing.type)) return `<label class="prop-btn prop-live" data-proplive="${P.key}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))} <span class="db-caret" aria-hidden="true">▾</span></span>${propLiveControl(P)}</label>`;
-      return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; }).join("");
+      return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; };
+    const all = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")), main = all.filter(P => SHARED.has(P.key)), spec = all.filter(P => !SHARED.has(P.key));
+    bar.innerHTML = `<div class="pb-h">Properties <span>every entry has these</span></div>${main.map(btnFor).join("")}
+      <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${PUBLIC || editing.ro ? "" : `<button type="button" class="prop-btn cp-plus pb-addspec" data-pbaddspec="${T.key}">＋ Add a property for ${esc(T.label)}</button>`}`;
   }
   var propBarTimer = null;
   function refreshPropBar() { clearTimeout(propBarTimer); propBarTimer = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches(".pl-native") && a.closest("#propBar")) { a.addEventListener("blur", () => refreshPropBar(), { once: true }); return; } renderPropBar(); }, 60); }
@@ -4176,6 +4185,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   });
   $("emojiQ").addEventListener("input", e => renderEmojiGrid(e.target.value));
   $("emojiQ").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeEmojiPop(); $("ed-emoji").focus(); } if (e.key === "Enter") { e.preventDefault(); const first = $("emojiGrid").querySelector("[data-pick]"); if (first) first.click(); } });
+  document.addEventListener("click", e => { const b = e.target.closest("[data-pbaddspec]"); if (!b) return; const k = b.dataset.pbaddspec; closeEditor(); location.hash = k === "goals" ? "projects" : k; setTimeout(() => { const v = views[k]; const ab = v && v.main.querySelector('[data-r="tAddProp"]'); if (ab) ab.click(); }, 150); });
   const closeEditor = () => { $("overlay").hidden = true; editing = null; navStack = []; hideSuggest(); };
   $("cancelBtn").addEventListener("click", closeEditor);
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeEditor(); });
