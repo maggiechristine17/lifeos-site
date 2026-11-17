@@ -163,6 +163,21 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-relist { margin: 4px 0 10px; padding-left: 18px; display: grid; gap: 3px; max-height: 260px; overflow: auto; }
 .pil-relist code { background: var(--bg); padding: 0 4px; border-radius: 4px; } .pil-relist code.new { color: var(--accent); font-weight: 700; }
 .pil-rea { font-size: 11.5px; color: var(--muted); }
+.cp-manage { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; gap: 8px; }
+.cp-h { font-weight: 700; font-size: 13px; }
+.cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cp-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.cp-nm { font-weight: 600; } .cp-opts { font-size: 12px; color: var(--muted); flex: 1 1 120px; }
+.cp-row input, .cp-row select, .cp-add input, .cp-add select { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.cp-row.ed input[data-cpopts], .cp-add input[data-cpnewopts] { flex: 1 1 220px; }
+.cp-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cp-add input[data-cpnewname] { flex: 1 1 160px; }
+.btn.small { font-size: 12px; padding: 3px 9px; }
+.btn.danger { border-color: #ef6b6b; color: #ef6b6b; }
+.cp-pill { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border: 1px solid var(--line); }
+.cp-link { color: var(--accent); } .cp-yes { color: var(--accent); font-weight: 800; } .cp-stars { color: #f2c94c; letter-spacing: 1px; }
+.cp-multi { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-rate { display: flex; gap: 2px; } .cp-rate button { border: 0; background: none; font-size: 22px; color: var(--line); cursor: pointer; padding: 0 2px; } .cp-rate button[aria-pressed="true"] { color: #f2c94c; }
 .code-row { display: flex; gap: 6px; align-items: center; }
 .code-in { font-family: ui-monospace, monospace; }
 .code-in[readonly] { background: transparent; border-style: dashed; color: var(--ink); cursor: default; }
@@ -2168,6 +2183,20 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Entry code shape: Pillar(1–5).Category/area(2 digits)[.Project 001 | Goal G01 | Routine R01][.Resource 001]
   const codeParse = (c) => { const m = /^([1-5])\.(\d{2})(?:\.(\d{3}|G\d{2}|R\d{2}))?(?:\.(\d{3}))?$/.exec(String(c || "").trim()); return m ? { prefix: `${m[1]}.${m[2]}`, item: m[3] || "", res: m[4] || "" } : null; };
   const pilNameOf = (prefix) => { try { const n = JSON.parse(localStorage.getItem("chevy.pillars") || "{}"); return (n && n[prefix]) || ""; } catch (e) { return ""; } };
+  const CP_TYPES = [["text", "Text"], ["number", "Number"], ["select", "Select"], ["multi", "Multi-select"], ["date", "Date"], ["check", "Checkbox"], ["url", "URL"], ["email", "Email"], ["phone", "Phone"], ["currency", "Currency ($)"], ["percent", "Percent"], ["rating", "Rating (1–5 ★)"]];
+  let CPROPS = (() => { try { return JSON.parse(localStorage.getItem("chevy.customProps") || "{}") || {}; } catch (e) { return {}; } })();
+  function applyCP() { TYPES.forEach(T => { T.props = T.props.filter(P => P.kind !== "cprop").concat((CPROPS[T.key] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [], width: 170 }))); }); }
+  // Rebuild one database's view in place so new or removed properties show at once
+  function rebuildView(key, reopen) {
+    const old = views[key]; if (!old) return; const wasHidden = old.main.hidden;
+    const nv = makeView(TYPE[key]); old.main.replaceWith(nv.main); views[key] = nv; nv.main.hidden = wasHidden;
+    renderAll(); if (reopen) setTimeout(() => { const b = nv.main.querySelector('[data-r="tCols"]'); if (b && b.getAttribute("aria-expanded") !== "true") b.click(); const pn = nv.main.querySelector('[data-r="colsPanel"]'); if (pn && pn.hidden) pn.hidden = false; }, 0);
+  }
+  function cpChange(key, list, msg) {
+    CPROPS = { ...CPROPS, [key]: list }; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {}
+    if (!PUBLIC && db && !local) db.doc("settings/customProps").set({ props: CPROPS, updatedAt: new Date().toISOString() }).catch(() => notice("Couldn't save the property."));
+    applyCP(); rebuildView(key, true); if (msg) notice(msg);
+  }
   const sharedProps = (createdField) => [
     { key: "title", kind: "title", label: "Title", field: "title", width: 380 },
     { key: "subtitle", kind: "subtitle", label: "Subtitle", field: "subtitle", width: 260, hidden: true },
@@ -2679,6 +2708,56 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       editHtml: (P, e) => `<label for="ed-${P.key}">${P.label}</label><div class="code-row"><input id="ed-${P.key}" class="code-in" type="text" autocomplete="off" placeholder="No code yet" value="${esc(e?.code || "")}" maxlength="20" readonly><button type="button" class="btn small" data-codeedit>✏️ Edit</button></div><div class="pub-hint">Pillar.Category or area.Project (001), Goal (G01) or Routine (R01).Resource (001). See Pillars → How this works.</div>`,
       read: (P, out) => { const v = $("ed-" + P.key).value.trim().toUpperCase(); out.code = v; const pr = codeParse(v); out.codeArea = pr ? (pilNameOf(pr.prefix) || out.codeArea || "") : ""; },
     },
+    // Custom properties I add myself (Notion-style). P.ptype picks the kind: text, number, select, multi, date, check, url, email, phone, currency, percent, rating
+    cprop: {
+      raw: (e, P) => e ? e[P.field] : undefined,
+      show: (e, P) => { const v = e ? e[P.field] : undefined; switch (P.ptype) {
+        case "check": return v ? "Yes" : "";
+        case "multi": return Array.isArray(v) ? v.join(", ") : "";
+        case "date": return v ? fmt(String(v).slice(0, 10)) : "";
+        case "currency": return v === "" || v == null || isNaN(v) ? "" : "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        case "percent": return v === "" || v == null || isNaN(v) ? "" : Number(v) + "%";
+        case "rating": return v ? "★".repeat(Number(v)) : "";
+        case "number": return v === "" || v == null || isNaN(v) ? "" : Number(v).toLocaleString("en-US");
+        default: return v == null ? "" : String(v); } },
+      empty: () => ({ q: "" }),
+      active: f => !!f.q.trim(),
+      test: (e, P, f) => !f.q.trim() || K.cprop.show(e, P).toLowerCase().includes(f.q.trim().toLowerCase()),
+      sortVal: (e, P) => { const v = e ? e[P.field] : undefined; if (["number", "currency", "percent", "rating"].includes(P.ptype)) return v === "" || v == null || isNaN(v) ? "" : Number(v); if (P.ptype === "check") return v ? 0 : ""; if (P.ptype === "select") { const i = (P.options || []).indexOf(v); return i < 0 ? "" : i; } return K.cprop.show(e, P).toLowerCase(); },
+      search: (e, P) => K.cprop.show(e, P),
+      filterHtml: (P, id) => `<label for="${id}">${esc(P.label)}</label><input id="${id}" type="text" placeholder="Contains…" data-part="q">`,
+      sync: (box, f) => { const i = box.querySelector('[data-part="q"]'); if (document.activeElement !== i) i.value = f.q; },
+      cell: (e, P) => { const v = e ? e[P.field] : undefined, sh = K.cprop.show(e, P); if (!sh) return '<span style="color:var(--muted)">—</span>';
+        if (P.ptype === "url") { const u = /^https?:\/\//i.test(v) ? v : "https://" + v; return `<a href="${esc(u)}" target="_blank" rel="noopener" class="cp-link">${esc(sh)}</a>`; }
+        if (P.ptype === "email") return `<a href="mailto:${esc(v)}" class="cp-link">${esc(sh)}</a>`;
+        if (P.ptype === "phone") return `<a href="tel:${esc(String(v).replace(/[^\d+]/g, ""))}" class="cp-link">${esc(sh)}</a>`;
+        if (P.ptype === "select") return `<span class="cp-pill">${esc(sh)}</span>`;
+        if (P.ptype === "multi") return v.map(x => `<span class="cp-pill">${esc(x)}</span>`).join(" ");
+        if (P.ptype === "check") return '<span class="cp-yes">✓</span>';
+        if (P.ptype === "rating") return `<span class="cp-stars">${esc(sh)}</span>`;
+        return `<span class="t-sub">${esc(sh)}</span>`; },
+      editHtml: (P, e) => { const v = e ? e[P.field] : undefined, id = "ed-" + P.key, L = `<label for="${id}">${esc(P.label)}</label>`;
+        switch (P.ptype) {
+          case "number": case "currency": case "percent": return `${L}<input id="${id}" type="number" step="any" inputmode="decimal" value="${v == null ? "" : esc(v)}" placeholder="${P.ptype === "currency" ? "0.00" : P.ptype === "percent" ? "0–100" : "Number"}">`;
+          case "url": return `${L}<input id="${id}" type="url" value="${esc(v || "")}" placeholder="https://…">`;
+          case "email": return `${L}<input id="${id}" type="email" value="${esc(v || "")}" placeholder="name@example.com">`;
+          case "phone": return `${L}<input id="${id}" type="tel" value="${esc(v || "")}" placeholder="(555) 555-5555">`;
+          case "date": return `${L}<input id="${id}" type="date" value="${esc(v || "")}">`;
+          case "check": return `<label class="pub-toggle" for="${id}"><input type="checkbox" id="${id}"${v ? " checked" : ""}><span class="pub-switch" aria-hidden="true"></span><span>${esc(P.label)}</span></label>`;
+          case "select": return `${L}<select id="${id}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+          case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="flabel">${esc(P.label)}</span><div class="cp-multi" id="${id}">${(P.options || []).map(o => `<button type="button" class="chip" data-cpm aria-pressed="${on.includes(o)}" data-val="${esc(o)}">${esc(o)}</button>`).join("") || '<span class="pub-hint">No options yet. Add some in Show Properties → Your properties.</span>'}</div>`; }
+          case "rating": return `<span class="flabel">${esc(P.label)}</span><div class="cp-rate" id="${id}" data-v="${Number(v) || 0}">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpr="${n}" aria-label="${n} star${n > 1 ? "s" : ""}" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</div>`;
+          default: return `${L}<input id="${id}" type="text" value="${esc(v || "")}" placeholder="Empty">`;
+        } },
+      read: (P, out) => { const el = $("ed-" + P.key); if (!el) return;
+        switch (P.ptype) {
+          case "number": case "currency": case "percent": out[P.field] = el.value === "" ? "" : Number(el.value); break;
+          case "check": out[P.field] = el.checked; break;
+          case "multi": out[P.field] = [...el.querySelectorAll('[data-cpm][aria-pressed="true"]')].map(b => b.dataset.val); break;
+          case "rating": out[P.field] = Number(el.dataset.v) || 0; break;
+          default: out[P.field] = el.value.trim();
+        } },
+    },
     text: {
       empty: () => ({ q: "" }),
       active: f => !!f.q.trim(),
@@ -2924,6 +3003,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         <div class="col-list" data-r="colList"></div>
         <div class="area-colors in-props" data-r="areaColors" hidden></div>
         <div><button class="btn ghost" type="button" data-r="resetCols" style="padding:2px 6px;font-size:12px">Reset columns</button></div>
+        ${PUBLIC ? "" : `<div class="cp-manage" data-r="cpManage"></div>`}
       </section>
       <div class="gallery" data-r="gallery" hidden></div>
       <div class="timeline" data-r="timeline" hidden></div>
@@ -2959,7 +3039,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const DEF_SHOW = ["title", "focus", "links", "status"];
     const colProps = T.props.filter(P => P.key !== "subtitle");
     const SHOW = T.archive ? ["title", "origin", ...DEF_SHOW.filter(k => k !== "title")] : DEF_SHOW; // Archive always shows "Came from"
-    const defaults = [...SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !SHOW.includes(P.key))].map(P => ({ key: P.key, visible: SHOW.includes(P.key), width: P.width }));
+    const defaults = [...SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !SHOW.includes(P.key))].map(P => ({ key: P.key, visible: SHOW.includes(P.key) || P.kind === "cprop", width: P.width }));
     const normalize = (list) => {
       const out = [];
       (Array.isArray(list) ? list : []).forEach(c => { if (c && PROP[c.key] && c.key !== "subtitle" && !out.some(o => o.key === c.key)) out.push({ key: c.key, visible: c.visible !== false, width: Math.max(90, Number(c.width) || PROP[c.key].width) }); });
@@ -3033,8 +3113,30 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const sb = R("sbadge"), n2 = ui.sorts.length; sb.hidden = n2 < 2; sb.textContent = n2; sb.setAttribute("aria-label", n2 + " sorts");
     }
 
+    // Your properties: add, edit or delete custom properties for this database (Notion-style)
+    let cpArm = null, cpEdit = null;
+    function renderCpManage() {
+      const box = R("cpManage"); if (!box) return;
+      const defs = CPROPS[T.key] || [], ty = (k) => (CP_TYPES.find(x => x[0] === k) || ["", k])[1];
+      box.innerHTML = `<div class="cp-h">Your properties</div>
+        ${defs.length ? `<ul class="cp-list">${defs.map(d => cpEdit === d.key ? `<li class="cp-row ed"><input type="text" data-cpname value="${esc(d.label)}" maxlength="40" aria-label="Property name"><select data-cptype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}"${k === d.ptype ? " selected" : ""}>${l}</option>`).join("")}</select><input type="text" data-cpopts value="${esc((d.options || []).join(", "))}" placeholder="Options, comma separated (for Select / Multi-select)" aria-label="Options"><button type="button" class="btn small primary" data-cpsave="${d.key}">Save</button><button type="button" class="btn small" data-cpcancel>Cancel</button></li>` : `<li class="cp-row"><span class="cp-nm">${esc(d.label)}</span><span class="pa-type">${esc(ty(d.ptype))}</span>${(d.options || []).length ? `<span class="cp-opts">${esc(d.options.join(", "))}</span>` : ""}<button type="button" class="btn small" data-cpedit="${d.key}">✏️ Edit</button><button type="button" class="btn small${cpArm === d.key ? " danger" : ""}" data-cpdel="${d.key}">${cpArm === d.key ? "Sure? Delete" : "🗑 Delete"}</button></li>`).join("")}</ul>` : '<p class="pub-hint">No properties of your own yet.</p>'}
+        <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select><input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div>
+        <p class="pub-hint">Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
+    }
+    if (R("cpManage")) {
+      R("cpManage").addEventListener("change", e => { if (e.target.matches("[data-cpnewtype]")) R("cpManage").querySelector("[data-cpnewopts]").hidden = !["select", "multi"].includes(e.target.value); });
+      R("cpManage").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("[data-cpnewname], [data-cpnewopts]")) { e.preventDefault(); R("cpManage").querySelector("[data-cpadd]").click(); } });
+      R("cpManage").addEventListener("click", e => {
+        const t = e.target, box = R("cpManage"), opts = (v) => [...new Set(String(v || "").split(",").map(x => x.trim()).filter(Boolean))].slice(0, 50);
+        if (t.closest("[data-cpadd]")) { const nm = box.querySelector("[data-cpnewname]").value.trim(); if (!nm) { box.querySelector("[data-cpnewname]").focus(); return; } const pt = box.querySelector("[data-cpnewtype]").value; cpChange(T.key, [...(CPROPS[T.key] || []), { key: "cp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), label: nm.slice(0, 40), ptype: pt, options: opts(box.querySelector("[data-cpnewopts]").value) }], `Added “${nm}” to ${T.label}.`); return; }
+        const ed = t.closest("[data-cpedit]"); if (ed) { cpEdit = ed.dataset.cpedit; cpArm = null; renderCpManage(); return; }
+        if (t.closest("[data-cpcancel]")) { cpEdit = null; renderCpManage(); return; }
+        const sv = t.closest("[data-cpsave]"); if (sv) { const row = sv.closest("li"), nm = row.querySelector("[data-cpname]").value.trim(); if (!nm) return; cpChange(T.key, (CPROPS[T.key] || []).map(d => d.key === sv.dataset.cpsave ? { ...d, label: nm.slice(0, 40), ptype: row.querySelector("[data-cptype]").value, options: opts(row.querySelector("[data-cpopts]").value) } : d), `Saved “${nm}”.`); return; }
+        const dl = t.closest("[data-cpdel]"); if (dl) { const k = dl.dataset.cpdel; if (cpArm !== k) { cpArm = k; renderCpManage(); return; } const d = (CPROPS[T.key] || []).find(x => x.key === k); cpChange(T.key, (CPROPS[T.key] || []).filter(x => x.key !== k), `Deleted the property “${d ? d.label : ""}”.`); }
+      });
+    }
     // Columns panel
-    function renderColPanel() {
+    function renderColPanel() { renderCpManage();
       const list = cols[T.key], vis = list.filter(c => c.visible).length;
       R("colList").innerHTML = list.map((c, i) => `<button type="button" class="col-chip" data-colchip="${c.key}" aria-pressed="${c.visible}" title="${c.visible ? "Shown" : "Hidden"} · tap to ${c.visible ? "hide" : "show"}, hold and drag to move"><span class="col-grip" aria-hidden="true">⠿</span><span class="col-box" aria-hidden="true">${c.visible ? "✓" : ""}</span>${PROP[c.key].label}</button>`).join("");
     }
@@ -3952,6 +4054,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       case "color": { const b = box.querySelector('[data-colorpick][aria-pressed="true"]'); const c = b && b.dataset.colorpick; if (c) return c[0].toUpperCase() + c.slice(1); const ex = editing && data[editing.type].find(x => x.id === editing.id); const ac = ex ? areaColorFor(ex) : ""; return ac ? ac[0].toUpperCase() + ac.slice(1) + " (area)" : "White"; }
       case "date": { const r = box.querySelector(".ro-date"), x = r ? r.dataset.v : v("input"); return x ? fmt(x) : "—"; }
       case "status": return v("select") || "Not started";
+      case "cprop": { if (P.ptype === "check") { const c = box.querySelector("input"); return c && c.checked ? "Yes" : "No"; } if (P.ptype === "multi") { const on = [...box.querySelectorAll('[aria-pressed="true"]')].map(b => b.dataset.val); return on.join(", ") || "—"; } if (P.ptype === "rating") { const r2 = box.querySelector(".cp-rate"); const n = r2 ? Number(r2.dataset.v) : 0; return n ? "★".repeat(n) : "—"; } const x = box.querySelector("input, select"); return x && x.value ? (P.ptype === "date" ? fmt(x.value) : x.value) : "—"; }
       case "origin": { const s2 = box.querySelector("select"); return s2 && s2.value ? s2.options[s2.selectedIndex].text : "Not set"; }
       case "daterange": { const ins = box.querySelectorAll("input"), ss = box.querySelectorAll("select"); return whenText({ focusStart: ins[0] && ins[0].value, focusEnd: ins[1] && ins[1].value, timeStart: ss[0] && ss[0].value, timeEnd: ss[1] && ss[1].value }) || "None"; }
       case "tasks": { const n = draft.tasks.length, d = draft.tasks.filter(t => t.done).length; return n ? d + "/" + n + " done" : "None"; }
@@ -6135,6 +6238,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${P.changes.length ? `<button type="button" class="btn primary" data-pilapply>Apply ${ch.length ? ch.length + " change" + (ch.length === 1 ? "" : "s") : "(remember area names)"}</button>` : ""}`;
   }
   $("pilRecodeBtn").addEventListener("click", pilRecodeShow);
+  document.addEventListener("click", e => { const m = e.target.closest("[data-cpm]"); if (m) { m.setAttribute("aria-pressed", String(m.getAttribute("aria-pressed") !== "true")); return; } const rt = e.target.closest("[data-cpr]"); if (rt) { const box = rt.parentNode, n = Number(rt.dataset.cpr), v = Number(box.dataset.v) === n ? 0 : n; box.dataset.v = v; box.querySelectorAll("[data-cpr]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.cpr) <= v))); } });
   document.addEventListener("click", e => { const b = e.target.closest("[data-codeedit]"); if (!b) return; const i = b.parentNode.querySelector(".code-in"); if (!i) return; if (i.readOnly) { i.readOnly = false; i.focus(); i.select(); b.textContent = "🔒 Lock"; } else { i.readOnly = true; b.textContent = "✏️ Edit"; } });
   $("pilPop").addEventListener("click", async e => {
     if (e.target.closest("[data-pilreshut]")) { $("pilRe").hidden = true; return; }
@@ -7379,6 +7483,8 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   applyMode();
+  // ----- Custom properties (Notion-style): defined per database, saved in settings/customProps -----
+  applyCP();
   TYPES.forEach(T => { views[T.key] = makeView(T); });
   mountProjectSections();
   let lastView = null, plKeepSub = false;
@@ -7538,6 +7644,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
         renderAll();
       });
+      if (T === TYPES[0]) db.doc("settings/customProps").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (!d || !d.props) return; const was = JSON.stringify(CPROPS); if (JSON.stringify(d.props) === was) return; const old = CPROPS; CPROPS = d.props; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {} applyCP(); TYPES.forEach(Y => { if (JSON.stringify(old[Y.key] || []) !== JSON.stringify(CPROPS[Y.key] || [])) rebuildView(Y.key); }); }, () => {});
       db.doc(`settings/board_${T.key}`).onSnapshot(snap => { if (snap.exists) views[T.key].applyBoard(snap.data()); }, () => {});
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
