@@ -1938,7 +1938,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
@@ -1951,6 +1951,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <div class="hint">Tap a property to show or hide its column. Hold and drag one to change the order, left to right.</div>
     <div class="col-list" id="dbShowList"></div>
   </section>
+  <div id="dbCpMgr"></div>
   <div class="db-bar" id="dbBar"></div>
   <div id="dbBody"></div>
   <div class="ghint">Click a title to open the note. Click any other property to change it right there. Drag a column header to move it, or drag its right edge to resize it. <button type="button" class="btn ghost db-clear" id="dbResetCols">Reset columns</button></div>
@@ -2189,23 +2190,25 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const pilNameOf = (prefix) => { try { const n = JSON.parse(localStorage.getItem("chevy.pillars") || "{}"); return (n && n[prefix]) || ""; } catch (e) { return ""; } };
   const CP_TYPES = [["text", "Text"], ["number", "Number"], ["select", "Select"], ["multi", "Multi-select"], ["date", "Date"], ["check", "Checkbox"], ["url", "URL"], ["email", "Email"], ["phone", "Phone"], ["currency", "Currency ($)"], ["percent", "Percent"], ["rating", "Rating (1–5 ★)"]];
   let CPROPS = (() => { try { return JSON.parse(localStorage.getItem("chevy.customProps") || "{}") || {}; } catch (e) { return {}; } })();
-  function applyCP() { TYPES.forEach(T => { T.props = T.props.filter(P => P.kind !== "cprop").concat((CPROPS[T.key] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [], width: 170 }))); }); }
+  function applyCP() { TYPES.forEach(T => { T.props = T.props.filter(P => P.kind !== "cprop").concat([...(CPROPS._all || []), ...(CPROPS[T.key] || [])].map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [], width: 170 }))); }); }
   // Rebuild one database's view in place so new or removed properties show at once
-  function rebuildView(key, reopen) {
+  function rebuildView(key, reopen, quiet) {
     const old = views[key]; if (!old) return; const wasHidden = old.main.hidden;
     const nv = makeView(TYPE[key]); old.main.replaceWith(nv.main); views[key] = nv; nv.main.hidden = wasHidden;
-    renderAll(); if (reopen) setTimeout(() => { const b = nv.main.querySelector('[data-r="tCols"]'); if (b && b.getAttribute("aria-expanded") !== "true") b.click(); const pn = nv.main.querySelector('[data-r="colsPanel"]'); if (pn && pn.hidden) pn.hidden = false; }, 0);
+    if (quiet) return; renderAll(); if (reopen) setTimeout(() => { const b = nv.main.querySelector('[data-r="tCols"]'); if (b && b.getAttribute("aria-expanded") !== "true") b.click(); const pn = nv.main.querySelector('[data-r="colsPanel"]'); if (pn && pn.hidden) pn.hidden = false; }, 0);
   }
   function cpChange(key, list, msg) {
     CPROPS = { ...CPROPS, [key]: list }; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {}
     if (!PUBLIC && db && !local) db.doc("settings/customProps").set({ props: CPROPS, updatedAt: new Date().toISOString() }).catch(() => notice("Couldn't save the property."));
-    applyCP(); if (views[key]) rebuildView(key, true); else { const f = CP_PAGEDB[key]; if (f) f.render(); } if (msg) notice(msg);
+    applyCP(); if (key === "_all") { TYPES.forEach(T => rebuildView(T.key, false, true)); renderAll(); } else if (views[key]) rebuildView(key, true); else { const f = CP_PAGEDB[key]; if (f) f.render(); } if (msg) notice(msg);
   }
   // Page databases (Inventory, Meals, and any database added later): same custom properties, shown in their own tables/dialogs.
   // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
   const CP_PAGEDB = {};
   const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
   const cpOpenMgr = {};
+  // The whole master database (every section together, as seen in Layers)
+  CP_PAGEDB._all = { label: "every entry", list: () => TYPES.flatMap(T => data[T.key] || []), save: (x) => { const T = TYPES.find(Y => (data[Y.key] || []).some(e => e.id === x.id)); return T ? saveEntry(T.key, x) : null; }, render: () => renderDatabase() };
   // The "Your properties" box for a page database
   function cpMgrHtml(k, label) {
     if (PUBLIC) return "";
@@ -3171,10 +3174,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     function renderCpManage() {
       const box = R("cpManage"); if (!box) return;
       const defs = CPROPS[T.key] || [], ty = (k) => (CP_TYPES.find(x => x[0] === k) || ["", k])[1];
-      box.innerHTML = `<div class="cp-h">Your properties</div>
+      const glob = CPROPS._all || [];
+      box.innerHTML = `<div class="cp-h">Your properties for ${esc(T.label)} only</div>
+        ${glob.length ? `<p class="pub-hint">Also on every entry (added in Layers): ${glob.map(d => `<b>${esc(d.label)}</b>`).join(", ")}. Change those in Layers → ＋ Add property.</p>` : ""}
         ${defs.length ? `<ul class="cp-list">${defs.map(d => cpEdit === d.key ? `<li class="cp-row ed"><input type="text" data-cpname value="${esc(d.label)}" maxlength="40" aria-label="Property name"><select data-cptype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}"${k === d.ptype ? " selected" : ""}>${l}</option>`).join("")}</select><input type="text" data-cpopts value="${esc((d.options || []).join(", "))}" placeholder="Options, comma separated (for Select / Multi-select)" aria-label="Options"><button type="button" class="btn small primary" data-cpsave="${d.key}">Save</button><button type="button" class="btn small" data-cpcancel>Cancel</button></li>` : `<li class="cp-row"><span class="cp-nm">${esc(d.label)}</span><span class="pa-type">${esc(ty(d.ptype))}</span>${(d.options || []).length ? `<span class="cp-opts">${esc(d.options.join(", "))}</span>` : ""}<button type="button" class="btn small" data-cpedit="${d.key}">✏️ Edit</button><button type="button" class="btn small${cpArm === d.key ? " danger" : ""}" data-cpdel="${d.key}">${cpArm === d.key ? "Sure? Delete" : "🗑 Delete"}</button></li>`).join("")}</ul>` : '<p class="pub-hint">No properties of your own yet.</p>'}
         <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select><input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div>
-        <p class="pub-hint">Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
+        <p class="pub-hint">A property added here is only for ${esc(T.label)}. To add one to every entry, use ＋ Add property in Layers. Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
     }
     const openAddProp = () => { const pn = R("colsPanel"); if (pn.hidden) R("tCols").click(); if (pn.hidden) pn.hidden = false; setTimeout(() => { const i = R("cpManage") && R("cpManage").querySelector("[data-cpnewname]"); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); };
     if (R("tAddProp")) R("tAddProp").addEventListener("click", openAddProp);
@@ -5734,7 +5739,15 @@ Don't invent appointments or facts that aren't listed.`);
     l.innerHTML = DB_SORT_CHIPS.map(([k, lab]) => sortChipHtml(dbs.sorts, k, lab, "data-dbsort")).join("");
     const b = $("dbSortBadge"); if (b) { b.hidden = !dbs.sorts.length; b.textContent = dbs.sorts.length; }
   }
+  // Properties added in Layers belong to the whole master database, so they become Layers columns too
+  function refreshDbCols() {
+    for (let i = DB_COLS.length - 1; i >= 0; i--) if (DB_COLS[i][0].startsWith("cp_")) { delete DB_COL[DB_COLS[i][0]]; DB_COLS.splice(i, 1); }
+    (CPROPS._all || []).forEach(d => { const c = [d.key, d.label, 170, true]; DB_COLS.push(c); DB_COL[d.key] = c; });
+    dbs.cols = dbNormCols(dbs.cols);
+  }
   function renderDatabase() {
+    refreshDbCols();
+    if ($("dbCpMgr")) $("dbCpMgr").innerHTML = cpOpenMgr._all ? cpMgrHtml("_all", "the whole database (every entry, every section)") : "";
     renderProjRoutines(); renderDbSort();
     if (!$("dbBody") || $("view-database").hidden) return;
     const rtRows = routines.map(r => ({ type: "routine", r, e: { id: r.id, title: r.name || "Untitled routine", emoji: rtEmoji(r), layers: ["7"], created: (r.createdAt || "").slice(0, 10), updatedAt: r.updatedAt || r.createdAt || "" } }));
@@ -5782,6 +5795,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "links") { const ls = linksOf(e.id); return `<td data-label="Links">${ls.length ? `<span class="lchips">${ls.map(y => `<button type="button" class="lchip${lkCls(y)}" data-dbopen="${esc(y.e.id)}" data-dbtype2="${y.type}">${lkIn(y)}</button>`).join("")}</span>` : dash}</td>`; }
       if (k === "tasks") { const ts = taskList(e), d = ts.filter(t => t.done).length; return `<td data-label="Tasks">${ts.length ? `<span class="tprog"><span class="tbar"><i style="width:${Math.round(d / ts.length * 100)}%"></i></span><span class="num">${d}/${ts.length}</span></span>` : dash}</td>`; }
       if (k === "updated") return `<td data-label="Last edited" class="num">${e.updatedAt ? esc(fmt(e.updatedAt.slice(0, 10))) : "—"}</td>`;
+      if (k.startsWith("cp_")) { const P = cpDefs("_all").find(d => d.key === k); return `<td data-label="${esc(DB_COL[k][1])}">${P ? (ro ? K.cprop.cell(e, P) : cpInline(P, e, "_all")) : dash}</td>`; }
       if (k === "created") { const cv = e[T.props.find(P => P.kind === "date").field] || e.created || e.createdTime || ""; return `<td data-label="Created" class="num" title="Set automatically">${cv ? esc(fmt(String(cv).slice(0, 10))) : "—"}</td>`; }
       const inner = k === "layer" ? (layersOf(e).length ? `<span class="layers">${layersOf(e).map(l => `<span class="layer${l === dbs.layer ? " hot" : ""}">${l}</span>`).join("")}</span>` : dash)
         : k === "focus" ? (whenText(e) ? `<span class="num">${esc(whenText(e))}</span>` : dash)
@@ -7713,7 +7727,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
         renderAll();
       });
-      if (T === TYPES[0]) db.doc("settings/customProps").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (!d || !d.props) return; const was = JSON.stringify(CPROPS); if (JSON.stringify(d.props) === was) return; const old = CPROPS; CPROPS = d.props; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {} applyCP(); TYPES.forEach(Y => { if (JSON.stringify(old[Y.key] || []) !== JSON.stringify(CPROPS[Y.key] || [])) rebuildView(Y.key); }); Object.values(CP_PAGEDB).forEach(D => D.render()); }, () => {});
+      if (T === TYPES[0]) db.doc("settings/customProps").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; if (!d || !d.props) return; const was = JSON.stringify(CPROPS); if (JSON.stringify(d.props) === was) return; const old = CPROPS; CPROPS = d.props; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {} applyCP(); const allCh = JSON.stringify(old._all || []) !== JSON.stringify(CPROPS._all || []); TYPES.forEach(Y => { if (allCh || JSON.stringify(old[Y.key] || []) !== JSON.stringify(CPROPS[Y.key] || [])) rebuildView(Y.key, false, true); }); renderAll(); Object.values(CP_PAGEDB).forEach(D => D.render()); }, () => {});
       db.doc(`settings/board_${T.key}`).onSnapshot(snap => { if (snap.exists) views[T.key].applyBoard(snap.data()); }, () => {});
       settingsRefs[T.key] = db.doc(T.settingsDoc);
       settingsRefs[T.key].onSnapshot(snap => {
