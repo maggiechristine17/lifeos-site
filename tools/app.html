@@ -99,6 +99,14 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .pil-relist { margin: 4px 0 10px; padding-left: 18px; display: grid; gap: 3px; max-height: 260px; overflow: auto; }
 .pil-relist code { background: var(--bg); padding: 0 4px; border-radius: 4px; } .pil-relist code.new { color: var(--accent); font-weight: 700; }
 .pil-rea { font-size: 11.5px; color: var(--muted); }
+.btn.ai-btn { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.ai-find { margin: 8px 0; }
+.ai-row { display: flex; gap: 6px; align-items: stretch; }
+.ai-row textarea { flex: 1; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; }
+.mic-btn { font-size: 18px; padding: 4px 12px; } .mic-btn.on { background: #ef6b6b; border-color: #ef6b6b; color: #fff; animation: micpulse 1.2s infinite; }
+@keyframes micpulse { 50% { opacity: .65; } }
+.ai-msg { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.ai-ans { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); font-size: 14px; }
 .btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
@@ -6444,6 +6452,7 @@ Don't invent appointments or facts that aren't listed.`);
     gg.busy = false; gg.status = ""; ggAbort = null; renderGg();
   }
   function ggMic() {
+    if (dictApi && $("ggIn")) { const t = $("ggIn"); micToggle(t, (m) => { gg.input = t.value; const st = document.querySelector("#ggBody .gg-status"); if (st) st.textContent = m; }); return; }
     if (ggRec) { try { ggRec.stop(); } catch (e) {} return; }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { gg.status = "This browser can't listen here. Use your keyboard's 🎤 dictation key in the box instead."; renderGg(); return; }
@@ -6651,6 +6660,7 @@ ${text}
   let bdRec = null;
   const BD_DICTATE = "Use your keyboard's dictation instead: on iPhone or iPad tap the 🎤 on the keyboard; on a Mac press the Fn (🌐) key twice; on Windows press Windows + H; on Android tap the 🎤 on the keyboard.";
   function bdMic() {
+    if (dictApi && $("bdText")) { const t = $("bdText"); micToggle(t, (m, on) => { bd.text = t.value; try { localStorage.setItem("chevy.braindump.draft", bd.text); } catch (e) {} bd.msg = m || (on ? "" : bd.msg); bd.bad = false; bd.listening = on; const mm = document.querySelector("#bdPop .bd-msg"); if (mm) mm.textContent = m; }); return; }
     if (bdRec) { try { bdRec.stop(); } catch (e) {} return; }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { bd.msg = "This browser can't listen here. " + BD_DICTATE; bd.bad = true; renderBd(); const t = $("bdText"); if (t) t.focus(); return; }
@@ -7065,6 +7075,64 @@ ${text}
     try { await db.doc("settings/rooms").set({ rooms, updatedAt: new Date().toISOString() }); } catch (err) { notice("Couldn't save the rooms."); }
   }
   const roomOpts = (cur) => `<option value=""${cur ? "" : " selected"}>— No room —</option>${rooms.map(r => `<option value="${esc(r)}"${r === cur ? " selected" : ""}>${esc(r)}</option>`).join("")}${cur && !rooms.includes(cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : ""}<option value="__new">+ Add a room…</option>`;
+  // ---------- 🎤 Mic that works inside Claude: the artifact's own dictation (falls back to the browser's speech-to-text) ----------
+  let dictApi; (async () => { try { dictApi = await window.claude?.use?.("dictation"); } catch (e) { dictApi = null; } })();
+  let micNow = null; // { stop, input }
+  function micToggle(input, onStatus) {
+    if (micNow) { const m = micNow; micNow = null; m.stop(); return; }
+    const base = (input.value || "").replace(/\s+$/, ""); let fin = "";
+    const put = (part) => { input.value = [base, (fin + part).trim()].filter(Boolean).join(" "); input.dispatchEvent(new Event("input", { bubbles: true })); };
+    if (dictApi) {
+      const offs = [dictApi.onPartial(({ text }) => put(text)), dictApi.onFinal(({ text }) => { fin += text.trim() + " "; put(""); }),
+        dictApi.onState(({ state, reason }) => { if (state === "listening") onStatus("Listening… tap 🎤 again when you're done.", true); if (state === "idle") { offs.forEach(f => { try { f(); } catch (e) {} }); micNow = null; onStatus(reason === "not_granted" ? "The microphone wasn't allowed. You can type instead." : reason && !["stopped", "viewer_stopped"].includes(reason) ? "Stopped listening." : "", false); } })];
+      micNow = { input, stop: () => { dictApi.stop().catch(() => {}); } };
+      dictApi.start().catch(e => { offs.forEach(f => { try { f(); } catch (er) {} }); micNow = null; onStatus(e && e.code === "not_granted" ? "The microphone wasn't allowed. You can type instead." : "The microphone couldn't start. Try again, or type.", false); });
+      onStatus("Starting the microphone…", true); return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { onStatus("The microphone isn't available here. On iPhone/iPad or Android tap the 🎤 on your keyboard; on a Mac press Fn twice; on Windows press Windows + H.", false); input.focus(); return; }
+    const rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = navigator.language || "en-US";
+    rec.onresult = (ev) => { let interim = ""; for (let i = ev.resultIndex; i < ev.results.length; i++) { const x = ev.results[i]; if (x.isFinal) fin += x[0].transcript.trim() + " "; else interim += x[0].transcript; } put(interim); };
+    rec.onerror = (ev) => onStatus(ev.error === "not-allowed" || ev.error === "service-not-allowed" ? "The microphone isn't allowed here. Use your keyboard's 🎤 instead." : "Stopped listening.", false);
+    rec.onend = () => { micNow = null; onStatus("", false); };
+    try { rec.start(); micNow = { input, stop: () => { try { rec.stop(); } catch (e) {} } }; onStatus("Listening… tap 🎤 again when you're done.", true); } catch (e) { onStatus("The microphone couldn't start here.", false); }
+  }
+
+  // ---------- ✨ Ask AI on Inventory and Meals: helps me find something in that list ----------
+  const AIF = { inventory: { open: false, q: "", ans: "", busy: false, msg: "", on: false }, meals: { open: false, q: "", ans: "", busy: false, msg: "", on: false } };
+  function aiFindData(k) {
+    const defs = cpDefs(k), extra = (x) => defs.map(P => { const v = K.cprop.show(x, P); return v ? `${P.label}: ${v}` : ""; }).filter(Boolean).join("; ");
+    if (k === "inventory") return inventory.map(x => `- ${x.title || "Untitled"} | room: ${x.room || "none"}${extra(x) ? " | " + extra(x) : ""}`).join("\n");
+    return meals.map(m => `- ${m.title || "Untitled"} | category: ${mlArr(m.category).join(", ")} | menu: ${mlArr(m.menu).join(", ")} | cuisine: ${mlArr(m.cuisine).join(", ")} | method: ${mlArr(m.method).join(", ")}${(m.ingList || []).length ? " | main: " + m.ingList.join(", ") : ""} | ingredients: ${String(m.ingredients || "").replace(/\s+/g, " ").slice(0, 300)}${extra(m) ? " | " + extra(m) : ""}`).join("\n");
+  }
+  function aiFindHtml(k) {
+    const a = AIF[k]; if (!a.open || PUBLIC) return "";
+    return `<section class="panel ai-find" data-aik="${k}"><div class="panel-head"><span class="panel-name">✨ Ask AI to find something in ${k === "inventory" ? "your inventory" : "your meals"}</span><button class="x" type="button" data-aiclose aria-label="Close">×</button></div>
+      <div class="ai-row"><textarea data-aiq rows="2" placeholder="${k === "inventory" ? "Like: where are the winter coats? or what's in the garage?" : "Like: a quick dinner with chicken, or something Italian Felicity would like"}" aria-label="Your question">${esc(a.q)}</textarea>
+      <button type="button" class="btn mic-btn${a.on ? " on" : ""}" data-aimic aria-pressed="${a.on}" title="Speak instead of typing">🎤</button><button type="button" class="btn primary" data-aiask${a.busy ? " disabled" : ""}>${a.busy ? "Looking…" : "Ask"}</button></div>
+      ${a.msg ? `<p class="ai-msg">${esc(a.msg)}</p>` : ""}${a.ans ? `<div class="ai-ans">${renderMd(a.ans)}</div>` : ""}</section>`;
+  }
+  async function aiFindAsk(k) {
+    const a = AIF[k], box = document.querySelector(`[data-aik="${k}"]`), q = ((box && box.querySelector("[data-aiq]").value) || a.q).trim(); a.q = q; if (!q || a.busy) return;
+    if (micNow) { const m = micNow; micNow = null; m.stop(); }
+    if (sampleApi === undefined) { try { sampleApi = await window.claude?.use?.("sample"); } catch (e) { sampleApi = null; } }
+    if (!sampleApi) { a.msg = "Asking AI isn't available in this view. Open LifeOS in Claude, signed in, to use it."; CP_PAGEDB[k].render(); return; }
+    a.busy = true; a.ans = ""; a.msg = ""; CP_PAGEDB[k].render();
+    const what = k === "inventory" ? "household inventory (items and the room each is in)" : "saved meals and recipes";
+    const prompt = `You help me find things in my ${what}. Answer my question using ONLY the list below. Name the matching ${k === "inventory" ? "items and their rooms" : "meals"} in **bold**, best matches first, with one short line on why each fits. If nothing matches, say so plainly and suggest the closest options. Keep it short.\n\nMy question: ${q}\n\nThe list (${k === "inventory" ? inventory.length : meals.length} entries):\n${aiFindData(k).slice(0, 60000)}`;
+    try { const res = await sampleApi(prompt, { cache: false, modelTier: "quick", onText: ({ text }) => { a.ans = text; const b = document.querySelector(`[data-aik="${k}"] .ai-ans`); if (b) b.innerHTML = renderMd(text); else CP_PAGEDB[k].render(); } }); a.ans = (res && res.text) || a.ans; }
+    catch (e) { a.msg = e && e.code === "rate_limited" ? "Too many questions right now. Try again in a minute." : e && e.code === "not_granted" ? "Asking AI wasn't allowed." : "Couldn't get an answer. Try again."; if (e && e.code === "not_granted") sampleApi = null; }
+    a.busy = false; CP_PAGEDB[k].render();
+  }
+  document.addEventListener("click", e => {
+    const o = e.target.closest("[data-aiopen]"); if (o) { const k = o.dataset.aiopen; AIF[k].open = !AIF[k].open; CP_PAGEDB[k].render(); setTimeout(() => { const t = document.querySelector(`[data-aik="${k}"] [data-aiq]`); if (t) t.focus(); }, 30); return; }
+    const box = e.target.closest("[data-aik]"); if (!box) return; const k = box.dataset.aik, a = AIF[k];
+    if (e.target.closest("[data-aiclose]")) { a.open = false; if (micNow) { const m = micNow; micNow = null; m.stop(); } CP_PAGEDB[k].render(); return; }
+    if (e.target.closest("[data-aiask]")) { aiFindAsk(k); return; }
+    const mb = e.target.closest("[data-aimic]"); if (mb) { const t = box.querySelector("[data-aiq]"); micToggle(t, (msg, on) => { a.msg = msg; a.on = on; a.q = t.value; const mm = box.querySelector(".ai-msg"); const btn = box.querySelector("[data-aimic]"); if (btn) { btn.classList.toggle("on", on); btn.setAttribute("aria-pressed", String(on)); } if (mm) mm.textContent = msg; else if (msg) btn.closest(".ai-row").insertAdjacentHTML("afterend", `<p class="ai-msg">${esc(msg)}</p>`); }); }
+  });
+  document.addEventListener("input", e => { const t = e.target.closest && e.target.closest("[data-aik] [data-aiq]"); if (t) AIF[t.closest("[data-aik]").dataset.aik].q = t.value; });
+  document.addEventListener("keydown", e => { const t = e.target.closest && e.target.closest("[data-aik] [data-aiq]"); if (t && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); aiFindAsk(t.closest("[data-aik]").dataset.aik); } });
   let invDel = null;
   CP_PAGEDB.inventory = { label: "Inventory", list: () => inventory, save: (x) => saveItem(x), render: () => renderInventory() };
   function renderInventory() {
@@ -7077,7 +7145,8 @@ ${text}
     el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button></div>`}
       <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
         <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
-        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button>`}</div>
+        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button><button type="button" class="btn ai-btn" data-aiopen="inventory">✨ Ask AI</button>`}</div>
+      ${aiFindHtml("inventory")}
       ${cpOpenMgr.inventory ? cpMgrHtml("inventory", "Inventory") : ""}
       ${!ro && inv.roomsOpen ? `<section class="panel inv-rooms"><div class="panel-head"><span class="panel-name">Rooms</span><button class="x" type="button" data-invrooms aria-label="Close rooms">×</button></div>
         <div class="chips">${rooms.length ? rooms.map(r => `<span class="inv-roomchip"><span>${esc(r)}</span><button type="button" class="tdel" data-invroomx="${esc(r)}" aria-label="Remove room ${esc(r)}">×</button></span>`).join("") : '<span class="pl-none">No rooms yet. Add your first one.</span>'}</div>
@@ -7166,7 +7235,8 @@ ${text}
         <input type="search" id="mlQ" class="search" placeholder="Search meals or ingredients…" value="${esc(ml.q)}" aria-label="Search meals">
         <span class="chips" role="group" aria-label="Group by"><span class="ml-gl">Group by</span>${[["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"], ["none", "None"]].map(([k, l]) => `<button type="button" class="chip" data-mlgroup="${k}" aria-pressed="${ml.group === k}">${l}</button>`).join("")}</span>
         <label class="switch"><input type="checkbox" id="mlArch"${ml.archived ? " checked" : ""}> Show archived</label>
-        ${ro ? "" : `<button type="button" class="btn cp-plus" data-cpmgr="meals">＋ Add property</button><button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+        ${ro ? "" : `<button type="button" class="btn ai-btn" data-aiopen="meals">✨ Ask AI</button><button type="button" class="btn cp-plus" data-cpmgr="meals">＋ Add property</button><button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+      ${aiFindHtml("meals")}
       ${cpOpenMgr.meals ? cpMgrHtml("meals", "Meals") : ""}
       <div class="ml-filters">${filt}${Object.values(ml.f).some(a => a && a.length) ? '<button type="button" class="btn ghost" data-mlclear>Clear filters</button>' : ""}</div>
       ${list.length ? groups.map(([g, l]) => `<section class="ml-group"><h2>${esc(g)} <span>${l.length}</span></h2><div class="ml-grid">${l.map(card).join("")}</div></section>`).join("") : `<div class="empty"><strong>${meals.length ? "Nothing matches" : "No meals yet"}</strong>${meals.length ? "Try another search or clear the filters." : ""}</div>`}`;
