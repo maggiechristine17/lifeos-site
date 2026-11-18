@@ -1958,7 +1958,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <header class="appbar">
   <div class="brand-wrap"><div class="brand">LifeOS</div><button type="button" class="site-build set-btn pa-btn" id="paBtn" aria-expanded="false" aria-controls="paPop" title="Planning Assistant: entries with pieces missing">📋 Planning Assistant</button><button type="button" class="site-build set-btn bd-btn" id="bdBtn" aria-expanded="false" aria-controls="bdPop" title="Brain dump: paste everything, get entries">🧠 Brain dump</button><button type="button" class="site-build set-btn sc-btn" id="scBtn" aria-expanded="false" aria-controls="scPop" title="How LifeOS fits together">🗺 Schematic</button><button type="button" class="site-build set-btn gg-btn" id="ggBtn" aria-expanded="false" aria-controls="ggPop" title="Your Google Drive and Docs">🔗 Google</button></div>
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
-  <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="paBody"></div></div></div>
+  <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="grBox"></div><div id="paBody"></div></div></div>
   <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><span class="pil-btns"><button type="button" class="btn primary" id="pilRecodeBtn">🔁 Recode</button><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></span></div><div class="pil-re" id="pilRe" hidden></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
@@ -2013,7 +2013,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><span id="dbFxSlot" class="fx-slot"></span><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn site-build" type="button" id="csBtn" title="Combine several entries into one">🧲 Consolidate</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><span id="dbFxSlot" class="fx-slot"></span><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn site-build" type="button" id="csBtn" title="Combine several entries into one">🧲 Consolidate</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
@@ -2028,7 +2028,6 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   </section>
   <div id="dbFx"></div>
   <div id="dbCpMgr"></div>
-  <div id="grBox"></div>
   <div id="csBox"></div>
   <div class="db-bar" id="dbBar"></div>
   <div id="dbBody"></div>
@@ -2466,7 +2465,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // Projects (one time / scheduled): a verb + a direct object. Routines: at least a verb (object optional). Resources: a document title (a proper noun).
   const GR_RULES = { values: "a gerund phrase (starts with an -ing verb, like \"Living with integrity\")", areas: "a noun or noun phrase (like \"Health\" or \"Home finances\")", goals: "a verb with a measurable qualification: a time bound (a date or deadline) or a performance metric with a number (like \"Run a 5K by June 2027\" or \"Save $10,000\")", projects: "a verb with a direct object (like \"Paint the bedroom\")", routines: "at least a verb, with an optional direct object (like \"Meditate\" or \"Walk the dog\")", pages: "the title of a document, written as a proper noun in title case (like \"Monthly Budget Spreadsheet\")" };
   const GR_KIND = { values: "Value", areas: "Area", goals: "Goal", projects: "Project", routines: "Routine", pages: "Resource" };
-  const gr = { busy: false, items: null, msg: "", skip: new Set(recall("chevy.gr.skip") || []) };
+  // Grammar is checked automatically: every title is checked once (results kept per title), and the Planning Assistant always lists the ones that break the rules
+  const gr = { busy: false, msg: "", failed: false, skip: new Set(recall("chevy.gr.skip") || []), cache: recall("chevy.gr.cache") || {} };
+  const grKey = (x) => x.t + ":" + x.id + ":" + x.title;
+  const grSaveCache = () => { const keep = new Set(grList().map(grKey)); Object.keys(gr.cache).forEach(k => { if (!keep.has(k)) delete gr.cache[k]; }); store("chevy.gr.cache", gr.cache); };
+  const grBad = () => grList().map(x => ({ ...x, ...(gr.cache[grKey(x)] || { ok: true }) })).filter(x => !x.ok && !gr.skip.has(grKey(x)));
   function grList() {
     const out = [];
     ["values", "areas", "goals", "projects", "pages"].forEach(t => (data[t] || []).forEach(e => { if (!e._pub && (e.title || "").trim() && !(t === "projects" && e.status === "Done")) out.push({ id: e.id, t, title: e.title.trim() }); }));
@@ -2475,38 +2478,41 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }
   function renderGr() {
     const el = $("grBox"); if (!el) return;
-    if (!gr.items && !gr.busy && !gr.msg) { el.innerHTML = ""; return; }
-    const bad = (gr.items || []).filter(x => !x.ok && !gr.skip.has(x.t + ":" + x.id + ":" + x.title));
-    el.innerHTML = `<section class="panel gr-box"><div class="panel-head"><span class="panel-name">✍️ Grammar check</span><button class="x" type="button" data-grx aria-label="Close">×</button></div>
+    const bad = grBad(), todo = grList().filter(x => !gr.cache[grKey(x)]).length;
+    const row = (x) => `<li class="gr-item"><span class="pa-type">${GR_KIND[x.t]}</span><b>${esc(x.title)}</b><span class="gr-why">${esc(x.issue || "")}</span>${x.fix ? `<span class="gr-fix">Try: <input type="text" data-grfixin="${esc(x.t + ":" + x.id)}" value="${esc(x.fix)}" aria-label="Suggested title"><button type="button" class="btn small primary" data-gruse="${esc(x.t + ":" + x.id)}">Use this title</button></span>` : ""}<button type="button" class="btn small" data-grskip="${esc(grKey(x))}">It's fine</button></li>`;
+    const status = gr.busy ? `<p class="ai-msg">Checking ${todo} title${todo === 1 ? "" : "s"}…</p>` : gr.msg ? `<p class="ai-msg">${esc(gr.msg)}</p>` : "";
+    if (!bad.length && !status) { el.innerHTML = ""; return; }
+    el.innerHTML = `<details class="pa-grp gr-grp" open><summary>✍️ Grammar <span class="c">${bad.length}</span></summary>
+      <p class="pa-gdesc">Titles that don't follow my grammar rules. Fix each one here, or mark it "It's fine".</p>
       <details class="gr-rules"><summary>The rules</summary><ul>${Object.keys(GR_RULES).map(k => `<li><b>${GR_KIND[k]}s</b>: ${esc(GR_RULES[k])}</li>`).join("")}</ul></details>
-      ${gr.busy ? `<p class="ai-msg">Checking ${grList().length} titles…</p>` : ""}${gr.msg ? `<p class="ai-msg">${esc(gr.msg)}</p>` : ""}
-      ${gr.items && !gr.busy ? (bad.length ? `<p class="ai-msg">${bad.length} ${bad.length === 1 ? "title doesn&#39;t" : "titles don&#39;t"} follow the rules:</p><ul class="gr-list">${bad.map(x => `<li class="gr-item"><span class="pa-type">${GR_KIND[x.t]}</span><b>${esc(x.title)}</b><span class="gr-why">${esc(x.issue || "")}</span>${x.fix ? `<span class="gr-fix">Try: <input type="text" data-grfixin="${esc(x.t + ":" + x.id)}" value="${esc(x.fix)}" aria-label="Suggested title"><button type="button" class="btn small primary" data-gruse="${esc(x.t + ":" + x.id)}">Use this title</button></span>` : ""}<button type="button" class="btn small" data-grskip="${esc(x.t + ":" + x.id + ":" + x.title)}">It's fine</button></li>`).join("")}</ul>` : `<p class="ai-msg">🎉 Every title follows the rules.</p>`) : ""}
-    </section>`;
+      ${status}${bad.length ? `<ul class="gr-list">${bad.map(row).join("")}</ul>` : ""}</details>`;
   }
   async function grRun() {
-    if (gr.busy) return;
+    if (gr.busy || gr.failed || PUBLIC) return;
+    const L = grList().filter(x => !gr.cache[grKey(x)]).slice(0, 80); if (!L.length) { renderGr(); return; }
+    gr.busy = true;
     if (sampleApi === undefined) { try { sampleApi = await window.LIFEOS_USE("sample"); } catch (e) { sampleApi = null; } }
-    if (!sampleApi) { gr.msg = "The grammar check uses AI, which isn't available in this view. Open LifeOS in Claude, signed in."; renderGr(); return; }
-    const L = grList(); if (!L.length) { gr.items = []; gr.msg = ""; renderGr(); return; }
-    gr.busy = true; gr.msg = ""; gr.items = null; renderGr();
+    if (!sampleApi) { gr.busy = false; gr.failed = true; gr.msg = "The grammar check uses AI, which isn't available in this view. Open LifeOS in Claude, signed in."; renderGr(); return; }
+    gr.busy = true; gr.msg = ""; renderGr();
     const prompt = `Check each title against the grammar rule for its kind. Rules:\n${Object.keys(GR_RULES).map(k => `- ${GR_KIND[k]}: ${GR_RULES[k]}`).join("\n")}\n\nFor every title return an object {"i": its number, "ok": true or false, "issue": "a short plain reason if not ok", "fix": "a corrected title that keeps the same meaning and follows the rule (if not ok)"}. Don't invent facts: if a goal has no number or date, write the fix with a placeholder like "by [date]" or "[number]". Return ONLY a JSON array.\n\nTitles:\n${L.map((x, i) => `${i}. [${GR_KIND[x.t]}] ${x.title}`).join("\n")}`;
     try {
       const res = await sampleApi(prompt, { cache: false, modelTier: "default" });
       const txt = (res && res.text) || ""; const m = txt.match(/\[[\s\S]*\]/); const arr = m ? JSON.parse(m[0]) : [];
-      gr.items = L.map((x, i) => { const a = arr.find(o => Number(o.i) === i) || { ok: true }; return { ...x, ok: !!a.ok, issue: a.issue || "", fix: a.ok ? "" : (a.fix || "") }; });
-    } catch (e) { gr.msg = e && e.code === "rate_limited" ? "Too many requests right now. Try again in a minute." : "Couldn't finish the check. Try again."; if (e && e.code === "not_granted") sampleApi = null; }
-    gr.busy = false; renderGr();
+      L.forEach((x, i) => { const a = arr.find(o => Number(o.i) === i); if (a) gr.cache[grKey(x)] = a.ok ? { ok: true } : { ok: false, issue: a.issue || "", fix: a.fix || "" }; });
+      grSaveCache();
+    } catch (e) { gr.failed = true; gr.msg = e && e.code === "rate_limited" ? "Too many requests right now. The grammar check will try again next time you open this." : "Couldn't finish the grammar check. It will try again next time you open this."; if (e && e.code === "not_granted") sampleApi = null; }
+    gr.busy = false; renderGr(); renderPA();
+    if (!gr.failed && grList().some(x => !gr.cache[grKey(x)])) grRun(); // more than 80 titles: keep going
   }
-  $("grBtn").addEventListener("click", grRun);
   $("grBox").addEventListener("click", async e => {
-    if (e.target.closest("[data-grx]")) { gr.items = null; gr.msg = ""; renderGr(); return; }
-    const sk = e.target.closest("[data-grskip]"); if (sk) { gr.skip.add(sk.dataset.grskip); store("chevy.gr.skip", [...gr.skip]); renderGr(); return; }
+    const sk = e.target.closest("[data-grskip]"); if (sk) { gr.skip.add(sk.dataset.grskip); store("chevy.gr.skip", [...gr.skip]); renderGr(); renderPA(); return; }
     const u = e.target.closest("[data-gruse]"); if (u) {
       const [t, id] = u.dataset.gruse.split(":"), inp = $("grBox").querySelector(`[data-grfixin="${t}:${id}"]`), v = (inp ? inp.value : "").trim(); if (!v) return;
+      gr.cache[t + ":" + id + ":" + v] = { ok: true };
       try {
         if (t === "routines") { const rt = routines.find(x => x.id === id); if (rt) await saveRoutine({ ...rt, name: v, updatedAt: new Date().toISOString() }); }
         else { const x = (data[t] || []).find(y => y.id === id); if (x) await saveEntry(t, { ...x, title: v, updatedAt: new Date().toISOString() }); }
-        const it = gr.items.find(y => y.t === t && y.id === id); if (it) { it.ok = true; it.title = v; } notice(`Renamed to “${v}”.`); renderAll(); renderGr();
+        gr.cache[t + ":" + id + ":" + v] = { ok: true }; grSaveCache(); notice(`Renamed to “${v}”.`); renderAll(); renderGr();
       } catch (err) { notice(err.message || "Couldn't rename it."); }
     }
   });
@@ -6765,8 +6771,9 @@ Don't invent appointments or facts that aren't listed.`);
     return `<input type="text" data-patext="${id}" data-patype="${ty}" data-pafield="${x.fix}" placeholder="${x.fix === "tags" ? "tag, another tag" : "Subtitle"}" maxlength="200" aria-label="${x.fix === "tags" ? "Tags" : "Subtitle"} for ${esc(x.e.title || "entry")}"><button type="button" class="pa-chip" data-pago>Save</button>`;
   }
   function renderPA() {
-    const n = paCount(), nb = $("paN"); if (nb) nb.textContent = n ? String(n) : "";
+    const n = paCount() + grBad().length, nb = $("paN"); if (nb) nb.textContent = n ? String(n) : "";
     const el = $("paBody"), pop = $("paPop"); if (!el || !pop || pop.hidden) return;
+    const ga = document.activeElement; if (!(ga && $("grBox").contains(ga) && ga.matches("input[type=text]"))) renderGr(); grRun();
     const a = document.activeElement; if (a && el.contains(a) && a.matches("input[type=text]") && a.value) return; // don't wipe what I'm typing
     const G = paGroups(), total = G.reduce((s, g) => s + g.n, 0);
     const row = (x) => `<li class="pa-row"><button type="button" class="pa-name" data-paopen="${esc(x.type)}" data-paid="${esc(x.e.id)}" title="Open the entry">${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}</button><span class="pa-type">${esc(TYPE[x.type].singular)}</span><span class="pa-fix">${paFixHtml(x)}</span><button type="button" class="pa-skip" data-paskip="${esc(x.g + ":" + x.e.id)}" title="Hide this one: it doesn't need this">Not needed ✕</button></li>`;
@@ -6774,7 +6781,7 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="pa-sum" role="group" aria-label="Show which kind">${[["all", "All"], ...PA_TYPES.map(t => [t, TYPE[t].label])].map(([k, l]) => `<button type="button" data-patypef="${k}" aria-pressed="${paType === k}">${l}</button>`).join("")}${paSkip.size ? `<button type="button" data-paunskip title="Show the ones marked Not needed again">↺ Show ${paSkip.size} hidden</button>` : ""}</div>
       ${total ? G.filter(g => g.n).map(g => `<details class="pa-grp" open data-pag="${g.key}"><summary>${g.icon} ${g.title} <span class="c">${g.n}</span></summary><p class="pa-gdesc">${g.desc}</p>${g.subs.filter(s => s.items.length).map(s => `${s.title ? `<div class="pa-subh">${esc(s.title)} · ${s.items.length}</div>` : ""}<ul class="pa-list">${s.items.map(row).join("")}</ul>`).join("")}</details>`).join("") : `<div class="pa-allgood">🎉 Nothing missing${paType === "all" ? "" : " in " + TYPE[paType].label}. Everything is filled in and linked.</div>`}`;
   }
-  const paOpen = (v) => { const p = $("paPop"); p.hidden = !v; $("paBtn").setAttribute("aria-expanded", String(v)); if (v) renderPA(); };
+  const paOpen = (v) => { const p = $("paPop"); p.hidden = !v; $("paBtn").setAttribute("aria-expanded", String(v)); if (v) { gr.failed = false; gr.msg = ""; renderPA(); renderGr(); grRun(); } };
   $("paBtn").addEventListener("click", e => { e.stopPropagation(); paOpen($("paPop").hidden); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("paPop").hidden && !document.querySelector(".cal-pop:not([hidden])")) paOpen(false); });
   const paDone = () => { buildAdj(); renderPA(); };
