@@ -110,6 +110,25 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
+.pp-list { display: grid; gap: 2px; margin-top: 10px; }
+.pp-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; padding: 6px 4px; border-radius: 6px; min-height: 36px; }
+.pp-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.pp-l { font-size: 13px; color: var(--muted); font-weight: 600; } .pp-v { min-width: 0; }
+.pp-row.pp-add { grid-template-columns: 1fr; }
+.cp-iadd-btn { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 6px 4px; text-align: left; border-radius: 6px; }
+.cp-iadd-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.cp-iadd-btn span { font-size: 12px; opacity: .8; }
+.pb-iadd { flex-basis: 100%; }
+.cp-iadd { border: 1px solid var(--accent); border-radius: 10px; padding: 10px; display: grid; gap: 8px; background: var(--surface); max-width: 560px; }
+.cp-iadd input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); }
+.cp-itypes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px; }
+.cp-itype { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 7px; padding: 6px 8px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+.cp-itype span { width: 18px; text-align: center; color: var(--muted); } .cp-itype[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg)); font-weight: 700; }
+.cp-ibtns { display: flex; gap: 6px; }
+.inv-namecell { display: flex; gap: 6px; align-items: center; } .inv-namecell .inv-name { flex: 1; }
+.inv-open { border: 1px solid var(--line); background: none; color: var(--muted); border-radius: 6px; font-size: 11.5px; padding: 2px 7px; cursor: pointer; white-space: nowrap; opacity: .7; }
+tr:hover .inv-open, .inv-open:focus { opacity: 1; color: var(--accent); border-color: var(--accent); }
+@media (max-width: 560px) { .pp-row { grid-template-columns: 1fr; gap: 2px; } }
 .cp-newrow { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .cp-newrow .cp-in { flex: 1 1 140px; } .cp-newchk { display: flex; gap: 4px; align-items: center; font-size: 13px; }
 .cp-mlabel { font-size: 12px; color: var(--muted); font-weight: 700; align-self: center; }
@@ -1941,6 +1960,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="view-head"><div><h1>🍽️ Meals</h1><div class="count" id="mlCount"></div></div></div>
   <div id="mlBody"></div>
 </main>
+<div class="overlay" id="invOverlay" hidden><div class="dialog ml-dialog" id="invDialog" role="dialog" aria-modal="true" aria-label="Inventory item"></div></div>
 <div class="overlay" id="mlOverlay" hidden><div class="dialog ml-dialog" id="mlDialog" role="dialog" aria-modal="true" aria-label="Meal"></div></div>
 
 <main id="view-planner" hidden>
@@ -2250,6 +2270,37 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     return out;
   }
   document.addEventListener("click", e => { const c = e.target.closest("[data-cpnewchip]"); if (c) c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true")); });
+  // ----- Notion-style "＋ Add a property": right where I'm working, pick a name and a type, and it appears at once -----
+  const CP_TYPE_IC = { text: "≡", number: "#", select: "▾", multi: "☰", date: "📅", check: "☑", url: "🔗", email: "@", phone: "☎", currency: "$", percent: "%", rating: "★" };
+  const cpIAddOpen = {};
+  function cpIAddHtml(scope, label) {
+    if (PUBLIC) return "";
+    if (!cpIAddOpen[scope]) return `<button type="button" class="cp-iadd-btn" data-cpiaddopen="${scope}">＋ Add a property${label ? ` <span>${esc(label)}</span>` : ""}</button>`;
+    return `<div class="cp-iadd" data-cpiadd="${scope}"><input type="text" data-cpiname placeholder="Property name" maxlength="40" aria-label="Property name">
+      <div class="cp-itypes" role="radiogroup" aria-label="Type">${CP_TYPES.map(([k, l], i) => `<button type="button" class="cp-itype" data-cpitype="${k}" role="radio" aria-checked="${i === 0}"><span>${CP_TYPE_IC[k]}</span>${l}</button>`).join("")}</div>
+      <input type="text" data-cpiopts placeholder="Options, separated by commas" aria-label="Options" hidden>
+      <div class="cp-ibtns"><button type="button" class="btn small primary" data-cpigo>Add property</button><button type="button" class="btn small" data-cpicancel>Cancel</button></div></div>`;
+  }
+  // Add a property quietly (no panel reopening); hooks re-draw whatever window I'm in
+  const cpIAddHooks = {};
+  function cpAddQuiet(scope, def) {
+    CPROPS = { ...CPROPS, [scope]: [...(CPROPS[scope] || []), def] }; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {}
+    if (!PUBLIC && db && !local) db.doc("settings/customProps").set({ props: CPROPS, updatedAt: new Date().toISOString() }).catch(() => notice("Couldn't save the property."));
+    applyCP();
+    if (scope === "_all") TYPES.forEach(T => rebuildView(T.key, false, true)); else if (views[scope]) rebuildView(scope, false, true);
+    renderAll();
+  }
+  document.addEventListener("click", e => {
+    const o = e.target.closest("[data-cpiaddopen]"); if (o) { e.preventDefault(); const sc = o.dataset.cpiaddopen; cpIAddOpen[sc] = true; (cpIAddHooks[sc] || cpIAddHooks["*"] || (() => {}))(sc, null); setTimeout(() => { const i = document.querySelector(`[data-cpiadd="${sc}"] [data-cpiname]`); if (i) i.focus(); }, 20); return; }
+    const box = e.target.closest("[data-cpiadd]"); if (!box) return; const sc = box.dataset.cpiadd;
+    const ty = e.target.closest("[data-cpitype]"); if (ty) { e.preventDefault(); box.querySelectorAll("[data-cpitype]").forEach(b => b.setAttribute("aria-checked", String(b === ty))); box.querySelector("[data-cpiopts]").hidden = !["select", "multi"].includes(ty.dataset.cpitype); return; }
+    if (e.target.closest("[data-cpicancel]")) { e.preventDefault(); cpIAddOpen[sc] = false; (cpIAddHooks[sc] || cpIAddHooks["*"])(sc, null); return; }
+    if (e.target.closest("[data-cpigo]")) { e.preventDefault(); const nm = box.querySelector("[data-cpiname]").value.trim(); if (!nm) { box.querySelector("[data-cpiname]").focus(); return; }
+      const pt = (box.querySelector('[data-cpitype][aria-checked="true"]') || {}).dataset?.cpitype || "text", opts = [...new Set(box.querySelector("[data-cpiopts]").value.split(",").map(x => x.trim()).filter(Boolean))].slice(0, 50);
+      const def = { key: "cp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), label: nm.slice(0, 40), ptype: pt, options: opts };
+      cpIAddOpen[sc] = false; cpAddQuiet(sc, def); (cpIAddHooks[sc] || cpIAddHooks["*"])(sc, def); notice(`Added the property “${nm}”.`); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.closest && e.target.closest("[data-cpiadd] input")) { e.preventDefault(); e.target.closest("[data-cpiadd]").querySelector("[data-cpigo]").click(); } if (e.key === "Escape" && e.target.closest && e.target.closest("[data-cpiadd]")) { const sc = e.target.closest("[data-cpiadd]").dataset.cpiadd; cpIAddOpen[sc] = false; (cpIAddHooks[sc] || cpIAddHooks["*"])(sc, null); } });
   const cpSet = async (k, id, key, val) => { const D = CP_PAGEDB[k]; if (!D) return; const rec = D.list().find(x => x.id === id); if (!rec) return; await D.save({ ...rec, [key]: val, updatedAt: new Date().toISOString() }); };
   document.addEventListener("change", async e => {
     const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i || i.value === "__newopt") return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
@@ -4167,8 +4218,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (!editing.ro && !PUBLIC && QE_NATIVE(P, editing.type)) return `<label class="prop-btn prop-live" data-proplive="${P.key}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))} <span class="db-caret" aria-hidden="true">▾</span></span>${propLiveControl(P)}</label>`;
       return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; };
     const all = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")), main = all.filter(P => SHARED.has(P.key)), spec = all.filter(P => !SHARED.has(P.key));
-    bar.innerHTML = `<div class="pb-h">Properties <span>every entry has these</span></div>${main.map(btnFor).join("")}
-      <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${PUBLIC || editing.ro ? "" : `<button type="button" class="prop-btn cp-plus pb-addspec" data-pbaddspec="${T.key}">＋ Add a property for ${esc(T.label)}</button>`}`;
+    const ia = (sc, l) => editing.ro ? "" : `<div class="pb-iadd">${cpIAddHtml(sc, l)}</div>`;
+    bar.innerHTML = `<div class="pb-h">Properties <span>every entry has these</span></div>${main.map(btnFor).join("")}${ia("_all", "to every entry")}
+      <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${ia(T.key, "only for " + T.label)}`;
   }
   var propBarTimer = null;
   function refreshPropBar() { clearTimeout(propBarTimer); propBarTimer = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches(".pl-native") && a.closest("#propBar")) { a.addEventListener("blur", () => refreshPropBar(), { once: true }); return; } renderPropBar(); }, 60); }
@@ -4199,6 +4251,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   $("emojiQ").addEventListener("input", e => renderEmojiGrid(e.target.value));
   $("emojiQ").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeEmojiPop(); $("ed-emoji").focus(); } if (e.key === "Enter") { e.preventDefault(); const first = $("emojiGrid").querySelector("[data-pick]"); if (first) first.click(); } });
   document.addEventListener("click", e => { const b = e.target.closest("[data-pbaddspec]"); if (!b) return; const k = b.dataset.pbaddspec; closeEditor(); location.hash = k === "goals" ? "projects" : k; setTimeout(() => { const v = views[k]; const ab = v && v.main.querySelector('[data-r="tAddProp"]'); if (ab) ab.click(); }, 150); });
+  cpIAddHooks["*"] = (sc, def) => {
+    if (editing && !$("overlay").hidden && (sc === "_all" || sc === editing.type)) {
+      if (def) { const T = TYPE[editing.type], P = T.props.find(x => x.key === def.key); if (P && !$("edFields").querySelector(`[data-pk="${P.key}"]`)) { $("edFields").insertAdjacentHTML("beforeend", `<div class="f pf open" data-pk="${P.key}">${K.cprop.editHtml(P, null)}</div>`); } }
+      renderPropBar(); return;
+    }
+    const D = CP_PAGEDB[sc]; if (D) D.render(); else if (sc === "_all") renderDatabase();
+  };
   const closeEditor = () => { $("overlay").hidden = true; editing = null; navStack = []; hideSuggest(); };
   $("cancelBtn").addEventListener("click", closeEditor);
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeEditor(); });
@@ -7201,6 +7260,32 @@ ${text}
   document.addEventListener("input", e => { const t = e.target.closest && e.target.closest("[data-aik] [data-aiq]"); if (t) AIF[t.closest("[data-aik]").dataset.aik].q = t.value; });
   document.addEventListener("keydown", e => { const t = e.target.closest && e.target.closest("[data-aik] [data-aiq]"); if (t && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); aiFindAsk(t.closest("[data-aik]").dataset.aik); } });
   let invDel = null;
+  cpIAddHooks.inventory = () => { renderInventory(); if (invOpen) renderInvDialog(); };
+  let invOpen = null, invDelArm = false;
+  // Each inventory item opens as its own page, like any entry: title, then its properties, then ＋ Add a property
+  function renderInvDialog() {
+    const x = inventory.find(i => i.id === invOpen), ov = $("invOverlay"); if (!x) { ov.hidden = true; invOpen = null; return; }
+    const ro = !!PUBLIC;
+    $("invDialog").innerHTML = `<div class="dlg-head"><div class="dlg-top"><span class="dlg-kind">Inventory item</span></div><div class="dialog-actions">${ro ? "" : `<button type="button" class="btn danger" data-invdlgdel>${invDelArm ? "Tap again to delete" : "Delete"}</button>`}<div class="right"><button type="button" class="btn primary" data-invdlgclose>Done</button></div></div></div>
+      <div class="ml-dbody">
+        <div class="ml-titlerow">${ro ? `<h2 class="ml-h">${esc(x.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-invdlgtitle value="${esc(x.title || "")}" placeholder="Item name" aria-label="Item name">`}</div>
+        <div class="pp-list">
+          <div class="pp-row"><span class="pp-l">Room</span><span class="pp-v">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room">${roomOpts(x.room || "")}</select>`}</span></div>
+          ${cpDefs("inventory").map(P => `<div class="pp-row"><span class="pp-l">${esc(P.label)}</span><span class="pp-v">${cpInline(P, x, "inventory")}</span></div>`).join("")}
+          <div class="pp-row pp-add">${cpIAddHtml("inventory")}</div>
+          <div class="pp-row"><span class="pp-l">Added</span><span class="pp-v">${esc(x.createdAt ? fmt(x.createdAt.slice(0, 10)) : "—")}</span></div>
+        </div>
+      </div>`;
+    ov.hidden = false;
+  }
+  document.addEventListener("click", async e => {
+    const op = e.target.closest("[data-invopen]"); if (op) { invOpen = op.dataset.invopen; invDelArm = false; renderInvDialog(); return; }
+    if (e.target.closest("[data-invnewpage]")) { const it = { id: invId(), title: "", room: "", createdAt: new Date().toISOString() }; await saveItem(it); invOpen = it.id; invDelArm = false; renderInventory(); renderInvDialog(); setTimeout(() => { const t = document.querySelector("[data-invdlgtitle]"); if (t) t.focus(); }, 30); return; }
+    if (e.target.closest("[data-invdlgclose]") || e.target === $("invOverlay")) { const x = inventory.find(i => i.id === invOpen); invOpen = null; $("invOverlay").hidden = true; if (x && !(x.title || "").trim()) await deleteItem(x.id); renderInventory(); return; }
+    if (e.target.closest("[data-invdlgdel]")) { if (!invDelArm) { invDelArm = true; renderInvDialog(); return; } const id = invOpen; invOpen = null; $("invOverlay").hidden = true; await deleteItem(id); renderInventory(); }
+  });
+  document.addEventListener("change", async e => { const t = e.target.closest && e.target.closest("[data-invdlgtitle]"); if (!t) return; const x = inventory.find(i => i.id === invOpen); if (x) { await saveItem({ ...x, title: t.value.trim().slice(0, 120) }); renderInventory(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && invOpen && !$("invOverlay").hidden) $("invDialog").querySelector("[data-invdlgclose]").click(); });
   CP_PAGEDB.inventory = { label: "Inventory", list: () => inventory, save: (x) => saveItem(x), render: () => renderInventory() };
   function renderInventory() {
     const el = $("invBody"); if (!el) return;
@@ -7212,7 +7297,7 @@ ${text}
     el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button>${cpDefs("inventory").length ? `<div class="cp-newrow" id="invNewProps">${cpNewFields("inventory")}</div>` : ""}</div>`}
       <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
         <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
-        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button><button type="button" class="btn ai-btn" data-aiopen="inventory">✨ Ask AI</button>`}</div>
+        ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button><button type="button" class="btn ai-btn" data-aiopen="inventory">✨ Ask AI</button><button type="button" class="btn primary" data-invnewpage>+ New item</button>`}</div>
       ${aiFindHtml("inventory")}
       ${cpOpenMgr.inventory ? cpMgrHtml("inventory", "Inventory") : ""}
       ${!ro && inv.roomsOpen ? `<section class="panel inv-rooms"><div class="panel-head"><span class="panel-name">Rooms</span><button class="x" type="button" data-invrooms aria-label="Close rooms">×</button></div>
@@ -7220,7 +7305,7 @@ ${text}
         <div class="task-add"><input id="invRoomNew" type="text" placeholder="New room, like Garage" autocomplete="off" aria-label="New room name"><button type="button" class="btn" data-invroomadd>Add room</button></div>
         <div class="hint">Removing a room keeps the items; they just show "No room" until you pick another.</div></section>` : ""}
       ${list.length ? `<div class="table-wrap"><table class="inv-table"><thead><tr><th><button type="button" data-invsort="title" class="${inv.sort === "title" ? "on" : ""}">Item${inv.sort === "title" ? " ↑" : ""}</button></th><th><button type="button" data-invsort="room" class="${inv.sort === "room" ? "on" : ""}">Room${inv.sort === "room" ? " ↑" : ""}</button></th>${cpDefs("inventory").map(P => `<th>${esc(P.label)}</th>`).join("")}${ro ? "" : '<th><button type="button" class="cp-thadd" data-cpmgr="inventory" title="Add a property">＋</button></th>'}</tr></thead><tbody>
-        ${list.map(x => `<tr><td data-label="Item">${ro ? esc(x.title || "Untitled") : `<input type="text" class="db-inline inv-name" data-invname="${esc(x.id)}" value="${esc(x.title || "")}" aria-label="Item name">`}</td>
+        ${list.map(x => `<tr><td data-label="Item"><span class="inv-namecell">${ro ? esc(x.title || "Untitled") : `<input type="text" class="db-inline inv-name" data-invname="${esc(x.id)}" value="${esc(x.title || "")}" aria-label="Item name">`}<button type="button" class="inv-open" data-invopen="${esc(x.id)}" title="Open as a page" aria-label="Open ${esc(x.title || "item")}">↗ Open</button></span></td>
           <td data-label="Room">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room for ${esc(x.title || "item")}">${roomOpts(x.room || "")}</select>`}</td>
           ${cpDefs("inventory").map(P => `<td class="cp-cell" data-label="${esc(P.label)}">${cpInline(P, x, "inventory")}</td>`).join("")}
           ${ro ? "" : `<td class="inv-x"><button type="button" class="btn ghost danger" data-invdel="${esc(x.id)}">${invDel === x.id ? "Tap again to delete" : "Delete"}</button></td>`}</tr>`).join("")}
@@ -7286,6 +7371,7 @@ ${text}
     try { await db.doc("settings/mealOptions").set({ ...mealOpts, updatedAt: new Date().toISOString() }); } catch (e) {}
   }
   const mlChip = (v) => `<span class="ml-chip">${esc(v)}</span>`;
+  cpIAddHooks.meals = () => { renderMeals(); if (ml.open) renderMealDialog(); };
   CP_PAGEDB.meals = { label: "Meals", list: () => meals, save: (x) => saveMeal(x), render: () => { renderMeals(); if (ml.open) renderMealDialog(); } };
   function renderMeals() {
     const el = $("mlBody"); if (!el) return;
@@ -7323,7 +7409,7 @@ ${text}
         <div class="ml-titlerow"><button type="button" class="emoji-btn ml-emobtn" data-mlemoji${ro ? " disabled" : ""} aria-label="Change emoji">${esc(m.icon || "🍽️")}</button>${ro ? `<h2 class="ml-h">${esc(m.title || "Untitled")}</h2>` : `<input type="text" class="ml-title" data-mltext="title" value="${esc(m.title || "")}" placeholder="Meal name" aria-label="Meal name">`}</div>
         ${multi("category", "Category")}${multi("menu", "Menu")}${multi("cuisine", "Cuisine")}${multi("method", "Method")}
         ${cpDefs("meals").map(P => `<div class="ml-f"><span class="flabel">${esc(P.label)}</span>${cpInline(P, m, "meals")}</div>`).join("")}
-        ${ro ? "" : `<div class="ml-f"><button type="button" class="btn small cp-plus" data-cpmgr="meals" data-cpclose>＋ Add property</button></div>`}
+        ${ro ? "" : `<div class="ml-f">${cpIAddHtml("meals")}</div>`}
         <div class="ml-f ml-row"><label><span class="flabel">Status</span>${ro ? esc(m.status || "—") : `<select data-mltext="status"><option value="">—</option>${["Not started", "In progress", "Done"].map(s => `<option${m.status === s ? " selected" : ""}>${s}</option>`).join("")}</select>`}</label>
           <label><span class="flabel">Date</span>${ro ? esc(m.date ? fmt(m.date) : "—") : `<input type="date" data-mltext="date" value="${esc(m.date || "")}">`}</label>
           <span><span class="flabel">Added</span>${esc(m.created ? fmt(m.created) : "—")}</span></div>
