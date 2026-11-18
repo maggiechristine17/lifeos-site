@@ -110,6 +110,12 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
+.cp-newrow { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cp-newrow .cp-in { flex: 1 1 140px; } .cp-newchk { display: flex; gap: 4px; align-items: center; font-size: 13px; }
+.cp-mlabel { font-size: 12px; color: var(--muted); font-weight: 700; align-self: center; }
+.cp-optplus { border-style: dashed !important; color: var(--accent) !important; }
+.cp-optadd { display: inline-flex; gap: 4px; align-items: center; margin: 4px 0 0 4px; }
+.cp-optadd input { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 6px; background: var(--bg); color: var(--ink); width: 140px; }
 .cp-in { min-width: 90px; border: 1px dashed var(--line) !important; border-radius: 6px; padding: 4px 8px; background: var(--bg) !important; color: var(--ink); }
 .cp-in:focus { border-style: solid !important; border-color: var(--accent) !important; outline: none; }
 .cp-in::placeholder { color: var(--muted); opacity: 1; }
@@ -2179,16 +2185,74 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
       case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
       case "check": return `<input type="checkbox" class="cp-chk" ${at}${v ? " checked" : ""}>`;
-      case "select": return `<select class="db-inline cp-in" ${at}><option value="">${esc(P.label)}: —</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
-      case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="cp-multi">${(P.options || []).map(o => `<button type="button" class="chip" data-cpim="${k}|${esc(rec.id)}|${P.key}" data-val="${esc(o)}" aria-pressed="${on.includes(o)}">${esc(o)}</button>`).join("")}</span>`; }
+      case "select": return `<select class="db-inline cp-in" ${at} data-cpkey="${P.key}"><option value="">${esc(P.label)}: —</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
+      case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="cp-multi">${(P.options || []).map(o => `<button type="button" class="chip" data-cpim="${k}|${esc(rec.id)}|${P.key}" data-val="${esc(o)}" aria-pressed="${on.includes(o)}">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}" data-cpim-for="${k}|${esc(rec.id)}|${P.key}" title="Add a new option">＋</button></span>`; }
       case "rating": return `<span class="cp-rate">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpir="${k}|${esc(rec.id)}|${P.key}" data-n="${n}" aria-label="${n} stars" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</span>`;
       default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
     }
   }
   document.addEventListener("click", e => { const b = e.target.closest("[data-cpmgr]"); if (!b) return; const k = b.dataset.cpmgr; cpOpenMgr[k] = true; if (b.hasAttribute("data-cpclose") && k === "meals") { ml.open = null; $("mlOverlay").hidden = true; } CP_PAGEDB[k].render(); setTimeout(() => { const i = document.querySelector(`[data-cpdb="${k}"] [data-cpnewname]`); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); });
+  // ----- New options on the fly: "＋ New option…" in any Select, "＋" in any Multi-select (editor, tables, new-item rows) -----
+  function cpAddOption(key, val) {
+    val = String(val || "").trim().slice(0, 60); if (!val) return false;
+    let found = false; const next = {};
+    Object.keys(CPROPS).forEach(k => { next[k] = (CPROPS[k] || []).map(d => { if (d.key !== key) return d; found = true; return (d.options || []).includes(val) ? d : { ...d, options: [...(d.options || []), val] }; }); });
+    if (!found) return false;
+    CPROPS = next; try { localStorage.setItem("chevy.customProps", JSON.stringify(CPROPS)); } catch (e) {}
+    if (!PUBLIC && db && !local) db.doc("settings/customProps").set({ props: CPROPS, updatedAt: new Date().toISOString() }).catch(() => {});
+    TYPES.forEach(T => T.props.forEach(P => { if (P.key === key && Array.isArray(P.options) && !P.options.includes(val)) P.options.push(val); }));
+    return true;
+  }
+  let cpOptSeq = 0;
+  function cpOptAsk(anchor, key, done) {
+    const old = anchor.parentNode.querySelector(".cp-optadd"); if (old) old.remove();
+    const id = "cpo" + (++cpOptSeq);
+    anchor.insertAdjacentHTML("afterend", `<span class="cp-optadd" id="${id}"><input type="text" placeholder="New option" maxlength="60" aria-label="New option"><button type="button" class="btn small primary">Add</button><button type="button" class="btn small" aria-label="Cancel">×</button></span>`);
+    const box = $(id), inp = box.querySelector("input"), go = () => { const v = inp.value.trim(); if (!v) { inp.focus(); return; } if (cpAddOption(key, v)) { box.remove(); done(v); } };
+    box.querySelector(".primary").onclick = go; box.querySelectorAll("button")[1].onclick = () => box.remove();
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); go(); } if (e.key === "Escape") box.remove(); });
+    inp.focus();
+  }
+  document.addEventListener("change", e => {
+    const sel = e.target.closest && e.target.closest("select[data-cpkey]"); if (!sel || sel.value !== "__newopt") return;
+    const prev = sel.dataset.prev || ""; sel.value = prev;
+    cpOptAsk(sel, sel.dataset.cpkey, (v) => { const o = document.createElement("option"); o.textContent = v; sel.insertBefore(o, sel.querySelector('option[value="__newopt"]')); sel.value = v; sel.dispatchEvent(new Event("change", { bubbles: true })); });
+  }, true);
+  document.addEventListener("focusin", e => { const sel = e.target.closest && e.target.closest("select[data-cpkey]"); if (sel) sel.dataset.prev = sel.value; });
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-cpaddopt]"); if (!b) return; e.stopPropagation();
+    cpOptAsk(b, b.dataset.cpaddopt, (v) => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.dataset.val = v; c.textContent = v;
+      if (b.dataset.cpimFor) { c.dataset.cpim = b.dataset.cpimFor; c.setAttribute("aria-pressed", "false"); b.before(c); c.click(); }
+      else { c.setAttribute(b.closest("[data-cpnewm]") ? "data-cpnewchip" : "data-cpm", ""); c.setAttribute("aria-pressed", "true"); b.before(c); }
+      if (editing && !$("overlay").hidden) renderPropBar(); });
+  }, true);
+  // Fields for a brand-new item, so its properties are filled in while adding it
+  function cpNewFields(k) {
+    return cpDefs(k).map(P => { const at = `data-cpnew="${P.key}" aria-label="${esc(P.label)}"`;
+      switch (P.ptype) {
+        case "check": return `<label class="cp-newchk"><input type="checkbox" ${at}> ${esc(P.label)}</label>`;
+        case "select": return `<select class="cp-in" ${at} data-cpkey="${P.key}"><option value="">${esc(P.label)}: —</option>${(P.options || []).map(o => `<option>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
+        case "multi": return `<span class="cp-multi" data-cpnewm="${P.key}"><span class="cp-mlabel">${esc(P.label)}:</span>${(P.options || []).map(o => `<button type="button" class="chip" data-cpnewchip data-val="${esc(o)}" aria-pressed="false">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}">＋</button></span>`;
+        case "rating": return `<select class="cp-in" ${at}><option value="">${esc(P.label)}: —</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}">${"★".repeat(n)}</option>`).join("")}</select>`;
+        case "number": case "currency": case "percent": return `<input type="number" step="any" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
+        case "date": case "url": case "email": return `<input type="${P.ptype}" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
+        case "phone": return `<input type="tel" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
+        default: return `<input type="text" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
+      } }).join("");
+  }
+  function cpNewRead(root, k) {
+    const out = {};
+    cpDefs(k).forEach(P => {
+      if (P.ptype === "multi") { const box = root.querySelector(`[data-cpnewm="${P.key}"]`); if (box) out[P.key] = [...box.querySelectorAll('[data-cpnewchip][aria-pressed="true"]')].map(b => b.dataset.val); return; }
+      const el = root.querySelector(`[data-cpnew="${P.key}"]`); if (!el) return;
+      if (P.ptype === "check") out[P.key] = el.checked; else if (["number", "currency", "percent", "rating"].includes(P.ptype)) { if (el.value !== "") out[P.key] = Number(el.value); } else if (el.value && el.value !== "__newopt") out[P.key] = el.value.trim();
+    });
+    return out;
+  }
+  document.addEventListener("click", e => { const c = e.target.closest("[data-cpnewchip]"); if (c) c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true")); });
   const cpSet = async (k, id, key, val) => { const D = CP_PAGEDB[k]; if (!D) return; const rec = D.list().find(x => x.id === id); if (!rec) return; await D.save({ ...rec, [key]: val, updatedAt: new Date().toISOString() }); };
   document.addEventListener("change", async e => {
-    const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i) return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
+    const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i || i.value === "__newopt") return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
     const val = P.ptype === "check" ? i.checked : ["number", "currency", "percent"].includes(P.ptype) ? (i.value === "" ? "" : Number(i.value)) : i.value.trim();
     await cpSet(k, id, key, val);
   });
@@ -2752,8 +2816,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           case "phone": return `${L}<input id="${id}" type="tel" value="${esc(v || "")}" placeholder="(555) 555-5555">`;
           case "date": return `${L}<input id="${id}" type="date" value="${esc(v || "")}">`;
           case "check": return `<label class="pub-toggle" for="${id}"><input type="checkbox" id="${id}"${v ? " checked" : ""}><span class="pub-switch" aria-hidden="true"></span><span>${esc(P.label)}</span></label>`;
-          case "select": return `${L}<select id="${id}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
-          case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="flabel">${esc(P.label)}</span><div class="cp-multi" id="${id}">${(P.options || []).map(o => `<button type="button" class="chip" data-cpm aria-pressed="${on.includes(o)}" data-val="${esc(o)}">${esc(o)}</button>`).join("") || '<span class="pub-hint">No options yet. Add some in Show Properties → Your properties.</span>'}</div>`; }
+          case "select": return `${L}<select id="${id}" data-cpkey="${P.key}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
+          case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="flabel">${esc(P.label)}</span><div class="cp-multi" id="${id}">${(P.options || []).map(o => `<button type="button" class="chip" data-cpm aria-pressed="${on.includes(o)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}" title="Add a new option">＋ New option</button></div>`; }
           case "rating": return `<span class="flabel">${esc(P.label)}</span><div class="cp-rate" id="${id}" data-v="${Number(v) || 0}">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpr="${n}" aria-label="${n} star${n > 1 ? "s" : ""}" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</div>`;
           default: return `${L}<input id="${id}" type="text" value="${esc(v || "")}" placeholder="Empty">`;
         } },
@@ -7145,7 +7209,7 @@ ${text}
     list.sort((a, b) => inv.sort === "room" ? ((a.room || "~").localeCompare(b.room || "~") || (a.title || "").localeCompare(b.title || "")) : (a.title || "").localeCompare(b.title || ""));
     const usedRooms = [...new Set([...rooms, ...inventory.map(x => x.room).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
     $("invCount").textContent = `${inventory.length} item${inventory.length === 1 ? "" : "s"} · ${rooms.length} room${rooms.length === 1 ? "" : "s"}`;
-    el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button></div>`}
+    el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button>${cpDefs("inventory").length ? `<div class="cp-newrow" id="invNewProps">${cpNewFields("inventory")}</div>` : ""}</div>`}
       <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
         <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
         ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button><button type="button" class="btn ai-btn" data-aiopen="inventory">✨ Ask AI</button>`}</div>
@@ -7166,7 +7230,8 @@ ${text}
     if (e.target.closest("[data-invadd]")) {
       const t = ($("invNew").value || "").trim().slice(0, 120); if (!t) { $("invNew").focus(); return; }
       let room = $("invNewRoom").value; if (room === "__new") room = "";
-      await saveItem({ id: invId(), title: t, room, createdAt: new Date().toISOString() });
+      const extra = $("invNewProps") ? cpNewRead($("invNewProps"), "inventory") : {};
+      await saveItem({ id: invId(), title: t, room, ...extra, createdAt: new Date().toISOString() });
       renderInventory(); const n = $("invNew"); if (n) { n.value = ""; n.focus(); } const r = $("invNewRoom"); if (r) r.value = room;
       return;
     }
