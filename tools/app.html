@@ -238,6 +238,12 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .ctl-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .ctl-title .btn { padding: 0 6px; font-size: 11px; text-transform: none; letter-spacing: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ent-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-align: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+.ent-link:hover { color: var(--accent); text-decoration-color: currentColor; }
+.cs-hit { display: flex; align-items: center; gap: 8px; }
+.cs-hit .cs-pick.cs-plus { width: auto; flex: none; padding: 2px 9px; }
+.g-qopen { font-size: 11px; border: 1px solid var(--panel-line); border-radius: 6px; padding: 1px 7px; color: var(--ink); }
+.g-qopen:hover { border-color: var(--accent); color: var(--accent); }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -2225,6 +2231,19 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
   const CP_PAGEDB = {};
   const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
+  // ---------- Rule: every entry title shown anywhere is clickable and opens that entry ----------
+  // Use entLink(type, id, innerHtml) for any title that isn't already a button that opens it.
+  const entLink = (type, id, html) => `<button type="button" class="ent-link" data-entopen="${esc(type)}|${esc(id)}" title="Open">${html}</button>`;
+  function openAny(type, id) {
+    try { if (!$("paPop").hidden) { $("paPop").hidden = true; $("paBtn").setAttribute("aria-expanded", "false"); if (TYPE[type] || type === "auto") window.__backToPA = true; } } catch (e) {}
+    try { const pm = $("plMenu"); if (pm && !pm.hidden) { pm.hidden = true; } } catch (e) {}
+    if (type === "routine" || type === "routines") { pl.sub = "routines"; savePl(); plKeepSub = true; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
+    if (type === "inventory") { invOpen = id; invDelArm = false; renderInvDialog(); return; }
+    if (type === "meals") { ml.open = id; ml.del = false; renderMealDialog(); return; }
+    if (type === "auto") { const x = byId.get(id); if (x) type = x.type; else if (routines.some(r => r.id === id)) return openAny("routine", id); else return; }
+    if (TYPE[type]) openEditor(type, id);
+  }
+  document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-entopen]"); if (!b) return; e.preventDefault(); e.stopPropagation(); const i = b.dataset.entopen.indexOf("|"); openAny(b.dataset.entopen.slice(0, i), b.dataset.entopen.slice(i + 1)); }, true);
   // ---------- Filters: one engine for Layers, Graph and every page database (Inventory, Meals, and any database added later) ----------
   // To give a new database filters: set FX_SRC[scope] = { fields: () => [...], render: () => ... },
   // put fxBtn(scope) in its toolbar and fxPanel(scope) under it, and keep only rows where fxPass(scope, row).
@@ -2415,7 +2434,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function renderGr() {
     const el = $("grBox"); if (!el) return;
     const bad = grBad(), todo = grList().filter(x => !gr.cache[grKey(x)]).length;
-    const row = (x) => `<li class="gr-item"><span class="pa-type">${GR_KIND[x.t]}</span><b>${esc(x.title)}</b><span class="gr-why">${esc(x.issue || "")}</span>${x.fix ? `<span class="gr-fix">Try: <input type="text" data-grfixin="${esc(x.t + ":" + x.id)}" value="${esc(x.fix)}" aria-label="Suggested title"><button type="button" class="btn small primary" data-gruse="${esc(x.t + ":" + x.id)}">Use this title</button></span>` : ""}<button type="button" class="btn small" data-grskip="${esc(grKey(x))}">It's fine</button></li>`;
+    const row = (x) => `<li class="gr-item"><span class="pa-type">${GR_KIND[x.t]}</span><b>${entLink(x.t, x.id, esc(x.title))}</b><span class="gr-why">${esc(x.issue || "")}</span>${x.fix ? `<span class="gr-fix">Try: <input type="text" data-grfixin="${esc(x.t + ":" + x.id)}" value="${esc(x.fix)}" aria-label="Suggested title"><button type="button" class="btn small primary" data-gruse="${esc(x.t + ":" + x.id)}">Use this title</button></span>` : ""}<button type="button" class="btn small" data-grskip="${esc(grKey(x))}">It's fine</button></li>`;
     const status = gr.busy ? `<p class="ai-msg">Checking ${todo} title${todo === 1 ? "" : "s"}…</p>` : gr.msg ? `<p class="ai-msg">${esc(gr.msg)}</p>` : "";
     if (!bad.length && !status) { el.innerHTML = ""; return; }
     el.innerHTML = `<details class="pa-grp gr-grp" open><summary>✍️ Grammar <span class="c">${bad.length}</span></summary>
@@ -2464,8 +2483,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     el.innerHTML = `<section class="panel cs-box"><div class="panel-head"><span class="panel-name">🧲 Consolidate entries into one</span><button class="x" type="button" data-csx aria-label="Close">×</button></div>
       <p class="pub-hint">Search, then click the entries to combine. All of their notes, checkboxes, tags, links and files go into one entry. The first one you pick is kept and renamed; the others are deleted.</p>
       <input type="search" class="cs-q" id="csQ" value="${esc(cs.q)}" placeholder="🔍 Search entries…" aria-label="Search entries">
-      <div class="cs-cols"><div><div class="cs-h">Results</div><ul class="cs-list">${hits.map(x => `<li><button type="button" class="cs-pick" data-cspick="${esc(x.e.id)}">＋ ${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")} ${tag(x)}</button></li>`).join("") || '<li class="pub-hint">No matches.</li>'}</ul></div>
-      <div><div class="cs-h">Combining (${sel.length})</div><ol class="cs-list cs-sel">${sel.map((x, i) => `<li><span>${esc(x.e.title || "Untitled")} ${tag(x)}${i === 0 ? ' <b class="cs-keep">kept</b>' : ""}</span><button type="button" class="x" data-csun="${esc(x.e.id)}" aria-label="Remove">×</button></li>`).join("") || '<li class="pub-hint">Pick at least two.</li>'}</ol>
+      <div class="cs-cols"><div><div class="cs-h">Results</div><ul class="cs-list">${hits.map(x => `<li class="cs-hit"><button type="button" class="cs-pick cs-plus" data-cspick="${esc(x.e.id)}" aria-label="Add ${esc(x.e.title || "Untitled")}">＋</button><span>${entLink(x.type, x.e.id, `${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}`)} ${tag(x)}</span></li>`).join("") || '<li class="pub-hint">No matches.</li>'}</ul></div>
+      <div><div class="cs-h">Combining (${sel.length})</div><ol class="cs-list cs-sel">${sel.map((x, i) => `<li><span>${entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))} ${tag(x)}${i === 0 ? ' <b class="cs-keep">kept</b>' : ""}</span><button type="button" class="x" data-csun="${esc(x.e.id)}" aria-label="Remove">×</button></li>`).join("") || '<li class="pub-hint">Pick at least two.</li>'}</ol>
         ${sel.length >= 2 ? `<label class="cs-h" for="csTitle">Name of the combined entry</label><input type="text" id="csTitle" class="cs-q" value="${esc(cs.title || sel[0].e.title || "")}" maxlength="200">
         <button type="button" class="btn ${cs.arm ? "danger" : "primary"}" data-csgo${cs.busy ? " disabled" : ""}>${cs.busy ? "Combining…" : cs.arm ? `Sure? Combine and delete ${sel.length - 1}` : `Combine ${sel.length} entries`}</button>` : ""}</div></div></section>`;
   }
@@ -4461,7 +4480,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     }
     const D = CP_PAGEDB[sc]; if (D) D.render(); else if (sc === "_all") renderDatabase();
   };
-  const closeEditor = () => { $("overlay").hidden = true; editing = null; navStack = []; hideSuggest(); };
+  const closeEditor = () => { $("overlay").hidden = true; editing = null; navStack = []; hideSuggest(); if (window.__backToPA) { window.__backToPA = false; setTimeout(() => { if ($("overlay").hidden) $("paBtn").click(); }, 0); } };
   $("cancelBtn").addEventListener("click", closeEditor);
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeEditor(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("overlay").hidden && $("suggest").hidden) closeEditor(); });
@@ -4790,7 +4809,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const x = gSel && byId.get(gSel); if (!x) { gSel = null; box.hidden = true; box.innerHTML = ""; return; }
     const ls = linksOf(x.e.id), have = new Set(ls.map(y => y.e.id));
     const opts = TYPES.filter(T => !T.archive).map(T => T.key).map(k => { const items = data[k].filter(o => o.id !== x.e.id && !have.has(o.id)).sort((a, b) => (a.title || "").localeCompare(b.title || "")); return items.length ? `<optgroup label="${esc(TYPE[k].label)}">${items.map(o => `<option value="${esc(o.id)}">${esc(o.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
-    box.innerHTML = `<div class="g-head"><i class="tdot t-${x.type}" aria-hidden="true"></i><b title="${esc(x.e.title || "Untitled")}">${esc(x.e.title || "Untitled")}</b><button type="button" class="btn" data-gopen>Open</button><button type="button" class="x" data-gdone aria-label="Done linking">×</button></div>
+    box.innerHTML = `<div class="g-head"><i class="tdot t-${x.type}" aria-hidden="true"></i><b title="${esc(x.e.title || "Untitled")}">${entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))}</b><button type="button" class="btn" data-gopen>Open</button><button type="button" class="x" data-gdone aria-label="Done linking">×</button></div>
       <div class="g-tip">Tap another shape to link it. Tap a linked one to unlink it.</div>
       ${gMsg ? `<div class="g-msg" role="status">${esc(gMsg)}</div>` : ""}
       ${ls.length ? `<ul>${ls.map(y => `<li class="lk-li${lkCls(y)}"><span>${lkIn(y)}</span><button type="button" class="tdel" data-gunlink="${esc(y.e.id)}" aria-label="Unlink ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="g-tip">No links yet.</div>'}
@@ -4860,7 +4879,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     gQAct = Math.min(gQAct, Math.max(0, gQHits.length - 1));
     const shown = new Set(gNodes.filter(n => !n.dim).map(n => n.id));
     const label = (x) => x.type === "routine" ? "Routine" : TYPE[x.type] ? TYPE[x.type].singular : "";
-    box.innerHTML = gQHits.length ? gQHits.map((x, i) => `<button type="button" class="g-qhit${i === gQAct ? " on" : ""}" role="option" aria-selected="${i === gQAct}" data-gqpick="${esc(x.id)}"><i class="tdot t-${x.type === "routine" ? "routine" : x.type}" aria-hidden="true"></i><span class="g-qt">${esc(x.title)}</span><span class="g-qk">${esc(label(x))}${shown.has(x.id) ? "" : " · hidden"}</span></button>`).join("") : '<div class="g-qnone">No entry matches.</div>';
+    box.innerHTML = gQHits.length ? gQHits.map((x, i) => `<button type="button" class="g-qhit${i === gQAct ? " on" : ""}" role="option" aria-selected="${i === gQAct}" data-gqpick="${esc(x.id)}"><i class="tdot t-${x.type === "routine" ? "routine" : x.type}" aria-hidden="true"></i><span class="g-qt">${esc(x.title)}</span><span class="g-qk">${esc(label(x))}${shown.has(x.id) ? "" : " · hidden"}</span><span class="g-qopen" data-entopen="${esc(x.type)}|${esc(x.id)}" role="button" title="Open the entry">Open</span></button>`).join("") : '<div class="g-qnone">No entry matches.</div>';
     box.hidden = false;
   }
   function gFocusOn(id) {
@@ -5632,14 +5651,14 @@ Don't invent appointments or facts that aren't listed.`);
     const isThis = mon === mondayOf(t);
     // 1 Look back
     const s1 = `<section class="wk-card"><h2>${num(0)}Look back at last week</h2>
-      <div class="wk-facts"><div><b>${F.finished.length}</b> finished · <b>${F.rtDone}</b> of ${F.rtPlanned} routines done · <b>${F.blocksLast}</b> time blocks used</div>${li(F.finished.slice(0, 8), e => `<li>✓ ${esc(e.title || "Untitled")}</li>`)}</div>
+      <div class="wk-facts"><div><b>${F.finished.length}</b> finished · <b>${F.rtDone}</b> of ${F.rtPlanned} routines done · <b>${F.blocksLast}</b> time blocks used</div>${li(F.finished.slice(0, 8), e => `<li>✓ ${entLink("auto", e.id, esc(e.title || "Untitled"))}</li>`)}</div>
       ${wkQ("wentWell", "What went well?", "Small wins count", P.wentWell)}
       ${wkQ("notDone", "What didn't get done, and why?", "Be honest: too much planned? lost interest? something came up?", P.notDone)}</section>`;
     // 2 What's on
     const s2 = `<section class="wk-card"><h2>${num(1)}What's already on this week</h2>
       <div class="wk-facts">
-        <div><b>Fixed times</b>${F.fixed.length ? li(F.fixed, f => `<li>${esc(dayName(f.d))} ${esc(timeRange(f.x.e.timeStart, f.x.e.timeEnd))} · ${esc(f.x.e.title || "Untitled")}</li>`) : " · none"}</div>
-        <div><b>Ending this week</b>${F.ends.length ? li(F.ends, f => `<li>${esc(dayName(f.d))} · ${esc(f.x.e.title || "Untitled")}</li>`) : " · none"}</div>
+        <div><b>Fixed times</b>${F.fixed.length ? li(F.fixed, f => `<li>${esc(dayName(f.d))} ${esc(timeRange(f.x.e.timeStart, f.x.e.timeEnd))} · ${entLink(f.x.type || "auto", f.x.e.id, esc(f.x.e.title || "Untitled"))}</li>`) : " · none"}</div>
+        <div><b>Ending this week</b>${F.ends.length ? li(F.ends, f => `<li>${esc(dayName(f.d))} · ${entLink(f.x.type || "auto", f.x.e.id, esc(f.x.e.title || "Untitled"))}</li>`) : " · none"}</div>
       </div>
       ${wkQ("mustHappen", "What has to happen this week, no matter what?", "Appointments, deadlines, things other people are counting on", P.mustHappen)}</section>`;
     // 3 Top 3
@@ -5671,14 +5690,14 @@ Don't invent appointments or facts that aren't listed.`);
     const dd = (P.days || {})[wk.day] || {};
     const pool = plPool();
     const sched = SLOTS.map(s => {
-      const xs = pool.filter(x => blocksOf(x.e).some(b => b.date === wk.day && b.slot === s.k)).map(x => `${isDone(x) ? "✓ " : ""}${esc(x.e.title || "Untitled")}${noteOf(wk.day, s.k, x.e.id) ? ` <i class="wk-dmeta">📝 ${esc(noteOf(wk.day, s.k, x.e.id))}</i>` : ""}`);
-      const rs = routines.flatMap(r => rtPlans(r).filter(p => p.date === wk.day && p.slot === s.k).map(p => `${p.status === "done" ? "✓ " : "↻ "}${esc(r.name)}${noteOf(wk.day, s.k, "rt-" + r.id) ? ` <i class="wk-dmeta">📝 ${esc(noteOf(wk.day, s.k, "rt-" + r.id))}</i>` : ""}`));
+      const xs = pool.filter(x => blocksOf(x.e).some(b => b.date === wk.day && b.slot === s.k)).map(x => `${isDone(x) ? "✓ " : ""}${entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))}${noteOf(wk.day, s.k, x.e.id) ? ` <i class="wk-dmeta">📝 ${esc(noteOf(wk.day, s.k, x.e.id))}</i>` : ""}`);
+      const rs = routines.flatMap(r => rtPlans(r).filter(p => p.date === wk.day && p.slot === s.k).map(p => `${p.status === "done" ? "✓ " : "↻ "}${entLink("routine", r.id, esc(r.name))}${noteOf(wk.day, s.k, "rt-" + r.id) ? ` <i class="wk-dmeta">📝 ${esc(noteOf(wk.day, s.k, "rt-" + r.id))}</i>` : ""}`));
       return `<div class="wk-srow"><span>${s.label}</span><span>${[...rs, ...xs].join(" · ") || '<span class="wk-dmeta">free</span>'}</span></div>`;
     }).join("");
     const focusToday = pool.filter(x => x.type !== "archive" && inFocusOn(x.e, wk.day) && !blocksOf(x.e).some(b => b.date === wk.day) && !isDone(x));
     const s7 = `<section class="wk-card"><h2>${num(5, 7)}Daily check-in</h2>
       <div class="chips" role="group" aria-label="Day">${F.days.map(d => `<button type="button" class="chip" data-wkday="${d}" aria-pressed="${d === wk.day}">${esc(dayName(d))} ${Number(d.slice(8))}${d === t ? " · today" : ""}</button>`).join("")}</div>
-      <div class="wk-sched">${sched}${focusToday.length ? `<div class="wk-srow"><span>In focus</span><span>${focusToday.map(x => esc(x.e.title || "Untitled")).join(" · ")}</span></div>` : ""}</div>
+      <div class="wk-sched">${sched}${focusToday.length ? `<div class="wk-srow"><span>In focus</span><span>${focusToday.map(x => entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))).join(" · ")}</span></div>` : ""}</div>
       ${wkQ("d:one", "What's the one thing that matters most " + (wk.day === t ? "today" : "that day") + "?", "If only one thing gets done, it should be…", dd.one)}
       ${wkQ("d:risk", "What might get in the way?", "And what will you do about it?", dd.risk)}
       ${wkQ("d:review", "End of day: what got done, and what moves to tomorrow?", "Write it down so it doesn't live in your head", dd.review)}</section>`;
@@ -5882,7 +5901,7 @@ Don't invent appointments or facts that aren't listed.`);
     const x = byId.get(id); if (!x) return;
     plMenuFor = { kind: "entry", type, id, date, el: anchorEl, slot };
     const have = blocksOf(x.e).filter(b => b.date === date).map(b => b.slot), ro = !!x.e._pub;
-    $("plMenu").innerHTML = `<div class="pl-mh2"><i class="tdot t-${type}" aria-hidden="true"></i><b>${esc(x.e.title || "Untitled")}</b><button type="button" class="btn pl-open" data-plopenmenu>Open</button><button type="button" class="x" data-plclose aria-label="Close menu" title="Close menu">×</button></div>
+    $("plMenu").innerHTML = `<div class="pl-mh2"><i class="tdot t-${type}" aria-hidden="true"></i><b>${entLink(type, x.e.id, esc(x.e.title || "Untitled"))}</b><button type="button" class="btn pl-open" data-plopenmenu>Open</button><button type="button" class="x" data-plclose aria-label="Close menu" title="Close menu">×</button></div>
       ${!ro && SLOT[slot] ? (isAutoBlock(x.e, date, slot)
         ? `<button type="button" class="btn pl-unplace" data-plunplace="auto">Remove from time blocks (clears its time, keeps the entry and its date)</button>`
         : `<button type="button" class="btn pl-unplace" data-plunplace="${slot}">Remove from ${esc(SLOT[slot].label)} block</button>`) : ""}
@@ -5896,7 +5915,7 @@ Don't invent appointments or facts that aren't listed.`);
     const r = rtById(rid), x = rtPlans(r).find(y => y.id === pid); if (!r || !x) return;
     plMenuFor = { kind: "routine", rid, pid, el: anchorEl };
     const done = x.status === "done";
-    $("plMenu").innerHTML = `<div class="pl-mh2">${RT_ICON}<b>${esc(r.name)}</b><button type="button" class="x" data-plclose aria-label="Close">×</button></div>
+    $("plMenu").innerHTML = `<div class="pl-mh2">${RT_ICON}<b>${entLink("routine", r.id, esc(r.name))}</b><button type="button" class="x" data-plclose aria-label="Close">×</button></div>
       <div class="pl-msub">${SLOT[x.slot] ? SLOT[x.slot].label : ""} · ${dayName(x.date)}, ${esc(fmt(x.date, false))}${done ? ` · done${x.doneAt ? " " + esc(fmt(x.doneAt, false)) + (fmtTime(x.doneAt) ? " at " + esc(fmtTime(x.doneAt)) : "") : ""}` : ""}</div>
       <div class="pl-macts rt-acts">${done ? '<button type="button" class="btn" data-rtdone="0">Undo done</button>' : '<button type="button" class="btn primary" data-rtdone="1">✓ I did it</button>'}<button type="button" class="btn danger" data-rtremove>${done ? "Remove" : "Not doing it, remove"}</button></div>
       ${x.slot ? noteBox(x.date, x.slot, "rt-" + rid) : ""}
@@ -6171,7 +6190,7 @@ Don't invent appointments or facts that aren't listed.`);
   function dbClosePop() { const m = $("dbPop"); if (m) { m.hidden = true; m.innerHTML = ""; } dbPopFor = null; }
   function dbRenderPop() {
     const f = dbPopFor; if (!f) return; const e = dbEntry(f.type, f.id); if (!e) { dbClosePop(); return; }
-    const head = `<div class="pl-mh2"><b>${esc(e.title || "Untitled")}</b><button type="button" class="x" data-dbpopx aria-label="Close">×</button></div>`;
+    const head = `<div class="pl-mh2"><b>${entLink("auto", e.id, esc(e.title || "Untitled"))}</b><button type="button" class="x" data-dbpopx aria-label="Close">×</button></div>`;
     let body = "";
     if (f.kind === "layer") body = FIXED_LAYER[f.type] ? `<div class="pl-msub">${esc(TYPE[f.type].label)} are always Layer ${FIXED_LAYER[f.type]}. Change its Database to give it another layer.</div>` : `<div class="pl-msub">Layer</div><div class="layer-pick">${LAYERS.map(l => `<button type="button" class="layer-toggle" aria-pressed="${layersOf(e).includes(l)}" data-dblt="${l}">${l}</button>`).join("")}</div>`;
     if (f.kind === "focus") body = `<div class="pl-msub">When</div><div class="db-drange"><label>Start date<input type="date" id="dbFs" value="${esc(e.focusStart || "")}"></label><label>End date<input type="date" id="dbFe" value="${esc(e.focusEnd || "")}"></label><label>Start time<select id="dbTs">${hourOpts(e.timeStart || "", "—")}</select></label><label>End time<select id="dbTe">${hourOpts(e.timeEnd || "", "—")}</select></label></div><div class="pl-macts"><button type="button" class="btn primary" data-dbfsave>Save</button> <button type="button" class="btn" data-dbfclear>Clear</button></div><div class="err" id="dbFerr"></div>`;
@@ -6385,7 +6404,7 @@ Don't invent appointments or facts that aren't listed.`);
     const list = sitePublic().sort((a, b) => (a.e.title || "").localeCompare(b.e.title || ""));
     $("sitePop").innerHTML = `<h3>🌐 Your website</h3>
       <div><b>${list.length}</b> ${list.length === 1 ? "entry is" : "entries are"} marked Show on website.${list.length ? "" : " Open an entry and switch on Show on website, or turn on 🌐 Add to website before adding new ones."}</div>
-      ${list.length ? `<ul class="sp-list">${list.slice(0, 40).map(x => `<li>${esc(x.e.title || "Untitled")}</li>`).join("")}${list.length > 40 ? `<li>…and ${list.length - 40} more</li>` : ""}</ul>` : ""}
+      ${list.length ? `<ul class="sp-list">${list.slice(0, 40).map(x => `<li>${entLink(x.type || "auto", x.e.id, esc(x.e.title || "Untitled"))}</li>`).join("")}${list.length > 40 ? `<li>…and ${list.length - 40} more</li>` : ""}</ul>` : ""}
       <label class="flabel" for="spTitle">Website title</label>
       <input type="text" id="spTitle" maxlength="80" placeholder="e.g. Maggie's Resources" value="${esc(siteTitle)}">
       <div class="sp-msg"><b>Your website:</b> <a href="https://maggiechristine17.github.io/lifeos-site/" target="_blank" rel="noopener">maggiechristine17.github.io/lifeos-site</a> · updates by itself once a day, overnight.</div>
@@ -6643,8 +6662,8 @@ Don't invent appointments or facts that aren't listed.`);
     const ch = P.changes.filter(x => x.neu !== x.old);
     el.innerHTML = `<h4>🔁 Recode<button type="button" class="x" data-pilreshut aria-label="Close">×</button></h4>
       <p class="pa-intro">${P.total ? `Checked ${P.total} coded entr${P.total === 1 ? "y" : "ies"}. ${ch.length ? `${ch.length} code${ch.length === 1 ? "" : "s"} should change to fit the pillars now:` : "Every code already fits the pillars. 🎉"}` : "No entries have a code yet. Give entries a Code (in the entry window) and Recode will keep them in order."}</p>
-      ${ch.length ? `<ul class="pil-relist">${ch.map(x => `<li><span class="pa-type">${esc(TYPE[x.type].singular)}</span> ${esc(x.e.title || "Untitled")}: <code>${esc(x.old)}</code> → <code class="new">${esc(x.neu)}</code>${x.areaName ? ` <span class="pil-rea">${esc(x.areaName)}</span>` : ""}</li>`).join("")}</ul>` : ""}
-      ${P.problems.length ? `<p class="pa-intro"><b>Needs a look (${P.problems.length}):</b></p><ul class="pil-relist">${P.problems.map(x => `<li>${esc(x.e.title || "Untitled")} <code>${esc(x.old)}</code>: ${esc(x.why)}</li>`).join("")}</ul>` : ""}
+      ${ch.length ? `<ul class="pil-relist">${ch.map(x => `<li><span class="pa-type">${esc(TYPE[x.type].singular)}</span> ${entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))}: <code>${esc(x.old)}</code> → <code class="new">${esc(x.neu)}</code>${x.areaName ? ` <span class="pil-rea">${esc(x.areaName)}</span>` : ""}</li>`).join("")}</ul>` : ""}
+      ${P.problems.length ? `<p class="pa-intro"><b>Needs a look (${P.problems.length}):</b></p><ul class="pil-relist">${P.problems.map(x => `<li>${entLink(x.type, x.e.id, esc(x.e.title || "Untitled"))} <code>${esc(x.old)}</code>: ${esc(x.why)}</li>`).join("")}</ul>` : ""}
       ${P.changes.length ? `<button type="button" class="btn primary" data-pilapply>Apply ${ch.length ? ch.length + " change" + (ch.length === 1 ? "" : "s") : "(remember area names)"}</button>` : ""}`;
   }
   $("pilRecodeBtn").addEventListener("click", pilRecodeShow);
@@ -6727,7 +6746,7 @@ Don't invent appointments or facts that aren't listed.`);
     const tf = t.closest("[data-patypef]"); if (tf) { paType = tf.dataset.patypef; renderPA(); return; }
     if (t.closest("[data-paunskip]")) { paSkip = new Set(); paSaveSkip(); renderPA(); return; }
     const sk = t.closest("[data-paskip]"); if (sk) { paSkip.add(sk.dataset.paskip); paSaveSkip(); renderPA(); return; }
-    const op = t.closest("[data-paopen]"); if (op) { paOpen(false); openEditor(op.dataset.paopen, op.dataset.paid); return; }
+    const op = t.closest("[data-paopen]"); if (op) { paOpen(false); window.__backToPA = true; openEditor(op.dataset.paopen, op.dataset.paid); return; }
     const dt = t.closest("[data-padate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const st = t.closest("[data-paset]"); if (st) { const f = st.dataset.pafield, v = st.dataset.paval; await wfPatch(st.dataset.patype, st.dataset.paset, { [f]: f === "layers" ? [v] : v }); paDone(); return; }
     const go = t.closest("[data-pago]"); if (go) { const i = go.parentNode.querySelector("[data-patext]"); if (i) await paText(i); return; }
@@ -7202,7 +7221,7 @@ ${text}
       <div class="wf-bot"><span class="wf-plabel">${label}</span>${bottom}</div></article>`;
     const board = (type, cards, addCard) => `<div class="wf-board" data-wfboard="${type}">${cards}${wfMove && wfMove.sec === type ? `<button type="button" class="wf-here wf-end" data-wfhere="${type}" data-wfkey="">Move to the end</button>` : ""}${addCard || ""}</div>`;
     const name = (e) => esc(e.title || "Untitled");
-    const linkChip = (x, ownerId, icon) => `<span class="wf-achip">${icon}${name(x)}${PUBLIC ? "" : `<button type="button" data-wfunlink="${esc(ownerId)}" data-wfo="${esc(x.id)}" title="Take it off this card (nothing is deleted)" aria-label="Remove">×</button>`}</span>`;
+    const linkChip = (x, ownerId, icon) => `<span class="wf-achip">${icon}${entLink("auto", x.id, name(x))}${PUBLIC ? "" : `<button type="button" data-wfunlink="${esc(ownerId)}" data-wfo="${esc(x.id)}" title="Take it off this card (nothing is deleted)" aria-label="Remove">×</button>`}</span>`;
     const ICON = { ideas: "✦ ", values: "◆ ", areas: "", goals: "🎯 ", projects: "", pages: "" };
     const chipIcon = (type, x) => ICON[type] || (emojiOf(x, type) + " ");
     // From: the linked entries of the section above, plus a dropdown to add one
@@ -7821,7 +7840,7 @@ ${text}
       const steps = taskList(e).filter(x => (x.text || "").trim()).filter(x => !onlyKeys || onlyKeys.has("t:" + e.id + ":" + x.id));
       const stepHtml = steps.map(x => { const k = "t:" + e.id + ":" + x.id, dn = !!x.done; return `<li class="gm-st${dn ? " done" : ""}${picks.includes(k) ? " picked" : ""}"><button type="button" class="gm-check sm${dn ? " on" : ""}" data-gmstep="${esc(k)}" aria-pressed="${dn}" aria-label="${dn ? "Mark not done" : "Mark done"}: ${esc(x.text)}">${dn ? "✓" : ""}</button><div class="gm-qt"><span class="gm-stn">${esc(x.text)}</span>${dueLbl(e.id, x.id, (x.due || "").slice(0, 10), x.text, dn)}</div>${dn ? "" : `<span class="gm-xp">+${GM_XP.task}</span>${pickBtn(k, x.text)}`}</li>`; }).join("");
       const allDone = taskList(e).some(x => (x.text || "").trim()) && taskList(e).filter(x => (x.text || "").trim()).every(x => x.done);
-      return `<li class="gm-card${picks.includes(pk) ? " picked" : ""}"><div class="gm-ph"><button type="button" class="gm-check${gmArm === pk ? " arm" : ""}" data-gmdone="${esc(pk)}" aria-label="Finish the project ${esc(name)}">${gmArm === pk ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${esc(emojiOf(e, "projects") || "")} ${esc(name)}</span>${e.subtitle ? `<span class="gm-psub">${esc(e.subtitle)}</span>` : ""}<span class="gm-qs">${dueLbl(e.id, "", pdue, name, false)}${allDone ? ` · <span class="gm-ready">All steps done. Tick the circle to finish the project.</span>` : ""}</span></div><span class="gm-xp">+${GM_XP.project}</span>${pickBtn(pk, name)}</div>${stepHtml ? `<ul class="gm-steps">${stepHtml}</ul>` : ""}</li>`;
+      return `<li class="gm-card${picks.includes(pk) ? " picked" : ""}"><div class="gm-ph"><button type="button" class="gm-check${gmArm === pk ? " arm" : ""}" data-gmdone="${esc(pk)}" aria-label="Finish the project ${esc(name)}">${gmArm === pk ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${entLink("projects", e.id, `${esc(emojiOf(e, "projects") || "")} ${esc(name)}`)}</span>${e.subtitle ? `<span class="gm-psub">${esc(e.subtitle)}</span>` : ""}<span class="gm-qs">${dueLbl(e.id, "", pdue, name, false)}${allDone ? ` · <span class="gm-ready">All steps done. Tick the circle to finish the project.</span>` : ""}</span></div><span class="gm-xp">+${GM_XP.project}</span>${pickBtn(pk, name)}</div>${stepHtml ? `<ul class="gm-steps">${stepHtml}</ul>` : ""}</li>`;
     };
     const gone = (k) => `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`;
     const openP = (data.projects || []).filter(e => !e._pub && e.status !== "Done");
