@@ -316,6 +316,8 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .dl-a { display: flex; gap: 6px; flex: none; }
 @media (max-width: 560px) { .dl-row { flex-direction: column; align-items: stretch; } .dl-a { justify-content: flex-end; } }
 .pg-dl { display: flex; justify-content: center; margin: 28px auto 8px; padding: 14px 0 0; border-top: 1px dashed var(--panel-line); max-width: 1180px; }
+.gm-h2row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.gm-addp { font-size: 13px; }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -8045,7 +8047,7 @@ ${text}
         <div class="gm-stats"><div><b>🔥 ${streak}</b><span>day streak</span></div><div><b>+${todayXp}</b><span>XP today</span></div><div><b>${todayP.length + onOther.length}</b><span>on today</span></div><div><b>${quests.length}</b><span>open quests</span></div></div>
       </section>
       ${gmToast ? `<div class="gm-toast" role="status">${esc(gmToast)}</div>` : ""}
-      <section class="gm-sec" id="gmToday"><h2>Today</h2>
+      <section class="gm-sec" id="gmToday"><h2 class="gm-h2row">Today${PUBLIC ? "" : `<button type="button" class="btn primary gm-addp" data-gmaddp>＋ Add project</button>`}</h2>
         <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${picks.length}</span></button><button type="button" role="tab" data-gmtab="today" aria-selected="${gmTab === "today"}">☀️ Today's projects <span class="gm-tn">${todayP.length + onOther.length}</span></button><button type="button" role="tab" data-gmtab="more" aria-selected="${gmTab === "more"}">More projects <span class="gm-tn">${moreP.length}</span></button></div>
         ${gmTab === "pinned" ? `<p class="gm-hint">${!picks.length ? `Nothing pinned yet. Tap <b>📌 Pin</b> on any project, step or entry in the other tabs. Pinning your first one today earns <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything pinned is done. Perfect day! 🎉" : `Finish everything pinned for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
         <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing pinned yet</li>'}</ul>`
@@ -8074,6 +8076,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
     if (t.closest("[data-gmnewp]")) { openEditor("projects"); return; }
+    if (t.closest("[data-gmaddp]")) { openEditor("projects", null, gmTab === "more" ? {} : { preset: { focusStart: today(), focusEnd: today() } }); return; }
     const gt = t.closest("[data-gmtab]"); if (gt) { gmTab = gt.dataset.gmtab; try { localStorage.setItem("chevy.gm.tab", gmTab); } catch (e) {} renderGame(); return; }
     const dtb = t.closest("[data-gmdidtab]"); if (dtb) { gmDidTab = dtb.dataset.gmdidtab; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : (pk.dataset.gmname || "Pinned")) : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
