@@ -254,6 +254,50 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .pg-dl { display: flex; justify-content: center; margin: 28px auto 8px; padding: 14px 0 0; border-top: 1px dashed var(--panel-line); max-width: 1180px; }
 .gm-h2row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .gm-addp { font-size: 13px; }
+.dk-lab { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.dk-addlay { margin: 6px 0; }
+.dk-sel li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dk-ord { display: flex; gap: 2px; flex: none; }
+.dk-go { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.dk-go .set-desc { margin-right: auto; }
+body.dk-open { overflow: hidden; }
+.dk-show { position: fixed; inset: 0; z-index: 200; background: #111; color: #fff; display: flex; flex-direction: column; }
+.dk-stage { position: relative; flex: 1; overflow: hidden; cursor: pointer; }
+.dk-frame { position: absolute; width: 1280px; height: 720px; transform-origin: 0 0; }
+.dk-slide { position: relative; width: 1280px; height: 720px; background: #fff; color: #1d1d1f; font-family: "IBM Plex Sans", system-ui, sans-serif; overflow: hidden; box-sizing: border-box; }
+.dk-in { position: absolute; inset: 64px 90px 80px; display: flex; flex-direction: column; gap: 22px; overflow: hidden; }
+.dk-slide h1 { font-size: 60px; line-height: 1.1; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+.dk-slide h2 { font-size: 38px; line-height: 1.15; margin: 0; font-weight: 700; }
+.dk-part { font-size: 20px; font-weight: 600; color: #6b6b73; margin-left: 10px; white-space: nowrap; }
+.dk-sub { font-size: 28px; color: #55555c; margin: 0; line-height: 1.35; }
+.dk-cover { background: linear-gradient(135deg, #f4f7ec, #fff 60%); }
+.dk-cover .dk-in { justify-content: center; }
+.dk-cover h1 { font-size: 76px; }
+.dk-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; display: block; border-radius: 0; }
+.dk-props { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; margin: 10px 0 0; }
+.dk-props div { border-top: 2px solid #ececf0; padding-top: 10px; }
+.dk-props dt { font-size: 17px; font-weight: 700; color: #85858c; text-transform: uppercase; letter-spacing: .06em; }
+.dk-props dd { margin: 4px 0 0; font-size: 27px; line-height: 1.3; }
+.dk-tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; font-size: 28px; }
+.dk-tasks li { display: flex; gap: 14px; align-items: baseline; }
+.dk-tasks li.done { color: #8a8a90; text-decoration: line-through; }
+.dk-md { font-size: 25px; line-height: 1.5; color: #2a2a2e; }
+.dk-md h1, .dk-md h2, .dk-md h3 { font-size: 31px; margin: 0 0 10px; }
+.dk-md p { margin: 0 0 14px; } .dk-md ul, .dk-md ol { margin: 0 0 14px; padding-left: 34px; }
+.dk-md a { color: inherit; }
+.dk-foot { position: absolute; left: 90px; right: 90px; bottom: 26px; display: flex; justify-content: space-between; font-size: 16px; color: #9a9aa0; }
+.dk-progress { height: 4px; background: #333; } .dk-progress i { display: block; height: 100%; background: #b8e05a; }
+.dk-ctl { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px; font-size: 14px; color: #ccc; }
+.dk-ctl button { background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px; min-width: 36px; height: 32px; font-size: 16px; cursor: pointer; }
+.dk-ctl button:disabled { opacity: .35; cursor: default; }
+.dk-clock { font-variant-numeric: tabular-nums; color: #999; min-width: 44px; text-align: center; }
+.dk-show[data-mode="grid"] { overflow-y: auto; }
+.dk-gridbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #111; flex-wrap: wrap; }
+.dk-gridbar span { color: #aaa; font-size: 13px; } .dk-sp { flex: 1; }
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 4px 18px 24px; }
+.dk-thumb { position: relative; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: #fff; cursor: pointer; display: block; width: 100%; }
+.dk-thumb:hover { border-color: #b8e05a; }
+.dk-scale { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; pointer-events: none; text-align: left; }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -1374,7 +1418,7 @@ table.pr-rt { width: 100%; }
 .sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
-.is-public #dlPop, .is-public #pgDlPop, .is-public #pgDl, .is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
+.is-public #dlPop, .is-public #dkPop, .is-public #dkShow, .is-public #pgDlPop, .is-public #pgDl, .is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
 .pa-dialog { width: min(980px, 100%); }
 .pa-n { margin-left: 6px; background: var(--accent); color: var(--bg); border-radius: 99px; padding: 0 7px; font-size: 11px; font-weight: 800; }
 .pa-n:empty { display: none; }
@@ -1914,6 +1958,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><span class="pil-btns"><button type="button" class="btn primary" id="pilRecodeBtn">🔁 Recode</button><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></span></div><div class="pil-re" id="pilRe" hidden></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
   <div class="bd-pop dl-pop" id="dlPop" hidden><div class="bd-dialog dl-dialog" role="dialog" aria-modal="true" aria-label="Download"><h3>⬇ Download<button type="button" class="x" data-dlclose aria-label="Close Download">×</button></h3><div id="dlBody"></div></div></div>
   <div class="bd-pop dl-pop" id="pgDlPop" hidden><div class="bd-dialog dl-dialog" role="dialog" aria-modal="true" aria-label="Download this page"><h3>⬇ Download this page<button type="button" class="x" data-pgclose aria-label="Close">×</button></h3><div id="pgDlBody"></div></div></div>
+  <div class="bd-pop dk-pop" id="dkPop" hidden><div class="bd-dialog dk-dialog" role="dialog" aria-modal="true" aria-label="Slide deck"><h3>🎞 Slide deck<button type="button" class="x" data-dkclose aria-label="Close">×</button></h3><div id="dkBody"></div></div></div>
+  <div class="dk-show" id="dkShow" hidden></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -2130,6 +2176,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <button type="button" class="af-btn af-priv" data-afclick="ggBtn">🔗 Google</button>
     <button type="button" class="af-btn af-priv af-mode" data-modetoggle aria-pressed="false">✨ Streamlined: <b>Off</b></button>
     <button type="button" class="af-btn af-priv" id="pilBtn" aria-controls="pilPop">🏛 Pillars</button>
+    <button type="button" class="af-btn af-priv" id="dkBtn" aria-expanded="false" aria-controls="dkPop">🎞 Slide deck</button>
     <button type="button" class="af-btn af-priv" id="dlBtn" aria-expanded="false" aria-controls="dlPop">⬇ Download</button>
     <button type="button" class="af-btn" data-aftop>↑ Back to top</button>
   </div>
@@ -6669,6 +6716,157 @@ Don't invent appointments or facts that aren't listed.`);
   });
   $("pgDlPop").addEventListener("change", e => { if (e.target.id === "pgNotes") { pgNotes = e.target.checked; renderPgDl(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pgDlPop").hidden) pgOpen(false); });
+  // ---------- 🎞 Slide deck (footer): pick entries and which properties show, then present. Built right on the page: no AI, no tokens. ----------
+  const DK_PROPS = [["type", "Database"], ["subtitle", "Subtitle"], ["status", "Status"], ["when", "When"], ["layer", "Layer"], ["color", "Color"], ["tags", "Tags"], ["links", "Links"], ["created", "Created"], ["updated", "Last edited"], ["tasks", "Tasks (own slides)"], ["notes", "Notes (own slides)"]];
+  const dk = Object.assign({ title: "", ids: [], props: ["subtitle", "status", "when", "tags", "tasks", "notes"], q: "" }, recall("chevy.deck") || {});
+  dk.q = ""; let dkSlides = [], dkAt = 0, dkTimer = null, dkStart = 0;
+  const dkSave = () => store("chevy.deck", { title: dk.title, ids: dk.ids, props: dk.props });
+  const dkAllProps = () => [...DK_PROPS, ...cpDefs("_all").map(P => [P.key, P.label])];
+  const dkEntry = (id) => byId.get(id);
+  // Long notes: split into slides of about the same size, breaking between paragraphs (or sentences for a very long paragraph)
+  function dkSplitNotes(text) {
+    const LIM = 650;
+    let blocks = String(text || "").replace(/\r/g, "").split(/\n\s*\n|\n(?=#{1,6}\s)/).map(b => b.trim()).filter(Boolean);
+    blocks = blocks.flatMap(b => b.length <= LIM ? [b] : (b.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) || [b]).reduce((acc, sn) => { if (!acc.length || (acc[acc.length - 1] + sn).length > LIM) acc.push(sn.trim()); else acc[acc.length - 1] += sn; return acc; }, []));
+    const total = blocks.reduce((s, b) => s + b.length, 0); if (!total) return [];
+    const n = Math.max(1, Math.ceil(total / LIM)), target = total / n, out = [[]]; let size = 0;
+    blocks.forEach(b => { const head = /^#{1,6}\s/.test(b); if (out[out.length - 1].length && (size + b.length > target * 1.15 || (head && size > target * 0.45))) { out.push([]); size = 0; } out[out.length - 1].push(b); size += b.length; });
+    for (let i = 0; i < out.length - 1; i++) { const c = out[i]; if (c.length > 1 && /^#{1,6}\s/.test(c[c.length - 1])) out[i + 1].unshift(c.pop()); } // a heading never ends a slide
+    return out.map(c => c.join("\n\n"));
+  }
+  function dkPropVal(k, x) {
+    const e = x.e;
+    if (k === "type") return TYPE[x.type] ? TYPE[x.type].singular[0].toUpperCase() + TYPE[x.type].singular.slice(1) : "";
+    if (k === "subtitle") return e.subtitle || "";
+    if (k === "status") return e.status || "";
+    if (k === "when") return whenText(e) || "";
+    if (k === "layer") return layersOf(e).map(l => "Layer " + l).join(", ");
+    if (k === "color") { const c = colorOf(e); return c ? c[0].toUpperCase() + c.slice(1) : ""; }
+    if (k === "tags") return tagsOf(e).join(", ");
+    if (k === "links") return [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))].join(", ");
+    if (k === "created") { const v = e.created || e.createdTime || e.createdAt; return v ? fmt(String(v).slice(0, 10)) : ""; }
+    if (k === "updated") return e.updatedAt ? fmt(e.updatedAt.slice(0, 10)) : "";
+    const P = cpDefs("_all").find(d => d.key === k); return P ? K.cprop.show(e, P) : "";
+  }
+  function dkBuild() {
+    const S = [], items = dk.ids.map(dkEntry).filter(Boolean), names = Object.fromEntries(dkAllProps());
+    S.push({ kind: "cover", title: dk.title.trim() || "LifeOS", sub: `${items.length} ${items.length === 1 ? "entry" : "entries"} · ${fmt(today())}` });
+    items.forEach(x => {
+      const e = x.e, title = `${emojiOf(e, x.type)} ${e.title || "Untitled"}`, color = colorOf(e) || "";
+      const props = dk.props.filter(k => !["subtitle", "tasks", "notes"].includes(k)).map(k => [names[k] || k, dkPropVal(k, x)]).filter(([, v]) => v);
+      S.push({ kind: "entry", title, color, sub: dk.props.includes("subtitle") ? e.subtitle || "" : "", props, id: e.id, type: x.type });
+      if (dk.props.includes("tasks")) { const ts = taskList(e).filter(t => (t.text || "").trim()); for (let i = 0, n = Math.ceil(ts.length / 8); i < n; i++) S.push({ kind: "tasks", title, color, part: n > 1 ? `${i + 1} of ${n}` : "", tasks: ts.slice(i * 8, i * 8 + 8) }); }
+      if (dk.props.includes("notes")) {
+        const tabs = [{ name: "", body: e.body }, ...(Array.isArray(e.noteTabs) ? e.noteTabs : [])].filter(t => (t.body || "").trim());
+        const text = tabs.map(t => (t.name ? `## ${t.name}\n\n` : "") + t.body.trim()).join("\n\n");
+        const parts = dkSplitNotes(text); parts.forEach((p, i) => S.push({ kind: "notes", title, color, part: parts.length > 1 ? `${i + 1} of ${parts.length}` : "", md: p }));
+      }
+    });
+    return S;
+  }
+  function dkSlideHtml(s, i, n) {
+    const bar = s.color ? `<i class="dk-bar sw-${s.color}" aria-hidden="true"></i>` : "";
+    const foot = `<div class="dk-foot"><span>${esc(dk.title.trim() || "LifeOS")}</span><span>${i + 1} / ${n}</span></div>`;
+    if (s.kind === "cover") return `<div class="dk-slide dk-cover"><div class="dk-in"><h1>${esc(s.title)}</h1><p class="dk-sub">${esc(s.sub)}</p></div>${foot}</div>`;
+    if (s.kind === "entry") return `<div class="dk-slide">${bar}<div class="dk-in"><h1>${esc(s.title)}</h1>${s.sub ? `<p class="dk-sub">${esc(s.sub)}</p>` : ""}${s.props.length ? `<dl class="dk-props">${s.props.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}</div>${foot}</div>`;
+    if (s.kind === "tasks") return `<div class="dk-slide">${bar}<div class="dk-in"><h2>${esc(s.title)} <span class="dk-part">Tasks${s.part ? " · " + s.part : ""}</span></h2><ul class="dk-tasks">${s.tasks.map(t => `<li class="${t.done ? "done" : ""}"><span aria-hidden="true">${t.done ? "☑" : "☐"}</span>${esc(t.text)}</li>`).join("")}</ul></div>${foot}</div>`;
+    return `<div class="dk-slide">${bar}<div class="dk-in"><h2>${esc(s.title)} <span class="dk-part">Notes${s.part ? " · " + s.part : ""}</span></h2><div class="dk-md">${renderMd(s.md)}</div></div>${foot}</div>`;
+  }
+  function renderDeckBuilder() {
+    const el = $("dkBody"); if (!el || $("dkPop").hidden) return;
+    const q = dk.q.trim().toLowerCase(), chosen = new Set(dk.ids);
+    const all = [...byId.values()].filter(x => !TYPE[x.type].archive || true);
+    const hits = q ? all.filter(x => !chosen.has(x.e.id) && (x.e.title || "").toLowerCase().includes(q)).sort((a, b) => (a.e.title || "").localeCompare(b.e.title || "")).slice(0, 30) : [];
+    const sel = dk.ids.map(dkEntry).filter(Boolean);
+    const layN = (dbLastRows || []).filter(x => x.type !== "routine" && !chosen.has(x.e.id)).length;
+    const nSlides = sel.length ? dkBuild().length : 0;
+    el.innerHTML = `<p class="set-desc">Pick the entries, then choose which properties show. Long notes are split across several slides of about the same size. Built right here, so it uses <b>no tokens</b>.</p>
+      <label class="dk-lab">Deck title <input type="text" id="dkTitle" class="wf-in" maxlength="120" placeholder="Like: November check-in" value="${esc(dk.title)}"></label>
+      <div class="cs-cols"><div><div class="cs-h">Find entries</div><input type="search" id="dkQ" class="search" placeholder="Type a title…" autocomplete="off" value="${esc(dk.q)}">
+        ${layN ? `<button type="button" class="btn ghost dk-addlay" data-dkaddlay>＋ Add the ${layN} shown on Layers</button>` : ""}
+        <ul class="cs-list">${hits.map(x => `<li class="cs-hit"><button type="button" class="cs-pick cs-plus" data-dkadd="${esc(x.e.id)}" aria-label="Add">＋</button><span>${entLink(x.type, x.e.id, `${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}`)} <span class="pa-type">${esc(TYPE[x.type].singular)}</span></span></li>`).join("") || (q ? '<li class="pub-hint">No matches.</li>' : "")}</ul></div>
+        <div><div class="cs-h">In the deck, in order (${sel.length})</div><ol class="cs-list cs-sel dk-sel">${sel.map((x, i) => `<li><span>${entLink(x.type, x.e.id, `${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")}`)}</span><span class="dk-ord"><button type="button" class="tdel" data-dkup="${i}" aria-label="Move up"${i ? "" : " disabled"}>↑</button><button type="button" class="tdel" data-dkdown="${i}" aria-label="Move down"${i < sel.length - 1 ? "" : " disabled"}>↓</button><button type="button" class="tdel" data-dkx="${esc(x.e.id)}" aria-label="Remove">×</button></span></li>`).join("") || '<li class="pub-hint">Nothing picked yet.</li>'}</ol>${sel.length ? '<button type="button" class="btn ghost" data-dkclear>Clear all</button>' : ""}</div></div>
+      <div class="cs-h">Properties to show</div><div class="chips">${dkAllProps().map(([k, l]) => `<button type="button" class="chip" data-dkprop="${esc(k)}" aria-pressed="${dk.props.includes(k)}">${esc(l)}</button>`).join("")}</div>
+      <div class="dk-go"><span class="set-desc">${sel.length ? `${nSlides} slides` : ""}</span><button type="button" class="btn" data-dkgrid${sel.length ? "" : " disabled"}>▦ See all slides</button><button type="button" class="btn primary" data-dkplay${sel.length ? "" : " disabled"}>▶ Present</button></div>`;
+  }
+  const dkOpen = (v) => { const p = $("dkPop"); p.hidden = !v; $("dkBtn").setAttribute("aria-expanded", String(v)); if (v) renderDeckBuilder(); };
+  $("dkBtn").addEventListener("click", e => { e.stopPropagation(); dkOpen($("dkPop").hidden); });
+  $("dkPop").addEventListener("click", e => {
+    const t = e.target;
+    if (t.closest("[data-dkclose]") || t === $("dkPop")) { dkOpen(false); return; }
+    const a = t.closest("[data-dkadd]"); if (a) { dk.ids.push(a.dataset.dkadd); dkSave(); renderDeckBuilder(); const q = $("dkQ"); if (q) q.focus(); return; }
+    if (t.closest("[data-dkaddlay]")) { (dbLastRows || []).forEach(x => { if (x.type !== "routine" && !dk.ids.includes(x.e.id)) dk.ids.push(x.e.id); }); dkSave(); renderDeckBuilder(); return; }
+    const x = t.closest("[data-dkx]"); if (x) { dk.ids = dk.ids.filter(i => i !== x.dataset.dkx); dkSave(); renderDeckBuilder(); return; }
+    const up = t.closest("[data-dkup]"), dn = t.closest("[data-dkdown]");
+    if (up || dn) { const ids = dk.ids.filter(i => dkEntry(i)), i = Number((up || dn).dataset[up ? "dkup" : "dkdown"]), j = up ? i - 1 : i + 1; if (j >= 0 && j < ids.length) { [ids[i], ids[j]] = [ids[j], ids[i]]; dk.ids = ids; dkSave(); renderDeckBuilder(); } return; }
+    if (t.closest("[data-dkclear]")) { dk.ids = []; dkSave(); renderDeckBuilder(); return; }
+    const pr = t.closest("[data-dkprop]"); if (pr) { const k = pr.dataset.dkprop; dk.props = dk.props.includes(k) ? dk.props.filter(p => p !== k) : [...dk.props, k]; dkSave(); renderDeckBuilder(); return; }
+    if (t.closest("[data-dkgrid]")) { dkShow("grid", 0); return; }
+    if (t.closest("[data-dkplay]")) { dkShow("play", 0); return; }
+  });
+  $("dkPop").addEventListener("input", e => {
+    if (e.target.id === "dkQ") { dk.q = e.target.value; const pos = e.target.selectionStart; renderDeckBuilder(); const q = $("dkQ"); q.focus(); q.setSelectionRange(pos, pos); }
+    if (e.target.id === "dkTitle") { dk.title = e.target.value; dkSave(); }
+  });
+  // ----- Showing the deck: every slide at once (grid), or presenting one at a time -----
+  function dkShow(mode, at) {
+    dkSlides = dkBuild(); if (dkSlides.length < 2) return;
+    dkAt = Math.max(0, Math.min(at || 0, dkSlides.length - 1));
+    const el = $("dkShow"); el.hidden = false; el.dataset.mode = mode; document.body.classList.add("dk-open");
+    if (mode === "play") { if (!dkStart) dkStart = Date.now(); clearInterval(dkTimer); dkTimer = setInterval(dkTick, 1000); try { if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {}); } catch (e) {} }
+    dkRender();
+  }
+  function dkClose() { const el = $("dkShow"); el.hidden = true; el.innerHTML = ""; document.body.classList.remove("dk-open"); clearInterval(dkTimer); dkStart = 0; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} }
+  const dkClock = () => { const s = Math.floor((Date.now() - dkStart) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  function dkTick() { const c = $("dkClock"); if (c) c.textContent = dkClock(); }
+  function dkRender() {
+    const el = $("dkShow"), n = dkSlides.length;
+    if (el.dataset.mode === "grid") {
+      el.innerHTML = `<div class="dk-gridbar"><b>${esc(dk.title.trim() || "LifeOS")}</b><span>${n} slides · tap one to present from there</span><span class="dk-sp"></span><button type="button" class="btn primary" data-dkplayat="0">▶ Present</button><button type="button" class="btn" data-dkexit>Close</button></div>
+        <div class="dk-grid">${dkSlides.map((s, i) => `<button type="button" class="dk-thumb" data-dkplayat="${i}" aria-label="Slide ${i + 1}"><span class="dk-scale">${dkSlideHtml(s, i, n)}</span></button>`).join("")}</div>`;
+      dkFit(); return;
+    }
+    el.innerHTML = `<div class="dk-stage" data-dkstage><div class="dk-frame">${dkSlideHtml(dkSlides[dkAt], dkAt, n)}</div></div>
+      <div class="dk-progress" aria-hidden="true"><i style="width:${((dkAt + 1) / n) * 100}%"></i></div>
+      <div class="dk-ctl"><button type="button" data-dkprev aria-label="Previous slide"${dkAt ? "" : " disabled"}>‹</button><span>${dkAt + 1} / ${n}</span><button type="button" data-dknext aria-label="Next slide"${dkAt < n - 1 ? "" : " disabled"}>›</button><span class="dk-clock" id="dkClock" title="Time presenting">${dkClock()}</span><button type="button" data-dkgridbtn title="All slides (G)">▦</button><button type="button" data-dkfs title="Full screen (F)">⛶</button><button type="button" data-dkexit title="Exit (Esc)">✕</button></div>`;
+    dkFit();
+  }
+  // Slides are drawn at 1280×720 and scaled to fit, so they look the same on any screen
+  function dkFit() {
+    const el = $("dkShow");
+    el.querySelectorAll(".dk-frame").forEach(f => { const st = f.parentElement, r = st.getBoundingClientRect(), k = Math.min(r.width / 1280, r.height / 720); f.style.transform = `scale(${k})`; f.style.left = (r.width - 1280 * k) / 2 + "px"; f.style.top = (r.height - 720 * k) / 2 + "px"; });
+    el.querySelectorAll(".dk-thumb").forEach(t => { const k = t.clientWidth / 1280; t.style.height = 720 * k + "px"; t.firstElementChild.style.transform = `scale(${k})`; });
+  }
+  window.addEventListener("resize", () => { if (!$("dkShow").hidden) dkFit(); });
+  document.addEventListener("fullscreenchange", () => { if (!$("dkShow").hidden) setTimeout(dkFit, 50); });
+  const dkGo = (i) => { dkAt = Math.max(0, Math.min(i, dkSlides.length - 1)); dkRender(); };
+  $("dkShow").addEventListener("click", e => {
+    const t = e.target;
+    if (t.closest("[data-dkexit]")) { dkClose(); return; }
+    const pa = t.closest("[data-dkplayat]"); if (pa) { $("dkShow").dataset.mode = "play"; dkShow("play", Number(pa.dataset.dkplayat)); return; }
+    if (t.closest("[data-dkgridbtn]")) { $("dkShow").dataset.mode = "grid"; clearInterval(dkTimer); dkRender(); return; }
+    if (t.closest("[data-dkfs]")) { try { document.fullscreenElement ? document.exitFullscreen() : $("dkShow").requestFullscreen(); } catch (er) {} return; }
+    if (t.closest("[data-dkprev]")) { dkGo(dkAt - 1); return; }
+    if (t.closest("[data-dknext]")) { dkGo(dkAt + 1); return; }
+    if (t.closest("a, button")) return;
+    const st = t.closest("[data-dkstage]"); if (st) { const r = st.getBoundingClientRect(); dkGo(e.clientX < r.left + r.width / 3 ? dkAt - 1 : dkAt + 1); }
+  });
+  let dkTouch = null;
+  $("dkShow").addEventListener("touchstart", e => { dkTouch = e.touches[0].clientX; }, { passive: true });
+  $("dkShow").addEventListener("touchend", e => { if (dkTouch == null || $("dkShow").dataset.mode !== "play") return; const dx = e.changedTouches[0].clientX - dkTouch; dkTouch = null; if (Math.abs(dx) > 50) dkGo(dkAt + (dx < 0 ? 1 : -1)); }, { passive: true });
+  document.addEventListener("keydown", e => {
+    if ($("dkShow").hidden) { if (e.key === "Escape" && !$("dkPop").hidden) dkOpen(false); return; }
+    const play = $("dkShow").dataset.mode === "play", k = e.key;
+    if (k === "Escape") { if (play) { try { if (document.fullscreenElement) document.exitFullscreen(); } catch (er) {} $("dkShow").dataset.mode = "grid"; clearInterval(dkTimer); dkRender(); } else dkClose(); e.preventDefault(); return; }
+    if (!play) return;
+    if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter", "n"].includes(k)) { e.preventDefault(); dkGo(dkAt + 1); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace", "p"].includes(k)) { e.preventDefault(); dkGo(dkAt - 1); }
+    else if (k === "Home") { e.preventDefault(); dkGo(0); }
+    else if (k === "End") { e.preventDefault(); dkGo(dkSlides.length - 1); }
+    else if (k === "g" || k === "G") { $("dkShow").dataset.mode = "grid"; clearInterval(dkTimer); dkRender(); }
+    else if (k === "f" || k === "F") { try { document.fullscreenElement ? document.exitFullscreen() : $("dkShow").requestFullscreen(); } catch (er) {} }
+    else if (/^[0-9]$/.test(k)) { /* number keys jump to a slide */ dkGo(Number(k) - 1 < 0 ? 9 : Number(k) - 1); }
+  });
   // ---------- 🗺 Schematic: a picture of how entries and views fit together ----------
   function renderSchematic() {
     const el = $("scBody"); if (!el) return;
