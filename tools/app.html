@@ -244,6 +244,13 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .cs-hit .cs-pick.cs-plus { width: auto; flex: none; padding: 2px 9px; }
 .g-qopen { font-size: 11px; border: 1px solid var(--panel-line); border-radius: 6px; padding: 1px 7px; color: var(--ink); }
 .g-qopen:hover { border-color: var(--accent); color: var(--accent); }
+.dl-g { font-size: 12px; font-weight: 700; color: var(--muted); margin: 14px 0 6px; }
+.dl-row { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border: 1px solid var(--panel-line); border-radius: 9px; margin-bottom: 6px; }
+.dl-t { flex: 1; min-width: 0; }
+.dl-ext { font-size: 11px; color: var(--muted); }
+.dl-d { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.dl-a { display: flex; gap: 6px; flex: none; }
+@media (max-width: 560px) { .dl-row { flex-direction: column; align-items: stretch; } .dl-a { justify-content: flex-end; } }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -1364,7 +1371,7 @@ table.pr-rt { width: 100%; }
 .sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
-.is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
+.is-public #dlPop, .is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
 .pa-dialog { width: min(980px, 100%); }
 .pa-n { margin-left: 6px; background: var(--accent); color: var(--bg); border-radius: 99px; padding: 0 7px; font-size: 11px; font-weight: 800; }
 .pa-n:empty { display: none; }
@@ -1902,13 +1909,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="bd-pop gg-pop" id="ggPop" hidden><div class="bd-dialog gg-dialog" role="dialog" aria-modal="true" aria-label="Google"><h3>🔗 Google: your Drive and Docs<button type="button" class="x" data-ggclose aria-label="Close Google">×</button></h3><div id="ggBody"></div></div></div>
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="grBox"></div><div id="paBody"></div></div></div>
   <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><span class="pil-btns"><button type="button" class="btn primary" id="pilRecodeBtn">🔁 Recode</button><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></span></div><div class="pil-re" id="pilRe" hidden></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
+  <div class="bd-pop dl-pop" id="dlPop" hidden><div class="bd-dialog dl-dialog" role="dialog" aria-modal="true" aria-label="Download"><h3>⬇ Download<button type="button" class="x" data-dlclose aria-label="Close Download">×</button></h3><div id="dlBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
     <h3>⚙ Settings<button type="button" class="x" data-setclose aria-label="Close settings">×</button></h3>
     <div class="set-row"><button type="button" class="easy-btn" id="easyBtn" aria-pressed="true"><span class="easy-dot" aria-hidden="true"></span>Easy mode</button><span class="set-desc">Shows the how-to tips throughout LifeOS.</span></div>
     <div class="set-row"><button type="button" class="easy-btn site-btn" id="siteBtn" aria-pressed="false"><span class="easy-dot" aria-hidden="true"></span>🌐 Add to website</button><span class="set-desc">While on, every new entry you add is shown on your website.</span></div>
-    <div class="ai-box" id="aiBox"></div>
     <div class="site-pop in-set" id="sitePop" aria-label="Your website"></div>
   </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -2119,6 +2126,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <button type="button" class="af-btn af-priv" data-afclick="ggBtn">🔗 Google</button>
     <button type="button" class="af-btn af-priv af-mode" data-modetoggle aria-pressed="false">✨ Streamlined: <b>Off</b></button>
     <button type="button" class="af-btn af-priv" id="pilBtn" aria-controls="pilPop">🏛 Pillars</button>
+    <button type="button" class="af-btn af-priv" id="dlBtn" aria-expanded="false" aria-controls="dlPop">⬇ Download</button>
     <button type="button" class="af-btn" data-aftop>↑ Back to top</button>
   </div>
   <div class="af-note">LifeOS for Maggie</div>
@@ -6414,7 +6422,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${siteMsg ? `<div class="sp-msg${siteBad ? " bad" : ""}">${esc(siteMsg)}</div>` : ""}
       <div class="sp-msg"><b>Backup, if the automatic update ever stops (free):</b><ol><li>Download the file (it's called index.html) and put it in a new folder, e.g. "my-website".</li><li>Go to <b>app.netlify.com/drop</b> and sign up free (or the site expires).</li><li>Drag the folder onto the page. Netlify gives you a public link.</li><li>After changes, download again, replace the file in the folder, and drag the folder onto your site's <b>Deploys</b> page.</li></ol></div>`;
   }
-  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; aiMsg = ""; renderAiBox(); renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = "auto"; p.style.bottom = Math.max(8, Math.round(window.innerHeight - r.top + 6)) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
+  const setOpen = (v) => { const p = $("setPop"); p.hidden = !v; $("setBtn").setAttribute("aria-expanded", String(v)); if (v) { siteMsg = ""; renderSitePop(); siteRunCheck(); const r = $("setBtn").getBoundingClientRect(); p.style.top = "auto"; p.style.bottom = Math.max(8, Math.round(window.innerHeight - r.top + 6)) + "px"; p.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - p.offsetWidth - 8)) + "px"; } };
   $("setBtn").addEventListener("click", e => { e.stopPropagation(); setOpen($("setPop").hidden); });
   document.querySelector(".app-foot").addEventListener("click", e => { const b = e.target.closest("[data-afclick]"); if (b) { e.stopPropagation(); const o = $(b.dataset.afclick); if (o) o.click(); return; } if (e.target.closest("[data-aftop]")) window.scrollTo({ top: 0, behavior: "smooth" }); });
   $("setPop").addEventListener("click", e => { if (e.target.closest("[data-setclose]")) setOpen(false); });
@@ -6496,7 +6504,7 @@ Don't invent appointments or facts that aren't listed.`);
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
   // ---------- 🤖 Export for AI: every main-database entry as compact plain text ----------
   // Short on purpose (fewer tokens): no ids, empty fields left out, links by title, one legend at the top.
-  function buildAiExport() {
+  function buildAiExport(lean) {
     const LAY = ["system instructions", "narrative facts of my life", "evidence", "authority and academia", "my argumentation and meaning-making", "artifacts I create", "to-do list, projects, goals, scheduled events", "routines and habits", "therapy and emotional", "structure, where areas live"];
     const COLW = { red: "personal admin", orange: "family and friends", yellow: "community", green: "money and work", blue: "everything else" };
     const when = (e) => { const d = e.focusStart ? (e.focusEnd && e.focusEnd !== e.focusStart ? e.focusStart + "→" + e.focusEnd : e.focusStart) : ""; const t = e.timeStart ? timeRange(e.timeStart, e.timeEnd) : ""; return [d, t].filter(Boolean).join(" "); };
@@ -6510,13 +6518,13 @@ Don't invent appointments or facts that aren't listed.`);
         const meta = [layersOf(e).length ? "L" + layersOf(e).join("/L") : "", e.color || "", e.status && e.status !== "Not started" ? e.status : "", e.scheduled ? "scheduled" : "", T.archive && e.archivedFrom ? "was " + (TYPE[e.archivedFrom] ? TYPE[e.archivedFrom].singular : e.archivedFrom) : "", k === "ideas" && e.wfKind ? e.wfKind : ""].filter(Boolean).join(", ");
         const lines = [`### ${e.title || "Untitled"}${meta ? ` (${meta})` : ""}`];
         const tasks = taskList(e).filter(t => (t.text || "").trim());
-        const sub = clean(e.subtitle); if (sub && !tasks.length) lines.push(sub);
-        tasks.forEach(t => lines.push(`- [${t.done ? "x" : " "}] ${t.text.trim()}`));
+        const sub = clean(e.subtitle); if (sub && (lean || !tasks.length)) lines.push(sub);
+        if (!lean) tasks.forEach(t => lines.push(`- [${t.done ? "x" : " "}] ${t.text.trim()}`));
         const w = when(e); if (w) lines.push("When: " + w);
         const ln = linksOf(e.id).map(x => x.e.title || "Untitled"); if (ln.length) lines.push("Links: " + [...new Set(ln)].join("; "));
         const tg = tagsOf(e); if (tg.length) lines.push("Tags: " + tg.join(", "));
         const tabs = [{ name: "", body: e.body, files: e.files }, ...(Array.isArray(e.noteTabs) ? e.noteTabs : [])];
-        tabs.forEach(t => { const b = clean(t.body), urls = (t.files || []).filter(f => f && f.kind === "link" && f.url).map(f => f.url); if (!b && !urls.length) return; if (t.name) lines.push(`[${t.name}]`); if (b) lines.push(b); if (urls.length) lines.push("Links out: " + urls.join(" ")); });
+        if (!lean) tabs.forEach(t => { const b = clean(t.body), urls = (t.files || []).filter(f => f && f.kind === "link" && f.url).map(f => f.url); if (!b && !urls.length) return; if (t.name) lines.push(`[${t.name}]`); if (b) lines.push(b); if (urls.length) lines.push("Links out: " + urls.join(" ")); });
         out.push(lines.join("\n"));
       });
     });
@@ -6526,39 +6534,75 @@ Don't invent appointments or facts that aren't listed.`);
         const done = rtPlans(r).filter(x => x.status === "done");
         const lines = [`### ${r.name || "Untitled routine"}${r.color ? ` (${r.color})` : ""}`, `Done ${done.length} times${done.length ? ", last " + done.map(x => x.date).sort().pop() : ""}`];
         const ln = linksOf(r.id).map(x => x.e.title || "Untitled"); if (ln.length) lines.push("Links: " + ln.join("; "));
-        const b = clean(r.body); if (b) lines.push(b);
+        const b = clean(r.body); if (b && !lean) lines.push(b);
         out.push(lines.join("\n"));
       });
     }
     return out.join("\n\n").replace(/\n{3,}/g, "\n\n") + "\n";
   }
-  let aiMsg = "";
-  function renderAiBox() {
-    const el = $("aiBox"); if (!el) return;
-    const n = TYPES.reduce((s, T) => s + data[T.key].length, 0) + routines.length;
-    el.innerHTML = `<div class="ai-title">🤖 Talk about my entries with another AI</div><p class="set-desc">Puts all ${n} entries (properties, links and notes) into one short text file, written to use as few tokens as possible. Paste it into another AI and ask it anything.</p>
-      <div class="ai-row"><button type="button" class="btn primary" data-aicopy>📋 Copy</button><button type="button" class="btn" data-aidl>⬇ Download .md</button></div>${aiMsg ? `<p class="set-desc ai-msg" role="status">${esc(aiMsg)}</p>` : ""}`;
+  // ---------- ⬇ Download (footer): every export in one place. Everything is built right here in the browser, so none of it uses AI or tokens. ----------
+  let dlMsg = "";
+  const dlTok = (t) => Math.round(t.length / 4);
+  const csvCell = (v) => { const s = v == null ? "" : Array.isArray(v) ? v.join("; ") : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const toCsv = (rows) => "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+  function dlLayersCsv() {
+    const cps = cpDefs("_all");
+    const head = ["Title", "Database", "Status", "Layers", "Color", "Tags", "When", "Links", "Subtitle", "Created", "Last edited", ...cps.map(P => P.label)];
+    const rows = [head];
+    TYPES.forEach(T => data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).forEach(e => rows.push([e.title || "Untitled", T.label, e.status || "", layersOf(e).join(" "), colorOf(e) || "", tagsOf(e), whenText(e) || "", [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))], e.subtitle || "", String(e.created || e.createdTime || e.createdAt || "").slice(0, 10), String(e.updatedAt || "").slice(0, 10), ...cps.map(P => K.cprop.show(e, P))])));
+    routines.forEach(r => rows.push([r.name || "Untitled routine", "Routines", "", "7", r.color || "purple", [], "", [...new Set(linksOf(r.id).map(y => y.e.title || "Untitled"))], "", String(r.createdAt || "").slice(0, 10), String(r.updatedAt || "").slice(0, 10), ...cps.map(() => "")]));
+    return toCsv(rows);
   }
-  async function aiCopy() {
-    const txt = buildAiExport(), tok = Math.round(txt.length / 4);
-    let ok = false;
-    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {}
-    if (!ok) { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); }
-    aiMsg = ok ? `Copied: about ${tok.toLocaleString()} tokens. Paste it into another AI.` : "Your browser blocked copying here. Use ⬇ Download .md instead and upload or paste the file.";
-    renderAiBox();
+  function dlInventoryCsv() { const cps = cpDefs("inventory"); return toCsv([["Item", "Room", ...cps.map(P => P.label)], ...inventory.slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(x => [x.title || "Untitled", x.room || "", ...cps.map(P => K.cprop.show(x, P))])]); }
+  function dlMealsCsv() { const cps = cpDefs("meals"); return toCsv([["Meal", "Category", "Menu", "Cuisine", "Method", "Status", "Date", "Recipe link", "Ingredients", "Directions", ...cps.map(P => P.label)], ...meals.slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(m => [m.title || "Untitled", mlArr(m.category), mlArr(m.menu), mlArr(m.cuisine), mlArr(m.method), m.status || "", m.date || "", m.link || "", m.ingredients || "", m.directions || "", ...cps.map(P => K.cprop.show(m, P))])]); }
+  function dlMealsMd() {
+    const list = meals.filter(m => !isArchivedMeal(m)).sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    return `# My recipes (${today()})\n\n` + list.map(m => [`## ${m.icon ? m.icon + " " : ""}${m.title || "Untitled"}`, [mlArr(m.category).join(", "), mlArr(m.cuisine).join(", "), mlArr(m.method).join(", ")].filter(Boolean).join(" · "), m.link ? `Recipe: ${m.link}` : "", m.ingredients ? `### Ingredients\n${m.ingredients.trim()}` : "", m.directions ? `### Directions\n${m.directions.trim()}` : ""].filter(Boolean).join("\n\n")).join("\n\n") + "\n";
   }
-  async function aiDownload() {
-    const txt = buildAiExport(), name = "lifeos-entries-" + today() + ".md";
-    const blob = new Blob([txt], { type: "text/markdown" });
+  function dlBackup() { return JSON.stringify({ app: "LifeOS", exported: new Date().toISOString(), entries: Object.fromEntries(TYPES.map(T => [T.key, data[T.key]])), routines, inventory, rooms, meals, customProps: CPROPS }, null, 1); }
+  const DL = [
+    { k: "ai", group: "🤖 To talk with an AI", label: "All entries, with notes", desc: "Every entry: properties, links, tasks and notes.", ext: "md", mime: "text/markdown", make: () => buildAiExport(false), copy: true },
+    { k: "ailean", group: "🤖 To talk with an AI", label: "All entries, lean (no notes)", desc: "Titles, properties, dates, links and tags only. Uses far fewer tokens.", ext: "md", mime: "text/markdown", make: () => buildAiExport(true), copy: true },
+    { k: "layers", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Layers: every entry", desc: "One row per entry, one column per property.", ext: "csv", mime: "text/csv", make: dlLayersCsv },
+    { k: "inventory", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Inventory", desc: "Every item with its room and properties.", ext: "csv", mime: "text/csv", make: dlInventoryCsv },
+    { k: "meals", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Meals", desc: "Every meal with its choices, ingredients and directions.", ext: "csv", mime: "text/csv", make: dlMealsCsv },
+    { k: "recipes", group: "📄 Documents", label: "Recipe book", desc: "Every meal (not archived) as an easy-to-read recipe page.", ext: "md", mime: "text/markdown", make: dlMealsMd },
+    { k: "backup", group: "💾 Backup", label: "Full backup", desc: "Everything in LifeOS (entries, routines, inventory, meals, properties) in one file to keep safe.", ext: "json", mime: "application/json", make: dlBackup },
+  ];
+  const dlName = (d) => `lifeos-${d.k}-${today()}.${d.ext}`;
+  async function dlSave(d) {
+    const txt = d.make(), name = dlName(d), blob = new Blob([txt], { type: d.mime });
     try {
       if (downloadsApi === undefined) { try { downloadsApi = await window.claude?.use?.("downloads"); } catch (e) { downloadsApi = null; } }
-      if (downloadsApi) { await downloadsApi.save({ filename: name, data: blob }); }
+      if (downloadsApi) await downloadsApi.save({ filename: name, data: blob });
       else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
-      aiMsg = `Saved ${name} (about ${Math.round(txt.length / 4).toLocaleString()} tokens).`;
-    } catch (err) { const c = err && err.code; aiMsg = c === "declined" || c === "canceled" || c === "cancelled" ? "Download cancelled." : "Couldn't save the file (" + (c || "error") + ")."; }
-    renderAiBox();
+      dlMsg = `Saved ${name}.`;
+    } catch (err) { const c = err && err.code; dlMsg = c === "declined" || c === "canceled" || c === "cancelled" ? "Download cancelled." : "Couldn't save the file (" + (c || "error") + ")."; }
+    renderDl();
   }
-  $("aiBox").addEventListener("click", e => { if (e.target.closest("[data-aicopy]")) aiCopy(); else if (e.target.closest("[data-aidl]")) aiDownload(); });
+  async function dlCopy(d) {
+    const txt = d.make(); let ok = false;
+    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {}
+    if (!ok) { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); }
+    dlMsg = ok ? `Copied (about ${dlTok(txt).toLocaleString()} tokens once pasted into a chat).` : "Your browser blocked copying here. Use Download instead and upload the file.";
+    renderDl();
+  }
+  function renderDl() {
+    const el = $("dlBody"); if (!el || $("dlPop").hidden) return;
+    let last = "";
+    el.innerHTML = `<p class="set-desc">Everything here is made right on this page. Downloading or copying uses <b>no tokens</b>. Tokens are only used if you paste or upload a file into a chat with an AI, so the sizes below show what that would cost.</p>
+      ${dlMsg ? `<p class="set-desc ai-msg" role="status">${esc(dlMsg)}</p>` : ""}
+      ${DL.map(d => { const g = d.group !== last ? `<div class="dl-g">${esc(d.group)}</div>` : ""; last = d.group; let size = ""; try { const t = d.make(); size = d.k.startsWith("ai") ? `about ${dlTok(t).toLocaleString()} tokens if pasted` : `${Math.max(1, Math.round(t.length / 1024)).toLocaleString()} KB`; } catch (e) {}
+        return `${g}<div class="dl-row"><div class="dl-t"><b>${esc(d.label)}</b> <span class="dl-ext">.${d.ext}</span><span class="dl-d">${esc(d.desc)}${size ? ` · ${size}` : ""}</span></div><div class="dl-a">${d.copy ? `<button type="button" class="btn" data-dlcopy="${d.k}">📋 Copy</button>` : ""}<button type="button" class="btn primary" data-dlsave="${d.k}">⬇ Download</button></div></div>`; }).join("")}`;
+  }
+  const dlOpen = (v) => { const p = $("dlPop"); p.hidden = !v; $("dlBtn").setAttribute("aria-expanded", String(v)); if (v) { dlMsg = ""; renderDl(); } };
+  $("dlBtn").addEventListener("click", e => { e.stopPropagation(); dlOpen($("dlPop").hidden); });
+  $("dlPop").addEventListener("click", e => {
+    if (e.target.closest("[data-dlclose]") || e.target === $("dlPop")) { dlOpen(false); return; }
+    const s = e.target.closest("[data-dlsave]"); if (s) { const d = DL.find(x => x.k === s.dataset.dlsave); if (d) dlSave(d); return; }
+    const c = e.target.closest("[data-dlcopy]"); if (c) { const d = DL.find(x => x.k === c.dataset.dlcopy); if (d) dlCopy(d); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("dlPop").hidden) dlOpen(false); });
   // ---------- 🗺 Schematic: a picture of how entries and views fit together ----------
   function renderSchematic() {
     const el = $("scBody"); if (!el) return;
