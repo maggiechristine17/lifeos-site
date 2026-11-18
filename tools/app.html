@@ -110,6 +110,13 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
+.gr-box { margin: 8px 0; }
+.gr-rules { font-size: 13px; margin-bottom: 6px; } .gr-rules ul { margin: 4px 0; padding-left: 18px; }
+.gr-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.gr-item { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.gr-why { font-size: 12.5px; color: var(--muted); flex: 1 1 220px; }
+.gr-fix { display: flex; gap: 6px; align-items: center; flex-basis: 100%; font-size: 13px; }
+.gr-fix input { flex: 1; font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .pp-list { display: grid; gap: 2px; margin-top: 10px; }
 .pp-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; padding: 6px 4px; border-radius: 6px; min-height: 36px; }
 .pp-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
@@ -1915,7 +1922,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
@@ -1929,6 +1936,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <div class="col-list" id="dbShowList"></div>
   </section>
   <div id="dbCpMgr"></div>
+  <div id="grBox"></div>
   <div class="db-bar" id="dbBar"></div>
   <div id="dbBody"></div>
   <div class="ghint">Click a title to open the note. Click any other property to change it right there. Drag a column header to move it, or drag its right edge to resize it. <button type="button" class="btn ghost db-clear" id="dbResetCols">Reset columns</button></div>
@@ -2301,6 +2309,55 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       cpIAddOpen[sc] = false; cpAddQuiet(sc, def); (cpIAddHooks[sc] || cpIAddHooks["*"])(sc, def); notice(`Added the property “${nm}”.`); }
   });
   document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.closest && e.target.closest("[data-cpiadd] input")) { e.preventDefault(); e.target.closest("[data-cpiadd]").querySelector("[data-cpigo]").click(); } if (e.key === "Escape" && e.target.closest && e.target.closest("[data-cpiadd]")) { const sc = e.target.closest("[data-cpiadd]").dataset.cpiadd; cpIAddOpen[sc] = false; (cpIAddHooks[sc] || cpIAddHooks["*"])(sc, null); } });
+  // ---------- ✍️ Check grammar (Layers): every title follows my naming rules ----------
+  // Values: a gerund phrase. Areas: a noun. Goals: a verb + a measurable qualifier (a deadline or a number).
+  // Projects (one time / scheduled): a verb + a direct object. Routines: at least a verb (object optional). Resources: a document title (a proper noun).
+  const GR_RULES = { values: "a gerund phrase (starts with an -ing verb, like \"Living with integrity\")", areas: "a noun or noun phrase (like \"Health\" or \"Home finances\")", goals: "a verb with a measurable qualification: a time bound (a date or deadline) or a performance metric with a number (like \"Run a 5K by June 2027\" or \"Save $10,000\")", projects: "a verb with a direct object (like \"Paint the bedroom\")", routines: "at least a verb, with an optional direct object (like \"Meditate\" or \"Walk the dog\")", pages: "the title of a document, written as a proper noun in title case (like \"Monthly Budget Spreadsheet\")" };
+  const GR_KIND = { values: "Value", areas: "Area", goals: "Goal", projects: "Project", routines: "Routine", pages: "Resource" };
+  const gr = { busy: false, items: null, msg: "", skip: new Set(recall("chevy.gr.skip") || []) };
+  function grList() {
+    const out = [];
+    ["values", "areas", "goals", "projects", "pages"].forEach(t => (data[t] || []).forEach(e => { if (!e._pub && (e.title || "").trim() && !(t === "projects" && e.status === "Done")) out.push({ id: e.id, t, title: e.title.trim() }); }));
+    routines.forEach(rt => { if ((rt.name || "").trim()) out.push({ id: rt.id, t: "routines", title: rt.name.trim() }); });
+    return out;
+  }
+  function renderGr() {
+    const el = $("grBox"); if (!el) return;
+    if (!gr.items && !gr.busy && !gr.msg) { el.innerHTML = ""; return; }
+    const bad = (gr.items || []).filter(x => !x.ok && !gr.skip.has(x.t + ":" + x.id + ":" + x.title));
+    el.innerHTML = `<section class="panel gr-box"><div class="panel-head"><span class="panel-name">✍️ Grammar check</span><button class="x" type="button" data-grx aria-label="Close">×</button></div>
+      <details class="gr-rules"><summary>The rules</summary><ul>${Object.keys(GR_RULES).map(k => `<li><b>${GR_KIND[k]}s</b>: ${esc(GR_RULES[k])}</li>`).join("")}</ul></details>
+      ${gr.busy ? `<p class="ai-msg">Checking ${grList().length} titles…</p>` : ""}${gr.msg ? `<p class="ai-msg">${esc(gr.msg)}</p>` : ""}
+      ${gr.items && !gr.busy ? (bad.length ? `<p class="ai-msg">${bad.length} ${bad.length === 1 ? "title doesn&#39;t" : "titles don&#39;t"} follow the rules:</p><ul class="gr-list">${bad.map(x => `<li class="gr-item"><span class="pa-type">${GR_KIND[x.t]}</span><b>${esc(x.title)}</b><span class="gr-why">${esc(x.issue || "")}</span>${x.fix ? `<span class="gr-fix">Try: <input type="text" data-grfixin="${esc(x.t + ":" + x.id)}" value="${esc(x.fix)}" aria-label="Suggested title"><button type="button" class="btn small primary" data-gruse="${esc(x.t + ":" + x.id)}">Use this title</button></span>` : ""}<button type="button" class="btn small" data-grskip="${esc(x.t + ":" + x.id + ":" + x.title)}">It's fine</button></li>`).join("")}</ul>` : `<p class="ai-msg">🎉 Every title follows the rules.</p>`) : ""}
+    </section>`;
+  }
+  async function grRun() {
+    if (gr.busy) return;
+    if (sampleApi === undefined) { try { sampleApi = await window.claude?.use?.("sample"); } catch (e) { sampleApi = null; } }
+    if (!sampleApi) { gr.msg = "The grammar check uses AI, which isn't available in this view. Open LifeOS in Claude, signed in."; renderGr(); return; }
+    const L = grList(); if (!L.length) { gr.items = []; gr.msg = ""; renderGr(); return; }
+    gr.busy = true; gr.msg = ""; gr.items = null; renderGr();
+    const prompt = `Check each title against the grammar rule for its kind. Rules:\n${Object.keys(GR_RULES).map(k => `- ${GR_KIND[k]}: ${GR_RULES[k]}`).join("\n")}\n\nFor every title return an object {"i": its number, "ok": true or false, "issue": "a short plain reason if not ok", "fix": "a corrected title that keeps the same meaning and follows the rule (if not ok)"}. Don't invent facts: if a goal has no number or date, write the fix with a placeholder like "by [date]" or "[number]". Return ONLY a JSON array.\n\nTitles:\n${L.map((x, i) => `${i}. [${GR_KIND[x.t]}] ${x.title}`).join("\n")}`;
+    try {
+      const res = await sampleApi(prompt, { cache: false, modelTier: "default" });
+      const txt = (res && res.text) || ""; const m = txt.match(/\[[\s\S]*\]/); const arr = m ? JSON.parse(m[0]) : [];
+      gr.items = L.map((x, i) => { const a = arr.find(o => Number(o.i) === i) || { ok: true }; return { ...x, ok: !!a.ok, issue: a.issue || "", fix: a.ok ? "" : (a.fix || "") }; });
+    } catch (e) { gr.msg = e && e.code === "rate_limited" ? "Too many requests right now. Try again in a minute." : "Couldn't finish the check. Try again."; if (e && e.code === "not_granted") sampleApi = null; }
+    gr.busy = false; renderGr();
+  }
+  $("grBtn").addEventListener("click", grRun);
+  $("grBox").addEventListener("click", async e => {
+    if (e.target.closest("[data-grx]")) { gr.items = null; gr.msg = ""; renderGr(); return; }
+    const sk = e.target.closest("[data-grskip]"); if (sk) { gr.skip.add(sk.dataset.grskip); store("chevy.gr.skip", [...gr.skip]); renderGr(); return; }
+    const u = e.target.closest("[data-gruse]"); if (u) {
+      const [t, id] = u.dataset.gruse.split(":"), inp = $("grBox").querySelector(`[data-grfixin="${t}:${id}"]`), v = (inp ? inp.value : "").trim(); if (!v) return;
+      try {
+        if (t === "routines") { const rt = routines.find(x => x.id === id); if (rt) await saveRoutine({ ...rt, name: v, updatedAt: new Date().toISOString() }); }
+        else { const x = (data[t] || []).find(y => y.id === id); if (x) await saveEntry(t, { ...x, title: v, updatedAt: new Date().toISOString() }); }
+        const it = gr.items.find(y => y.t === t && y.id === id); if (it) { it.ok = true; it.title = v; } notice(`Renamed to “${v}”.`); renderAll(); renderGr();
+      } catch (err) { notice(err.message || "Couldn't rename it."); }
+    }
+  });
   const cpSet = async (k, id, key, val) => { const D = CP_PAGEDB[k]; if (!D) return; const rec = D.list().find(x => x.id === id); if (!rec) return; await D.save({ ...rec, [key]: val, updatedAt: new Date().toISOString() }); };
   document.addEventListener("change", async e => {
     const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i || i.value === "__newopt") return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
