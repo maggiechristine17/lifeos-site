@@ -111,6 +111,17 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
 .gr-box { margin: 8px 0; }
+.cs-box { margin: 8px 0; display: grid; gap: 8px; }
+.cs-q { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.cs-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 640px) { .cs-cols { grid-template-columns: 1fr; } }
+.cs-cols > div { display: grid; gap: 6px; align-content: start; }
+.cs-h { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cs-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 300px; overflow: auto; }
+.cs-sel { list-style: decimal inside; }
+.cs-pick { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 7px; padding: 6px 8px; font: inherit; font-size: 13.5px; cursor: pointer; }
+.cs-pick:hover { border-color: var(--accent); }
+.cs-sel li { display: flex; justify-content: space-between; align-items: center; gap: 6px; border: 1px solid var(--accent); border-radius: 7px; padding: 5px 8px; font-size: 13.5px; }
+.cs-keep { color: var(--accent); font-size: 11px; }
 .gr-rules { font-size: 13px; margin-bottom: 6px; } .gr-rules ul { margin: 4px 0; padding-left: 18px; }
 .gr-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
 .gr-item { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
@@ -1922,7 +1933,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn site-build" type="button" id="csBtn" title="Combine several entries into one">🧲 Consolidate</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
@@ -1937,6 +1948,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   </section>
   <div id="dbCpMgr"></div>
   <div id="grBox"></div>
+  <div id="csBox"></div>
   <div class="db-bar" id="dbBar"></div>
   <div id="dbBody"></div>
   <div class="ghint">Click a title to open the note. Click any other property to change it right there. Drag a column header to move it, or drag its right edge to resize it. <button type="button" class="btn ghost db-clear" id="dbResetCols">Reset columns</button></div>
@@ -2358,6 +2370,52 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       } catch (err) { notice(err.message || "Couldn't rename it."); }
     }
   });
+  // ---------- 🧲 Consolidate (Layers): pick several entries, merge everything in them into one, rename it, delete the rest ----------
+  const cs = { open: false, q: "", sel: [], title: "", arm: false, busy: false };
+  const csAll = () => TYPES.flatMap(T => (data[T.key] || []).filter(e => !e._pub).map(e => ({ type: T.key, e })));
+  const csFind = (id) => csAll().find(x => x.e.id === id);
+  function renderCs() {
+    const el = $("csBox"); if (!el) return; if (!cs.open) { el.innerHTML = ""; return; }
+    const q = cs.q.trim().toLowerCase(), sel = cs.sel.map(csFind).filter(Boolean);
+    const hits = csAll().filter(x => !cs.sel.includes(x.e.id) && (!q || (x.e.title || "").toLowerCase().includes(q) || (x.e.body || "").toLowerCase().includes(q))).sort((a, b) => (a.e.title || "").localeCompare(b.e.title || "")).slice(0, 40);
+    const tag = (x) => `<span class="pa-type">${esc(TYPE[x.type].singular)}</span>`;
+    el.innerHTML = `<section class="panel cs-box"><div class="panel-head"><span class="panel-name">🧲 Consolidate entries into one</span><button class="x" type="button" data-csx aria-label="Close">×</button></div>
+      <p class="pub-hint">Search, then click the entries to combine. All of their notes, checkboxes, tags, links and files go into one entry. The first one you pick is kept and renamed; the others are deleted.</p>
+      <input type="search" class="cs-q" id="csQ" value="${esc(cs.q)}" placeholder="🔍 Search entries…" aria-label="Search entries">
+      <div class="cs-cols"><div><div class="cs-h">Results</div><ul class="cs-list">${hits.map(x => `<li><button type="button" class="cs-pick" data-cspick="${esc(x.e.id)}">＋ ${esc(emojiOf(x.e, x.type))} ${esc(x.e.title || "Untitled")} ${tag(x)}</button></li>`).join("") || '<li class="pub-hint">No matches.</li>'}</ul></div>
+      <div><div class="cs-h">Combining (${sel.length})</div><ol class="cs-list cs-sel">${sel.map((x, i) => `<li><span>${esc(x.e.title || "Untitled")} ${tag(x)}${i === 0 ? ' <b class="cs-keep">kept</b>' : ""}</span><button type="button" class="x" data-csun="${esc(x.e.id)}" aria-label="Remove">×</button></li>`).join("") || '<li class="pub-hint">Pick at least two.</li>'}</ol>
+        ${sel.length >= 2 ? `<label class="cs-h" for="csTitle">Name of the combined entry</label><input type="text" id="csTitle" class="cs-q" value="${esc(cs.title || sel[0].e.title || "")}" maxlength="200">
+        <button type="button" class="btn ${cs.arm ? "danger" : "primary"}" data-csgo${cs.busy ? " disabled" : ""}>${cs.busy ? "Combining…" : cs.arm ? `Sure? Combine and delete ${sel.length - 1}` : `Combine ${sel.length} entries`}</button>` : ""}</div></div></section>`;
+  }
+  async function csGo() {
+    const sel = cs.sel.map(csFind).filter(Boolean); if (sel.length < 2) return;
+    if (!cs.arm) { cs.arm = true; renderCs(); return; }
+    cs.busy = true; renderCs();
+    const keep = sel[0], title = (($("csTitle") || {}).value || cs.title || keep.e.title || "Untitled").trim().slice(0, 200), ids = new Set(sel.map(x => x.e.id));
+    const body = sel.map(x => { const b = String(x.e.body || "").trim(), sub = (x.e.subtitle || "").trim(); return `## ${x.e.title || "Untitled"}\n${sub ? "_" + sub + "_\n\n" : ""}${b}`; }).join("\n\n");
+    const uniq = (a) => [...new Set(a.filter(Boolean))];
+    const merged = { ...keep.e, title, body, subtitle: keep.e.subtitle || sel.map(x => x.e.subtitle).find(Boolean) || "",
+      tasks: sel.flatMap(x => taskList(x.e)).map((t, i) => ({ ...t, id: t.id + "_" + i })),
+      tags: uniq(sel.flatMap(x => tagsOf(x.e))), links: uniq(sel.flatMap(x => Array.isArray(x.e.links) ? x.e.links : [])).filter(id => !ids.has(id)),
+      files: sel.flatMap(x => Array.isArray(x.e.files) ? x.e.files : []), updatedAt: new Date().toISOString() };
+    sel.forEach(x => { if (!merged[ "focusStart" ] && x.e.focusStart) { merged.focusStart = x.e.focusStart; merged.focusEnd = x.e.focusEnd || x.e.focusStart; } Object.keys(x.e).filter(k => k.startsWith("cp_")).forEach(k => { if (merged[k] === undefined || merged[k] === "") merged[k] = x.e[k]; }); });
+    try {
+      await saveEntry(keep.type, merged);
+      // anything that linked to a removed entry now links to the kept one
+      for (const T of TYPES) for (const e of (data[T.key] || []).slice()) { if (ids.has(e.id) || !Array.isArray(e.links) || !e.links.some(l => ids.has(l) && l !== keep.e.id)) continue; await saveEntry(T.key, { ...e, links: uniq(e.links.map(l => ids.has(l) ? keep.e.id : l)).filter(l => l !== e.id) }); }
+      for (const x of sel.slice(1)) await deleteEntry(x.type, x.e.id);
+      notice(`Combined ${sel.length} entries into “${title}”.`);
+      cs.open = false; cs.sel = []; cs.title = ""; cs.arm = false; cs.busy = false; renderAll(); renderCs(); openEditor(keep.type, keep.e.id);
+    } catch (err) { cs.busy = false; cs.arm = false; notice(err.message || "Couldn't combine them."); renderCs(); }
+  }
+  $("csBtn").addEventListener("click", () => { cs.open = !cs.open; cs.arm = false; renderCs(); setTimeout(() => { const q = $("csQ"); if (q) q.focus(); }, 20); });
+  $("csBox").addEventListener("click", e => {
+    if (e.target.closest("[data-csx]")) { cs.open = false; renderCs(); return; }
+    const p = e.target.closest("[data-cspick]"); if (p) { cs.sel.push(p.dataset.cspick); cs.arm = false; if (cs.sel.length === 1) cs.title = (csFind(cs.sel[0]) || { e: {} }).e.title || ""; renderCs(); const q = $("csQ"); if (q) q.focus(); return; }
+    const u = e.target.closest("[data-csun]"); if (u) { cs.sel = cs.sel.filter(x => x !== u.dataset.csun); cs.arm = false; if (!cs.sel.length) cs.title = ""; renderCs(); return; }
+    if (e.target.closest("[data-csgo]")) csGo();
+  });
+  $("csBox").addEventListener("input", e => { if (e.target.id === "csQ") { cs.q = e.target.value; const pos = e.target.selectionStart; renderCs(); const q = $("csQ"); if (q) { q.focus(); q.setSelectionRange(pos, pos); } } if (e.target.id === "csTitle") cs.title = e.target.value; });
   const cpSet = async (k, id, key, val) => { const D = CP_PAGEDB[k]; if (!D) return; const rec = D.list().find(x => x.id === id); if (!rec) return; await D.save({ ...rec, [key]: val, updatedAt: new Date().toISOString() }); };
   document.addEventListener("change", async e => {
     const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i || i.value === "__newopt") return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
@@ -7792,7 +7850,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   document.addEventListener("click", e => { if (!e.target.closest("[data-modetoggle]")) return; uiMode = uiMode === "lite" ? "full" : "lite"; applyMode(); if (uiMode === "lite") window.scrollTo({ top: 0, behavior: "smooth" }); });
   // A link to another tab (like a routine opening in Planner) switches to Full page so it can show
   window.addEventListener("hashchange", () => { if (!PUBLIC && uiMode === "lite" && !["#game", "#today", ""].includes(location.hash)) { uiMode = "full"; applyMode(); } });
-  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "database", label: "Layers", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
+  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "database", label: "Layers", kind: "tool" }, { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   applyMode();
   // ----- Custom properties (Notion-style): defined per database, saved in settings/customProps -----
