@@ -315,6 +315,7 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .dl-d { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 .dl-a { display: flex; gap: 6px; flex: none; }
 @media (max-width: 560px) { .dl-row { flex-direction: column; align-items: stretch; } .dl-a { justify-content: flex-end; } }
+.pg-dl { display: flex; justify-content: center; margin: 28px auto 8px; padding: 14px 0 0; border-top: 1px dashed var(--panel-line); max-width: 1180px; }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -1435,7 +1436,7 @@ table.pr-rt { width: 100%; }
 .sc-props span { font-size: 12.5px; border: 1px dashed var(--line); border-radius: 6px; padding: 2px 8px; }
 .sc-note { font-size: 12px !important; }
 @media (max-width: 860px) { .sc-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sc-cols { grid-template-columns: 1fr; } }
-.is-public #dlPop, .is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
+.is-public #dlPop, .is-public #pgDlPop, .is-public #pgDl, .is-public #scBtn, .is-public #paBtn, .is-public #paPop, .is-public #pilPop { display: none !important; }
 .pa-dialog { width: min(980px, 100%); }
 .pa-n { margin-left: 6px; background: var(--accent); color: var(--bg); border-radius: 99px; padding: 0 7px; font-size: 11px; font-weight: 800; }
 .pa-n:empty { display: none; }
@@ -1974,6 +1975,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   <div class="bd-pop pa-pop" id="paPop" hidden><div class="bd-dialog pa-dialog" role="dialog" aria-modal="true" aria-label="Planning Assistant"><h3>📋 Planning Assistant<button type="button" class="x" data-paclose aria-label="Close Planning Assistant">×</button></h3><div id="grBox"></div><div id="paBody"></div></div></div>
   <div class="bd-pop pil-pop" id="pilPop" hidden><div class="bd-dialog pil-dialog" role="dialog" aria-modal="true" aria-label="Pillars"><h3>🏛 Pillars<button type="button" class="x" data-pilclose aria-label="Close Pillars">×</button></h3><div class="pil-top"><p class="pa-intro">Hover over a category to see its areas. Click a category to name it and its areas.</p><span class="pil-btns"><button type="button" class="btn primary" id="pilRecodeBtn">🔁 Recode</button><button type="button" class="btn" id="pilHowBtn" aria-expanded="false">ℹ️ How this works</button></span></div><div class="pil-re" id="pilRe" hidden></div><div class="pil-how" id="pilHow" hidden></div><div class="pil-row" id="pilBody"></div><div class="pil-ed" id="pilEd" hidden></div></div></div>
   <div class="bd-pop dl-pop" id="dlPop" hidden><div class="bd-dialog dl-dialog" role="dialog" aria-modal="true" aria-label="Download"><h3>⬇ Download<button type="button" class="x" data-dlclose aria-label="Close Download">×</button></h3><div id="dlBody"></div></div></div>
+  <div class="bd-pop dl-pop" id="pgDlPop" hidden><div class="bd-dialog dl-dialog" role="dialog" aria-modal="true" aria-label="Download this page"><h3>⬇ Download this page<button type="button" class="x" data-pgclose aria-label="Close">×</button></h3><div id="pgDlBody"></div></div></div>
   <div class="bd-pop sc-pop" id="scPop" hidden><div class="bd-dialog sc-dialog" role="dialog" aria-modal="true" aria-label="Schematic"><h3>🗺 Schematic: how LifeOS fits together<button type="button" class="x" data-scclose aria-label="Close schematic">×</button></h3><div id="scBody"></div></div></div>
   <div class="bd-pop" id="bdPop" hidden><div class="bd-dialog" role="dialog" aria-modal="true" aria-label="Brain dump"><h3>🧠 Brain dump<button type="button" class="x" data-bdclose aria-label="Close brain dump">×</button></h3><p class="set-desc">Dump in everything on your mind. Claude reads all of it and turns it into entries (projects, areas, goals, values, ideas, routines, resources or archive), using every word. You check them before anything is added. To speak instead of typing, press the 🎤 button one time and begin speaking.</p><div id="bdBody"></div></div></div>
   <div class="set-pop" id="setPop" role="dialog" aria-label="Settings" hidden>
@@ -4037,7 +4039,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     function applyRemoteCols(list) { if (resizing || dragKey) return; cols[T.key] = normalize(list); store(`chevy.${T.key}.cols2`, cols[T.key]); render(); }
     // Rule: a tab always opens on its first (left-most) view button
     const openFirst = () => { const f = R("layouts").querySelector("[data-layout]"); const k = f && f.dataset.layout; if (k && ui.layout !== k) { ui.layout = k; saveUi(); render(); } };
-    return { T, main, render, applyRemoteCols, applyBoard, openFirst };
+    return { T, main, render, applyRemoteCols, applyBoard, openFirst, visible };
   }
 
   // ---------- Editor ----------
@@ -6161,6 +6163,7 @@ Don't invent appointments or facts that aren't listed.`);
     el.innerHTML = `<div class="view-head"><div><h1>Routines</h1><div class="count">${list.length} routine${list.length === 1 ? "" : "s"} · Layer 7 · always purple</div></div>${PUBLIC ? "" : `<div class="head-actions pr-rtadd"><input class="wf-in" id="prRtNew" placeholder="New routine, like Morning walk" maxlength="120" aria-label="New routine"><button type="button" class="btn primary" data-prrtadd>+ New routine</button></div>`}</div>
       ${list.length ? `<div class="table-wrap"><table class="tbl pr-rt"><thead><tr><th>Title</th><th>Color</th><th>Done</th><th>Show on website</th></tr></thead><tbody>${list.map(row).join("")}</tbody></table></div>` : `<div class="empty"><strong>No routines yet</strong>Add one here or in Planner → Routines.</div>`}`;
   }
+  let dbLastRows = null;
   const DB_SORT_CHIPS = [["layer", "Layer"], ["title", "Title"], ["focus", "When"], ["status", "Status"], ["type", "Database"], ["color", "Color"], ["created", "Created"], ["updated", "Last edited"]];
   function renderDbSort() {
     const l = $("dbSortList"); if (!l) return;
@@ -6196,6 +6199,7 @@ Don't invent appointments or facts that aren't listed.`);
     const inLayer = (x, l) => l === "none" ? !layersOf(x.e).length : layersOf(x.e).includes(l);
     const rows = base.filter(x => !dbs.layer || inLayer(x, dbs.layer));
     rows.sort((a, b) => multiCmp(dbs.sorts, dbVal)(a, b) || titleSort(a, b));
+    dbLastRows = rows;
     $("dbCount").textContent = `${rows.length} of ${all.length} entries` + (dbs.layer ? ` · ${dbs.layer === "none" ? "no layer" : "Layer " + dbs.layer}` : "");
     const totalW = dbShown().reduce((s, c) => s + c.width, 0);
     renderDbShow();
@@ -6568,15 +6572,15 @@ Don't invent appointments or facts that aren't listed.`);
   // Database tabs share one look; tool tabs (Planner, Graph, Obsidian) wear a pill with an icon.
   // ---------- 🤖 Export for AI: every main-database entry as compact plain text ----------
   // Short on purpose (fewer tokens): no ids, empty fields left out, links by title, one legend at the top.
-  function buildAiExport(lean) {
+  function buildAiExport(lean, pick) {
     const LAY = ["system instructions", "narrative facts of my life", "evidence", "authority and academia", "my argumentation and meaning-making", "artifacts I create", "to-do list, projects, goals, scheduled events", "routines and habits", "therapy and emotional", "structure, where areas live"];
     const COLW = { red: "personal admin", orange: "family and friends", yellow: "community", green: "money and work", blue: "everything else" };
     const when = (e) => { const d = e.focusStart ? (e.focusEnd && e.focusEnd !== e.focusStart ? e.focusStart + "→" + e.focusEnd : e.focusStart) : ""; const t = e.timeStart ? timeRange(e.timeStart, e.timeEnd) : ""; return [d, t].filter(Boolean).join(" "); };
     const clean = (s) => String(s || "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
     const order = ["areas", "goals", "projects", "pages", "ideas", "values", "archive"];
-    const out = [`# My LifeOS entries (${today()})\nLayers: ${LAY.map((t, i) => `L${i} ${t}`).join("; ")}.\nColors: ${Object.entries(COLW).map(([k, v]) => k + " " + v).join("; ")}; purple routines. Links are two-way.`];
+    const out = [`# ${pick && pick.title ? pick.title : "My LifeOS entries"} (${today()})\nLayers: ${LAY.map((t, i) => `L${i} ${t}`).join("; ")}.\nColors: ${Object.entries(COLW).map(([k, v]) => k + " " + v).join("; ")}; purple routines. Links are two-way.`];
     order.forEach(k => {
-      const T = TYPE[k]; const list = data[k].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")); if (!list.length) return;
+      const T = TYPE[k]; const list = pick ? (pick.types[k] || []) : data[k].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")); if (!list.length) return;
       out.push(`## ${T.label} (${list.length})`);
       list.forEach(e => {
         const meta = [layersOf(e).length ? "L" + layersOf(e).join("/L") : "", e.color || "", e.status && e.status !== "Not started" ? e.status : "", e.scheduled ? "scheduled" : "", T.archive && e.archivedFrom ? "was " + (TYPE[e.archivedFrom] ? TYPE[e.archivedFrom].singular : e.archivedFrom) : "", k === "ideas" && e.wfKind ? e.wfKind : ""].filter(Boolean).join(", ");
@@ -6592,9 +6596,10 @@ Don't invent appointments or facts that aren't listed.`);
         out.push(lines.join("\n"));
       });
     });
-    if (routines.length) {
-      out.push(`## Routines (${routines.length}, L7, purple)`);
-      routines.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach(r => {
+    const RTS = pick ? (pick.routines || []) : routines;
+    if (RTS.length) {
+      out.push(`## Routines (${RTS.length}, L7, purple)`);
+      RTS.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach(r => {
         const done = rtPlans(r).filter(x => x.status === "done");
         const lines = [`### ${r.name || "Untitled routine"}${r.color ? ` (${r.color})` : ""}`, `Done ${done.length} times${done.length ? ", last " + done.map(x => x.date).sort().pop() : ""}`];
         const ln = linksOf(r.id).map(x => x.e.title || "Untitled"); if (ln.length) lines.push("Links: " + ln.join("; "));
@@ -6609,28 +6614,28 @@ Don't invent appointments or facts that aren't listed.`);
   const dlTok = (t) => Math.round(t.length / 4);
   const csvCell = (v) => { const s = v == null ? "" : Array.isArray(v) ? v.join("; ") : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const toCsv = (rows) => "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
-  function dlLayersCsv() {
-    const cps = cpDefs("_all");
+  function dlLayersCsv(pick) {
+    const cps = cpDefs("_all"), TL = pick ? pick.types : Object.fromEntries(TYPES.map(T => [T.key, data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || ""))])), RL = pick ? (pick.routines || []) : routines;
     const head = ["Title", "Database", "Status", "Layers", "Color", "Tags", "When", "Links", "Subtitle", "Created", "Last edited", ...cps.map(P => P.label)];
     const rows = [head];
-    TYPES.forEach(T => data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).forEach(e => rows.push([e.title || "Untitled", T.label, e.status || "", layersOf(e).join(" "), colorOf(e) || "", tagsOf(e), whenText(e) || "", [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))], e.subtitle || "", String(e.created || e.createdTime || e.createdAt || "").slice(0, 10), String(e.updatedAt || "").slice(0, 10), ...cps.map(P => K.cprop.show(e, P))])));
-    routines.forEach(r => rows.push([r.name || "Untitled routine", "Routines", "", "7", r.color || "purple", [], "", [...new Set(linksOf(r.id).map(y => y.e.title || "Untitled"))], "", String(r.createdAt || "").slice(0, 10), String(r.updatedAt || "").slice(0, 10), ...cps.map(() => "")]));
+    TYPES.forEach(T => (TL[T.key] || []).forEach(e => rows.push([e.title || "Untitled", T.label, e.status || "", layersOf(e).join(" "), colorOf(e) || "", tagsOf(e), whenText(e) || "", [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))], e.subtitle || "", String(e.created || e.createdTime || e.createdAt || "").slice(0, 10), String(e.updatedAt || "").slice(0, 10), ...cps.map(P => K.cprop.show(e, P))])));
+    RL.forEach(r => rows.push([r.name || "Untitled routine", "Routines", "", "7", r.color || "purple", [], "", [...new Set(linksOf(r.id).map(y => y.e.title || "Untitled"))], "", String(r.createdAt || "").slice(0, 10), String(r.updatedAt || "").slice(0, 10), ...cps.map(() => "")]));
     return toCsv(rows);
   }
-  function dlInventoryCsv() { const cps = cpDefs("inventory"); return toCsv([["Item", "Room", ...cps.map(P => P.label)], ...inventory.slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(x => [x.title || "Untitled", x.room || "", ...cps.map(P => K.cprop.show(x, P))])]); }
-  function dlMealsCsv() { const cps = cpDefs("meals"); return toCsv([["Meal", "Category", "Menu", "Cuisine", "Method", "Status", "Date", "Recipe link", "Ingredients", "Directions", ...cps.map(P => P.label)], ...meals.slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(m => [m.title || "Untitled", mlArr(m.category), mlArr(m.menu), mlArr(m.cuisine), mlArr(m.method), m.status || "", m.date || "", m.link || "", m.ingredients || "", m.directions || "", ...cps.map(P => K.cprop.show(m, P))])]); }
-  function dlMealsMd() {
-    const list = meals.filter(m => !isArchivedMeal(m)).sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-    return `# My recipes (${today()})\n\n` + list.map(m => [`## ${m.icon ? m.icon + " " : ""}${m.title || "Untitled"}`, [mlArr(m.category).join(", "), mlArr(m.cuisine).join(", "), mlArr(m.method).join(", ")].filter(Boolean).join(" · "), m.link ? `Recipe: ${m.link}` : "", m.ingredients ? `### Ingredients\n${m.ingredients.trim()}` : "", m.directions ? `### Directions\n${m.directions.trim()}` : ""].filter(Boolean).join("\n\n")).join("\n\n") + "\n";
+  function dlInventoryCsv(L) { const cps = cpDefs("inventory"); return toCsv([["Item", "Room", ...cps.map(P => P.label)], ...(L || inventory).slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(x => [x.title || "Untitled", x.room || "", ...cps.map(P => K.cprop.show(x, P))])]); }
+  function dlMealsCsv(L) { const cps = cpDefs("meals"); return toCsv([["Meal", "Category", "Menu", "Cuisine", "Method", "Status", "Date", "Recipe link", "Ingredients", "Directions", ...cps.map(P => P.label)], ...(L || meals).slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")).map(m => [m.title || "Untitled", mlArr(m.category), mlArr(m.menu), mlArr(m.cuisine), mlArr(m.method), m.status || "", m.date || "", m.link || "", m.ingredients || "", m.directions || "", ...cps.map(P => K.cprop.show(m, P))])]); }
+  function dlMealsMd(L, title) {
+    const list = (L || meals.filter(m => !isArchivedMeal(m))).slice().sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    return `# ${title || "My recipes"} (${today()})\n\n` + list.map(m => [`## ${m.icon ? m.icon + " " : ""}${m.title || "Untitled"}`, [mlArr(m.category).join(", "), mlArr(m.cuisine).join(", "), mlArr(m.method).join(", ")].filter(Boolean).join(" · "), m.link ? `Recipe: ${m.link}` : "", m.ingredients ? `### Ingredients\n${m.ingredients.trim()}` : "", m.directions ? `### Directions\n${m.directions.trim()}` : ""].filter(Boolean).join("\n\n")).join("\n\n") + "\n";
   }
   function dlBackup() { return JSON.stringify({ app: "LifeOS", exported: new Date().toISOString(), entries: Object.fromEntries(TYPES.map(T => [T.key, data[T.key]])), routines, inventory, rooms, meals, customProps: CPROPS }, null, 1); }
   const DL = [
     { k: "ai", group: "🤖 To talk with an AI", label: "All entries, with notes", desc: "Every entry: properties, links, tasks and notes.", ext: "md", mime: "text/markdown", make: () => buildAiExport(false), copy: true },
     { k: "ailean", group: "🤖 To talk with an AI", label: "All entries, lean (no notes)", desc: "Titles, properties, dates, links and tags only. Uses far fewer tokens.", ext: "md", mime: "text/markdown", make: () => buildAiExport(true), copy: true },
-    { k: "layers", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Layers: every entry", desc: "One row per entry, one column per property.", ext: "csv", mime: "text/csv", make: dlLayersCsv },
-    { k: "inventory", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Inventory", desc: "Every item with its room and properties.", ext: "csv", mime: "text/csv", make: dlInventoryCsv },
-    { k: "meals", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Meals", desc: "Every meal with its choices, ingredients and directions.", ext: "csv", mime: "text/csv", make: dlMealsCsv },
-    { k: "recipes", group: "📄 Documents", label: "Recipe book", desc: "Every meal (not archived) as an easy-to-read recipe page.", ext: "md", mime: "text/markdown", make: dlMealsMd },
+    { k: "layers", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Layers: every entry", desc: "One row per entry, one column per property.", ext: "csv", mime: "text/csv", make: () => dlLayersCsv() },
+    { k: "inventory", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Inventory", desc: "Every item with its room and properties.", ext: "csv", mime: "text/csv", make: () => dlInventoryCsv() },
+    { k: "meals", group: "📊 Spreadsheets (open in Excel or Google Sheets)", label: "Meals", desc: "Every meal with its choices, ingredients and directions.", ext: "csv", mime: "text/csv", make: () => dlMealsCsv() },
+    { k: "recipes", group: "📄 Documents", label: "Recipe book", desc: "Every meal (not archived) as an easy-to-read recipe page.", ext: "md", mime: "text/markdown", make: () => dlMealsMd() },
     { k: "backup", group: "💾 Backup", label: "Full backup", desc: "Everything in LifeOS (entries, routines, inventory, meals, properties) in one file to keep safe.", ext: "json", mime: "application/json", make: dlBackup },
   ];
   const dlName = (d) => `lifeos-${d.k}-${today()}.${d.ext}`;
@@ -6667,6 +6672,65 @@ Don't invent appointments or facts that aren't listed.`);
     const c = e.target.closest("[data-dlcopy]"); if (c) { const d = DL.find(x => x.k === c.dataset.dlcopy); if (d) dlCopy(d); }
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("dlPop").hidden) dlOpen(false); });
+  // ---------- ⬇ Download this page: a button at the bottom of every view, exporting only what that view shows. No AI, no tokens. ----------
+  let curView = "", pgNotes = false, pgMsg = "";
+  const pgDlEl = document.createElement("div"); pgDlEl.className = "pg-dl site-build"; pgDlEl.id = "pgDl";
+  pgDlEl.innerHTML = `<button type="button" class="btn" id="pgDlBtn" aria-controls="pgDlPop" aria-expanded="false">⬇ Download this page</button>`;
+  function pgDlPlace() {
+    if (PUBLIC) return;
+    const vis = [...document.querySelectorAll("main[id^='view-']")].filter(m => !m.hidden);
+    const last = vis[vis.length - 1]; if (!last) { pgDlEl.remove(); return; }
+    if (pgDlEl.previousElementSibling !== last) last.after(pgDlEl);
+  }
+  const VIEW_NAME = { database: "Layers", graph: "Graph", obsidian: "Obsidian", planner: "Planner", home: "Home", workflow: "Workflow", game: "Today", inventory: "Inventory", meals: "Meals" };
+  const pgName = () => VIEW_NAME[curView] || (TYPE[curView] ? TYPE[curView].label : "This page");
+  const pgPick = (items, title) => { const types = {}, rts = []; items.forEach(x => { if (x.type === "routine") { const r = x.r || routines.find(y => y.id === (x.e && x.e.id)); if (r) rts.push(r); } else (types[x.type] = types[x.type] || []).push(x.e); }); return { title, types, routines: rts }; };
+  // What this page shows, in the order it shows it
+  function pgData() {
+    const v = curView, name = pgName(), title = `${name} page`;
+    if (TYPE[v] && views[v]) {
+      const keys = v === "projects" ? ["goals", "projects"] : [v];
+      const items = keys.flatMap(k => (views[k] && views[k].visible ? views[k].visible() : data[k]).map(e => ({ type: k, e })));
+      if (v === "projects") routines.forEach(r => items.push({ type: "routine", r }));
+      const P = pgPick(items, title); return { n: items.length, md: (notes) => buildAiExport(!notes, P), csv: () => dlLayersCsv(P), notes: true };
+    }
+    if (v === "database") { const items = dbLastRows || []; const P = pgPick(items, title + (dbs.layer ? ` · ${dbs.layer === "none" ? "no layer" : "Layer " + dbs.layer}` : "")); return { n: items.length, md: (notes) => buildAiExport(!notes, P), csv: () => dlLayersCsv(P), notes: true }; }
+    if (v === "graph") { const items = gNodes.filter(n => !n.dim).map(n => n.type === "routine" ? { type: "routine", e: { id: n.id } } : byId.get(n.id)).filter(Boolean); const P = pgPick(items, title); return { n: items.length, md: (notes) => buildAiExport(!notes, P), csv: () => dlLayersCsv(P), notes: true }; }
+    if (v === "inventory") { const L = invLast || inventory; return { n: L.length, md: () => `# Inventory (${today()})\n\n` + L.map(x => `- ${x.title || "Untitled"}${x.room ? ` (${x.room})` : ""}${cpDefs("inventory").map(P => { const t = K.cprop.show(x, P); return t ? ` · ${P.label}: ${t}` : ""; }).join("")}`).join("\n") + "\n", csv: () => dlInventoryCsv(L) }; }
+    if (v === "meals") { const L = mlLast || meals; return { n: L.length, md: () => dlMealsMd(L, "Meals page"), csv: () => dlMealsCsv(L) }; }
+    // Every other page: the words on the screen, as plain text
+    const text = () => [...document.querySelectorAll("main[id^='view-']")].filter(m => !m.hidden).map(m => m.innerText).join("\n\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    return { n: null, md: () => `# ${title} (${today()})\n\n${text()}\n` };
+  }
+  async function pgSave(blob, name) {
+    try {
+      if (downloadsApi === undefined) { try { downloadsApi = await window.LIFEOS_USE("downloads"); } catch (e) { downloadsApi = null; } }
+      if (downloadsApi) await downloadsApi.save({ filename: name, data: blob });
+      else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+      pgMsg = `Saved ${name}.`;
+    } catch (err) { const c = err && err.code; pgMsg = c === "declined" || c === "canceled" || c === "cancelled" ? "Download cancelled." : "Couldn't save the file (" + (c || "error") + ")."; }
+    renderPgDl();
+  }
+  function renderPgDl() {
+    const el = $("pgDlBody"); if (!el || $("pgDlPop").hidden) return;
+    const D = pgData(), md = D.md(pgNotes), slug = pgName().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    el.innerHTML = `<p class="set-desc">Only what's on the <b>${esc(pgName())}</b> page right now${D.n != null ? ` (${D.n} ${D.n === 1 ? "item" : "items"}, with its current filters)` : ""}. Copying or downloading uses <b>no tokens</b>; tokens are only used if you paste it into a chat with an AI.</p>
+      ${pgMsg ? `<p class="set-desc ai-msg" role="status">${esc(pgMsg)}</p>` : ""}
+      ${D.notes ? `<label class="switch"><input type="checkbox" id="pgNotes"${pgNotes ? " checked" : ""}> Include notes and tasks</label>` : ""}
+      <div class="dl-row"><div class="dl-t"><b>Text</b> <span class="dl-ext">.md</span><span class="dl-d">Easy to read, or to paste into an AI · about ${dlTok(md).toLocaleString()} tokens if pasted</span></div><div class="dl-a"><button type="button" class="btn" data-pgcopy>📋 Copy</button><button type="button" class="btn primary" data-pgsave="md">⬇ Download</button></div></div>
+      ${D.csv ? `<div class="dl-row"><div class="dl-t"><b>Spreadsheet</b> <span class="dl-ext">.csv</span><span class="dl-d">Opens in Excel or Google Sheets</span></div><div class="dl-a"><button type="button" class="btn primary" data-pgsave="csv">⬇ Download</button></div></div>` : ""}`;
+    el.dataset.slug = slug;
+  }
+  const pgOpen = (v) => { const p = $("pgDlPop"); p.hidden = !v; $("pgDlBtn").setAttribute("aria-expanded", String(v)); if (v) { pgMsg = ""; renderPgDl(); } };
+  pgDlEl.addEventListener("click", e => { if (e.target.closest("#pgDlBtn")) { e.stopPropagation(); pgOpen(true); } });
+  $("pgDlPop").addEventListener("click", async e => {
+    if (e.target.closest("[data-pgclose]") || e.target === $("pgDlPop")) { pgOpen(false); return; }
+    const D = pgData(), slug = "lifeos-" + pgName().toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + today();
+    if (e.target.closest("[data-pgcopy]")) { const txt = D.md(pgNotes); let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch (er) {} if (!ok) { const ta = document.createElement("textarea"); ta.value = txt; ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (er) {} ta.remove(); } pgMsg = ok ? `Copied (about ${dlTok(txt).toLocaleString()} tokens once pasted into a chat).` : "Your browser blocked copying here. Use Download instead."; renderPgDl(); return; }
+    const sv = e.target.closest("[data-pgsave]"); if (sv) { if (sv.dataset.pgsave === "csv" && D.csv) pgSave(new Blob([D.csv()], { type: "text/csv" }), slug + ".csv"); else pgSave(new Blob([D.md(pgNotes)], { type: "text/markdown" }), slug + ".md"); }
+  });
+  $("pgDlPop").addEventListener("change", e => { if (e.target.id === "pgNotes") { pgNotes = e.target.checked; renderPgDl(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pgDlPop").hidden) pgOpen(false); });
   // ---------- 🗺 Schematic: a picture of how entries and views fit together ----------
   function renderSchematic() {
     const el = $("scBody"); if (!el) return;
@@ -7539,7 +7603,7 @@ ${text}
   const HOME_WEB_DEFAULT = { workflow: true, planner: true, projects: true, areas: true, pages: true, archive: false, inventory: false, meals: false, obsidian: true, database: true, graph: true };
   let homeWeb = { ...HOME_WEB_DEFAULT, ...((PUBLIC && PUBLIC.home && PUBLIC.home.web) || recall("chevy.homeWeb") || {}) };
   let inventory = [], rooms = recall("chevy.rooms") || [];
-  const inv = { q: "", room: "", sort: "title", roomsOpen: false };
+  const inv = { q: "", room: "", sort: "title", roomsOpen: false }; let invLast = null;
   const HOME_SWITCH = ["inventory", "meals"]; // databases without their own per-entry "Show on website"
   const webOn = (k) => !HOME_SWITCH.includes(k) || !!homeWeb[k];
   async function saveHomeWeb() {
@@ -7678,6 +7742,7 @@ ${text}
     const el = $("invBody"); if (!el) return;
     const ro = !!PUBLIC, q = inv.q.trim().toLowerCase();
     let list = inventory.filter(x => (!inv.room || (inv.room === "__none" ? !x.room : x.room === inv.room)) && (!q || (x.title || "").toLowerCase().includes(q) || (x.room || "").toLowerCase().includes(q)) && fxPass("inventory", x));
+    invLast = list;
     list.sort((a, b) => inv.sort === "room" ? ((a.room || "~").localeCompare(b.room || "~") || (a.title || "").localeCompare(b.title || "")) : (a.title || "").localeCompare(b.title || ""));
     const usedRooms = [...new Set([...rooms, ...inventory.map(x => x.room).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
     $("invCount").textContent = `${inventory.length} item${inventory.length === 1 ? "" : "s"} · ${rooms.length} room${rooms.length === 1 ? "" : "s"}`;
@@ -7733,6 +7798,7 @@ ${text}
   // ----- Meals: recipes imported from Notion, with Category, Menu, Cuisine and Method choices I can add to -----
   const ML_FIELDS = [["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"]];
   const ML_DEFAULT_OPTS = { category: ["Entree", "Meat", "Soups", "Side", "Dessert", "Sauce", "Kids", "Breakfast", "Vegan", "New", "Archived"], menu: ["Menu 1", "Menu 2", "Menu 3", "Menu 4", "Menu 5", "Other"], cuisine: ["Italian", "American", "European", "Mexican", "Korean & Chinese", "Indian & Thai", "Mediterranean", "Kids"], method: ["Assemble", "Air Fryer", "Food Processor", "Pressure Cook", "George Foreman", "Oven", "Pot", "Skillet"] };
+  let mlLast = null;
   let meals = [], mealOpts = { ...ML_DEFAULT_OPTS, ...(recall("chevy.mealOpts") || {}) };
   const ml = Object.assign({ q: "", group: "category", archived: false, f: {} }, recall("chevy.meals.view") || {});
   ml.open = null; ml.del = false;
@@ -7768,7 +7834,7 @@ ${text}
     const ro = !!PUBLIC, q = ml.q.trim().toLowerCase();
     let list = meals.filter(m => (ml.archived || !isArchivedMeal(m)) && (!q || [m.title, m.ingredients, (m.ingList || []).join(" "), mlArr(m.cuisine).join(" "), mlArr(m.category).join(" ")].join(" ").toLowerCase().includes(q)));
     ML_FIELDS.forEach(([k]) => { const sel = (ml.f[k] || []); if (sel.length) list = list.filter(m => mlArr(m[k]).some(v => sel.includes(v))); });
-    list = list.filter(m => fxPass("meals", m));
+    list = list.filter(m => fxPass("meals", m)); mlLast = list;
     list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     $("mlCount").textContent = `${meals.filter(m => !isArchivedMeal(m)).length} meals${meals.some(isArchivedMeal) ? ` · ${meals.filter(isArchivedMeal).length} archived` : ""}`;
     const card = (m) => `<button type="button" class="ml-card${mealCover(m) ? " has-cover" : ""}" data-mlopen="${esc(m.id)}">${mealCover(m) ? `<span class="ml-cover"><img src="${esc(mealCover(m))}" alt="" loading="lazy" style="${mealCoverPos(m)}"></span>` : ""}<span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
@@ -8156,6 +8222,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     if (v === "obsidian") renderVault();
     graphVisible = v === "graph";
     if (graphVisible) { sizeCanvas(); renderGraph(); }
+    curView = v; pgDlPlace();
   }
   // Dates are only ever picked from a calendar pop-up: every date field shows as a button (📅 + the chosen date), never as typeable numbers
   const calPop = (() => {
