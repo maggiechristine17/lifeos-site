@@ -211,7 +211,7 @@ tr:hover .inv-open, .inv-open:focus { opacity: 1; color: var(--accent); border-c
 .cp-in::placeholder { color: var(--muted); opacity: 1; }
 @media (max-width: 760px) { td.cp-cell { display: flex; align-items: center; gap: 8px; } td.cp-cell::before { content: attr(data-label); font-size: 12px; font-weight: 700; color: var(--muted); min-width: 70px; } } .cp-chk { width: 18px; height: 18px; }
 .cp-manage { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; gap: 8px; }
-.cp-h { font-weight: 700; font-size: 13px; }
+.cp-h { font-weight: 700; font-size: 13px; } .cp-hs { font-weight: 500; color: var(--muted); margin-left: 6px; font-size: 12px; }
 .cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .cp-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
 .cp-nm { font-weight: 600; } .cp-opts { font-size: 12px; color: var(--muted); flex: 1 1 120px; }
@@ -3360,15 +3360,20 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
     // Your properties: add, edit or delete custom properties for this database (Notion-style)
     let cpArm = null, cpEdit = null;
+    // Your properties. Whole-database properties can be added from any section (and Layers);
+    // section-only ("specific") properties only in Projects, Areas and Resources.
+    const SPEC_OK = ["projects", "areas", "pages"].includes(T.key);
     function renderCpManage() {
       const box = R("cpManage"); if (!box) return;
-      const defs = CPROPS[T.key] || [], ty = (k) => (CP_TYPES.find(x => x[0] === k) || ["", k])[1];
-      const glob = CPROPS._all || [];
-      box.innerHTML = `<div class="cp-h">Your properties for ${esc(T.label)} only</div>
-        ${glob.length ? `<p class="pub-hint">Also on every entry (added in Layers): ${glob.map(d => `<b>${esc(d.label)}</b>`).join(", ")}. Change those in Layers → ＋ Add property.</p>` : ""}
-        ${defs.length ? `<ul class="cp-list">${defs.map(d => cpEdit === d.key ? `<li class="cp-row ed"><input type="text" data-cpname value="${esc(d.label)}" maxlength="40" aria-label="Property name"><select data-cptype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}"${k === d.ptype ? " selected" : ""}>${l}</option>`).join("")}</select><input type="text" data-cpopts value="${esc((d.options || []).join(", "))}" placeholder="Options, comma separated (for Select / Multi-select)" aria-label="Options"><button type="button" class="btn small primary" data-cpsave="${d.key}">Save</button><button type="button" class="btn small" data-cpcancel>Cancel</button></li>` : `<li class="cp-row"><span class="cp-nm">${esc(d.label)}</span><span class="pa-type">${esc(ty(d.ptype))}</span>${(d.options || []).length ? `<span class="cp-opts">${esc(d.options.join(", "))}</span>` : ""}<button type="button" class="btn small" data-cpedit="${d.key}">✏️ Edit</button><button type="button" class="btn small${cpArm === d.key ? " danger" : ""}" data-cpdel="${d.key}">${cpArm === d.key ? "Sure? Delete" : "🗑 Delete"}</button></li>`).join("")}</ul>` : '<p class="pub-hint">No properties of your own yet.</p>'}
-        <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select><input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div>
-        <p class="pub-hint">A property added here is only for ${esc(T.label)}. To add one to every entry, use ＋ Add property in Layers. Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
+      const ty = (k) => (CP_TYPES.find(x => x[0] === k) || ["", k])[1];
+      const row = (d, sc) => cpEdit === sc + "|" + d.key ? `<li class="cp-row ed"><input type="text" data-cpname value="${esc(d.label)}" maxlength="40" aria-label="Property name"><select data-cptype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}"${k === d.ptype ? " selected" : ""}>${l}</option>`).join("")}</select><input type="text" data-cpopts value="${esc((d.options || []).join(", "))}" placeholder="Options, comma separated (for Select / Multi-select)" aria-label="Options"><button type="button" class="btn small primary" data-cpsave="${sc}|${d.key}">Save</button><button type="button" class="btn small" data-cpcancel>Cancel</button></li>`
+        : `<li class="cp-row"><span class="cp-nm">${esc(d.label)}</span><span class="pa-type">${esc(ty(d.ptype))}</span>${(d.options || []).length ? `<span class="cp-opts">${esc(d.options.join(", "))}</span>` : ""}<button type="button" class="btn small" data-cpedit="${sc}|${d.key}">✏️ Edit</button><button type="button" class="btn small${cpArm === sc + "|" + d.key ? " danger" : ""}" data-cpdel="${sc}|${d.key}">${cpArm === sc + "|" + d.key ? "Sure? Delete" : "🗑 Delete"}</button></li>`;
+      const glob = CPROPS._all || [], own = CPROPS[T.key] || [];
+      box.innerHTML = `<div class="cp-h">Properties for the whole database <span class="cp-hs">every entry has these</span></div>
+        ${glob.length ? `<ul class="cp-list">${glob.map(d => row(d, "_all")).join("")}</ul>` : '<p class="pub-hint">None yet.</p>'}
+        ${SPEC_OK ? `<div class="cp-h">Specific properties <span class="cp-hs">only for ${esc(T.label)}</span></div>${own.length ? `<ul class="cp-list">${own.map(d => row(d, T.key)).join("")}</ul>` : '<p class="pub-hint">None yet.</p>'}` : (own.length ? `<div class="cp-h">Specific properties <span class="cp-hs">only for ${esc(T.label)}</span></div><ul class="cp-list">${own.map(d => row(d, T.key)).join("")}</ul>` : "")}
+        <div class="cp-add"><input type="text" data-cpnewname placeholder="New property name" maxlength="40" aria-label="New property name"><select data-cpnewtype aria-label="Type">${CP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select>${SPEC_OK ? `<select data-cpscope aria-label="Add it to"><option value="_all">For the whole database</option><option value="${T.key}">Only for ${esc(T.label)}</option></select>` : `<span class="pub-hint">Adds to the whole database</span>`}<input type="text" data-cpnewopts placeholder="Options (for Select / Multi-select), comma separated" aria-label="Options" hidden><button type="button" class="btn small primary" data-cpadd>＋ Add property</button></div>
+        <p class="pub-hint">Built-in properties can't be deleted, but you can hide them by tapping them above.</p>`;
     }
     const openAddProp = () => { const pn = R("colsPanel"); if (pn.hidden) R("tCols").click(); if (pn.hidden) pn.hidden = false; setTimeout(() => { const i = R("cpManage") && R("cpManage").querySelector("[data-cpnewname]"); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); };
     if (R("tAddProp")) R("tAddProp").addEventListener("click", openAddProp);
@@ -3378,11 +3383,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       R("cpManage").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("[data-cpnewname], [data-cpnewopts]")) { e.preventDefault(); R("cpManage").querySelector("[data-cpadd]").click(); } });
       R("cpManage").addEventListener("click", e => {
         const t = e.target, box = R("cpManage"), opts = (v) => [...new Set(String(v || "").split(",").map(x => x.trim()).filter(Boolean))].slice(0, 50);
-        if (t.closest("[data-cpadd]")) { const nm = box.querySelector("[data-cpnewname]").value.trim(); if (!nm) { box.querySelector("[data-cpnewname]").focus(); return; } const pt = box.querySelector("[data-cpnewtype]").value; cpChange(T.key, [...(CPROPS[T.key] || []), { key: "cp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), label: nm.slice(0, 40), ptype: pt, options: opts(box.querySelector("[data-cpnewopts]").value) }], `Added “${nm}” to ${T.label}.`); return; }
+        const after = (sc) => { if (sc === "_all") setTimeout(() => { const v = views[T.key]; const b = v && v.main.querySelector('[data-r="tCols"]'); if (b && b.getAttribute("aria-expanded") !== "true") b.click(); const pn = v && v.main.querySelector('[data-r="colsPanel"]'); if (pn) pn.hidden = false; }, 20); };
+        if (t.closest("[data-cpadd]")) { const nm = box.querySelector("[data-cpnewname]").value.trim(); if (!nm) { box.querySelector("[data-cpnewname]").focus(); return; } const sc = SPEC_OK ? box.querySelector("[data-cpscope]").value : "_all"; cpChange(sc, [...(CPROPS[sc] || []), { key: "cp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), label: nm.slice(0, 40), ptype: box.querySelector("[data-cpnewtype]").value, options: opts(box.querySelector("[data-cpnewopts]").value) }], sc === "_all" ? `Added “${nm}” to every entry.` : `Added “${nm}” to ${T.label}.`); after(sc); return; }
         const ed = t.closest("[data-cpedit]"); if (ed) { cpEdit = ed.dataset.cpedit; cpArm = null; renderCpManage(); return; }
         if (t.closest("[data-cpcancel]")) { cpEdit = null; renderCpManage(); return; }
-        const sv = t.closest("[data-cpsave]"); if (sv) { const row = sv.closest("li"), nm = row.querySelector("[data-cpname]").value.trim(); if (!nm) return; cpChange(T.key, (CPROPS[T.key] || []).map(d => d.key === sv.dataset.cpsave ? { ...d, label: nm.slice(0, 40), ptype: row.querySelector("[data-cptype]").value, options: opts(row.querySelector("[data-cpopts]").value) } : d), `Saved “${nm}”.`); return; }
-        const dl = t.closest("[data-cpdel]"); if (dl) { const k = dl.dataset.cpdel; if (cpArm !== k) { cpArm = k; renderCpManage(); return; } const d = (CPROPS[T.key] || []).find(x => x.key === k); cpChange(T.key, (CPROPS[T.key] || []).filter(x => x.key !== k), `Deleted the property “${d ? d.label : ""}”.`); }
+        const sv = t.closest("[data-cpsave]"); if (sv) { const [sc, key] = sv.dataset.cpsave.split("|"), rw = sv.closest("li"), nm = rw.querySelector("[data-cpname]").value.trim(); if (!nm) return; cpEdit = null; cpChange(sc, (CPROPS[sc] || []).map(d => d.key === key ? { ...d, label: nm.slice(0, 40), ptype: rw.querySelector("[data-cptype]").value, options: opts(rw.querySelector("[data-cpopts]").value) } : d), `Saved “${nm}”.`); after(sc); return; }
+        const dl = t.closest("[data-cpdel]"); if (dl) { const [sc, key] = dl.dataset.cpdel.split("|"); if (cpArm !== dl.dataset.cpdel) { cpArm = dl.dataset.cpdel; renderCpManage(); return; } cpArm = null; const d = (CPROPS[sc] || []).find(x => x.key === key); cpChange(sc, (CPROPS[sc] || []).filter(x => x.key !== key), `Deleted the property “${d ? d.label : ""}”.`); after(sc); }
       });
     }
     // Columns panel
@@ -4341,7 +4347,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const all = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")), main = all.filter(P => SHARED.has(P.key)), spec = all.filter(P => !SHARED.has(P.key));
     const ia = (sc, l) => editing.ro ? "" : `<div class="pb-iadd">${cpIAddHtml(sc, l)}</div>`;
     bar.innerHTML = `<div class="pb-h">Properties <span>every entry has these</span></div>${main.map(btnFor).join("")}${ia("_all", "to every entry")}
-      <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${ia(T.key, "only for " + T.label)}`;
+      <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${["projects", "areas", "pages"].includes(T.key) ? ia(T.key, "only for " + T.label) : ""}`;
   }
   var propBarTimer = null;
   function refreshPropBar() { clearTimeout(propBarTimer); propBarTimer = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches(".pl-native") && a.closest("#propBar")) { a.addEventListener("blur", () => refreshPropBar(), { once: true }); return; } renderPropBar(); }, 60); }
