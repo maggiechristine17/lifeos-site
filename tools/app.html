@@ -110,7 +110,10 @@ body.mode-lite .tab:not([data-view="game"]), body.mode-lite .tab-sep { display: 
 .btn.cp-plus { border-style: dashed; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .cp-pm { margin: 8px 0; }
 .cp-thadd { border: 1px dashed var(--accent); background: none; color: var(--accent); border-radius: 6px; font-weight: 800; cursor: pointer; padding: 0 8px; }
-.cp-in { min-width: 90px; } .cp-chk { width: 18px; height: 18px; }
+.cp-in { min-width: 90px; border: 1px dashed var(--line) !important; border-radius: 6px; padding: 4px 8px; background: var(--bg) !important; color: var(--ink); }
+.cp-in:focus { border-style: solid !important; border-color: var(--accent) !important; outline: none; }
+.cp-in::placeholder { color: var(--muted); opacity: 1; }
+@media (max-width: 760px) { td.cp-cell { display: flex; align-items: center; gap: 8px; } td.cp-cell::before { content: attr(data-label); font-size: 12px; font-weight: 700; color: var(--muted); min-width: 70px; } } .cp-chk { width: 18px; height: 18px; }
 .cp-manage { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; gap: 8px; }
 .cp-h { font-weight: 700; font-size: 13px; }
 .cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -2172,14 +2175,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const v = rec ? rec[P.field] : undefined, at = `data-cpi="${k}|${esc(rec.id)}|${P.key}" aria-label="${esc(P.label)}"`;
     if (PUBLIC) return K.cprop.cell(rec, P);
     switch (P.ptype) {
-      case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${P.ptype === "currency" ? "$" : P.ptype === "percent" ? "%" : "#"}">`;
-      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
-      case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${esc(P.label)}${P.ptype === "currency" ? " ($)" : P.ptype === "percent" ? " (%)" : ""}">`;
+      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
+      case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
       case "check": return `<input type="checkbox" class="cp-chk" ${at}${v ? " checked" : ""}>`;
-      case "select": return `<select class="db-inline cp-in" ${at}><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+      case "select": return `<select class="db-inline cp-in" ${at}><option value="">${esc(P.label)}: —</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
       case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="cp-multi">${(P.options || []).map(o => `<button type="button" class="chip" data-cpim="${k}|${esc(rec.id)}|${P.key}" data-val="${esc(o)}" aria-pressed="${on.includes(o)}">${esc(o)}</button>`).join("")}</span>`; }
       case "rating": return `<span class="cp-rate">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpir="${k}|${esc(rec.id)}|${P.key}" data-n="${n}" aria-label="${n} stars" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</span>`;
-      default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
     }
   }
   document.addEventListener("click", e => { const b = e.target.closest("[data-cpmgr]"); if (!b) return; const k = b.dataset.cpmgr; cpOpenMgr[k] = true; if (b.hasAttribute("data-cpclose") && k === "meals") { ml.open = null; $("mlOverlay").hidden = true; } CP_PAGEDB[k].render(); setTimeout(() => { const i = document.querySelector(`[data-cpdb="${k}"] [data-cpnewname]`); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); });
@@ -7155,7 +7158,7 @@ ${text}
       ${list.length ? `<div class="table-wrap"><table class="inv-table"><thead><tr><th><button type="button" data-invsort="title" class="${inv.sort === "title" ? "on" : ""}">Item${inv.sort === "title" ? " ↑" : ""}</button></th><th><button type="button" data-invsort="room" class="${inv.sort === "room" ? "on" : ""}">Room${inv.sort === "room" ? " ↑" : ""}</button></th>${cpDefs("inventory").map(P => `<th>${esc(P.label)}</th>`).join("")}${ro ? "" : '<th><button type="button" class="cp-thadd" data-cpmgr="inventory" title="Add a property">＋</button></th>'}</tr></thead><tbody>
         ${list.map(x => `<tr><td data-label="Item">${ro ? esc(x.title || "Untitled") : `<input type="text" class="db-inline inv-name" data-invname="${esc(x.id)}" value="${esc(x.title || "")}" aria-label="Item name">`}</td>
           <td data-label="Room">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room for ${esc(x.title || "item")}">${roomOpts(x.room || "")}</select>`}</td>
-          ${cpDefs("inventory").map(P => `<td data-label="${esc(P.label)}">${cpInline(P, x, "inventory")}</td>`).join("")}
+          ${cpDefs("inventory").map(P => `<td class="cp-cell" data-label="${esc(P.label)}">${cpInline(P, x, "inventory")}</td>`).join("")}
           ${ro ? "" : `<td class="inv-x"><button type="button" class="btn ghost danger" data-invdel="${esc(x.id)}">${invDel === x.id ? "Tap again to delete" : "Delete"}</button></td>`}</tr>`).join("")}
       </tbody></table></div>` : `<div class="empty"><strong>${inventory.length ? "Nothing matches" : "No items yet"}</strong>${inventory.length ? "Try another room or clear the search." : ro ? "" : "Type an item above, pick its room, and press Add."}</div>`}`;
   }
