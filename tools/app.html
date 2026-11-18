@@ -238,6 +238,22 @@ h1 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: ba
 .ctl-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .ctl-title .btn { padding: 0 6px; font-size: 11px; text-transform: none; letter-spacing: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.fx-slot { display: contents; }
+.fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
+.fx-panel { margin: 8px 0; }
+.fx-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--panel-line); flex-wrap: wrap; }
+.fx-row:first-of-type { border-top: 0; }
+.fx-l { min-width: 120px; font-size: 12px; font-weight: 600; color: var(--muted); padding-top: 3px; }
+.fx-row .chips { flex: 1; min-width: 0; }
+.g-find { position: relative; }
+.g-find input { width: 220px; max-width: 60vw; }
+.g-qlist { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; width: max(100%, 300px); max-width: 86vw; max-height: 340px; overflow: auto; background: var(--surface); border: 1px solid var(--panel-line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 4px; }
+.g-qhit { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: 0; border-radius: 7px; padding: 7px 8px; cursor: pointer; color: var(--ink); font: inherit; }
+.g-qhit.on, .g-qhit:hover { background: var(--panel-input); }
+.g-qt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-qk { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.g-qnone { padding: 8px; color: var(--muted); font-size: 13px; }
+@media (max-width: 640px) { .g-find, .g-find input { width: 100%; max-width: none; } .fx-l { min-width: 0; width: 100%; } }
 .chip { border: 1px solid var(--panel-line); background: var(--panel-input); border-radius: 999px; padding: 2px 9px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
 .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
 .chip .dir { font-size: 11px; }
@@ -1933,7 +1949,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 <main id="view-database" hidden>
   <div class="view-head">
     <div><h1>Layers</h1><div class="count" id="dbCount"></div></div>
-    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn site-build" type="button" id="csBtn" title="Combine several entries into one">🧲 Consolidate</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
+    <div class="head-actions"><input class="search db-q" id="dbQ" type="search" placeholder="Search everything…" aria-label="Search all entries"><span id="dbFxSlot" class="fx-slot"></span><button class="btn toggle" type="button" id="dbShowBtn" aria-expanded="false" aria-controls="dbShowPanel">Show Properties</button><button class="btn cp-plus site-build" type="button" data-cpmgr="_all" title="Add a property to every entry in the master database">＋ Add property</button><button class="btn site-build" type="button" id="csBtn" title="Combine several entries into one">🧲 Consolidate</button><button class="btn ai-btn site-build" type="button" id="grBtn" title="Check that every title follows my grammar rules">✍️ Check grammar</button><button class="btn toggle" type="button" id="dbSortBtn" aria-expanded="false" aria-controls="dbSortPanel">Sort<span class="badge" id="dbSortBadge" hidden></span></button><button class="btn primary new-any" type="button" data-newany="layers">+ New</button></div>
   </div>
   <section class="db-layers" aria-label="Entries by layer" id="dbLayers"></section>
   <section class="panel" id="dbSortPanel" aria-label="Sort Layers" hidden>
@@ -1946,6 +1962,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     <div class="hint">Tap a property to show or hide its column. Hold and drag one to change the order, left to right.</div>
     <div class="col-list" id="dbShowList"></div>
   </section>
+  <div id="dbFx"></div>
   <div id="dbCpMgr"></div>
   <div id="grBox"></div>
   <div id="csBox"></div>
@@ -2013,6 +2030,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <div class="count" id="graphCount"></div>
     </div>
     <div class="head-actions">
+      <div class="g-find"><input class="search" id="gQ" type="search" placeholder="Find an entry…" autocomplete="off" aria-label="Find an entry on the graph" aria-controls="gQList"><div class="g-qlist" id="gQList" role="listbox" hidden></div></div>
+      <span id="gFxSlot" class="fx-slot"></span>
       <button class="btn toggle" id="toggleGraphOpts" type="button" aria-expanded="false" aria-controls="graphPanel">Display</button>
       <button class="btn" id="fitGraph" type="button">Fit to screen</button>
       <button class="btn" id="centerGraph" type="button" title="Pull every item back toward the middle">Bring back to center</button>
@@ -2030,8 +2049,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <label class="switch"><input type="checkbox" id="gOrphans" checked> Show unlinked items</label>
       <label class="switch"><input type="checkbox" id="gDone" checked> Show done projects</label>
       <label class="switch"><input type="checkbox" id="gLabels" checked> Always show names</label>
+      <label class="switch"><input type="checkbox" id="gFxDim"> Filter dims entries instead of hiding them</label>
     </div>
   </section>
+  <div id="gFx"></div>
   <div class="graph-legend" id="graphLegend"></div>
   <div class="graph-wrap" id="graphWrap">
     <canvas id="graph" aria-label="Graph of linked projects and pages"></canvas>
@@ -2205,6 +2226,61 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
   const CP_PAGEDB = {};
   const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
+  // ---------- Filters: one engine for Layers, Graph and every page database (Inventory, Meals, and any database added later) ----------
+  // To give a new database filters: set FX_SRC[scope] = { fields: () => [...], render: () => ... },
+  // put fxBtn(scope) in its toolbar and fxPanel(scope) under it, and keep only rows where fxPass(scope, row).
+  const FX_SRC = {};
+  const FX = (() => { try { return JSON.parse(localStorage.getItem("chevy.filters") || "{}") || {}; } catch (e) { return {}; } })();
+  const fxOpen = {};
+  const fxSave = () => { try { localStorage.setItem("chevy.filters", JSON.stringify(FX)); } catch (e) {} };
+  const fxArr = (v) => v == null || v === "" ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
+  const fxFields = (scope) => { const s = FX_SRC[scope]; try { return s ? s.fields() : []; } catch (e) { return []; } };
+  const fxSel = (scope) => FX[scope] || {};
+  function fxCount(scope) { const ks = new Set(fxFields(scope).map(f => f.key)); return Object.entries(fxSel(scope)).filter(([k, v]) => ks.has(k) && v && v.length).length; }
+  // A row passes when, for every field with picks, it has at least one picked value
+  function fxPass(scope, row) {
+    const sel = fxSel(scope); if (!Object.keys(sel).length) return true;
+    return fxFields(scope).every(f => { const want = sel[f.key]; if (!want || !want.length) return true; const have = f.get(row) || []; return have.some(v => want.includes(v)); });
+  }
+  // Custom properties become filters too: choices for select, multi-select, checkbox and rating; "Has a value / Empty" for the rest
+  function fxCpFields(scope, recOf) {
+    return cpDefs(scope).map(P => {
+      const t = P.ptype, val = (x) => { const r = recOf ? recOf(x) : x; return r ? r[P.key] : undefined; };
+      if (t === "select" || t === "multi") return { key: P.key, label: P.label, opts: () => (P.options || []).map(o => [o, o]), get: (x) => fxArr(val(x)) };
+      if (t === "check") return { key: P.key, label: P.label, opts: () => [["yes", "Checked"], ["no", "Not checked"]], get: (x) => [val(x) ? "yes" : "no"] };
+      if (t === "rating") return { key: P.key, label: P.label, opts: () => ["1", "2", "3", "4", "5"].map(n => [n, "★".repeat(+n)]).concat([["", "No rating"]]), get: (x) => [val(x) ? String(val(x)) : ""] };
+      return { key: P.key, label: P.label, opts: () => [["__has", "Has a value"], ["__empty", "Empty"]], get: (x) => { const v = val(x); return [v == null || v === "" || (Array.isArray(v) && !v.length) ? "__empty" : "__has"]; } };
+    });
+  }
+  // Fields shared by every entry in the master database (Layers and Graph)
+  function fxEntryFields() {
+    const typeOpts = TYPES.map(T => [T.key, T.label]).concat([["routine", "Routines"]]);
+    const lay = (x) => x.type === "routine" ? ["7"] : (Array.isArray(x.e.layers) ? x.e.layers.map(String) : []);
+    return [
+      { key: "type", label: "Database", opts: () => typeOpts, get: (x) => [x.type] },
+      { key: "status", label: "Status", opts: () => STATUSES.map(s => [s.v, s.v]), get: (x) => x.type === "routine" ? [] : [x.e.status || "Not started"] },
+      { key: "layer", label: "Layer", opts: () => ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(l => [l, "Layer " + l]).concat([["none", "No layer"]]), get: (x) => { const l = lay(x); return l.length ? l : ["none"]; } },
+      { key: "color", label: "Color", opts: () => COLORS.map(c => [c, c[0].toUpperCase() + c.slice(1)]).concat([["none", "No color"]]), get: (x) => [(x.type === "routine" ? x.e.color || "purple" : colorOf(x.e)) || "none"] },
+      { key: "tags", label: "Tags", opts: () => [...new Set(TYPES.flatMap(T => data[T.key].flatMap(tagsOf)))].sort((a, b) => a.localeCompare(b)).map(t => [t, t]), get: (x) => x.type === "routine" ? [] : tagsOf(x.e) },
+      { key: "public", label: "Show on website", opts: () => [["on", "On"], ["off", "Off"]], get: (x) => [(x.type === "routine" ? (x.r ? x.r.public : x.e.public) : x.e.public) === false ? "off" : "on"] },
+      ...fxCpFields("_all", (x) => x.type === "routine" ? null : x.e),
+    ];
+  }
+  function fxBtn(scope) { const n = fxCount(scope); return `<button type="button" class="btn toggle fx-btn" data-fxopen="${scope}" aria-expanded="${!!fxOpen[scope]}">⏷ Filter${n ? ` <span class="fx-n">${n}</span>` : ""}</button>`; }
+  function fxPanel(scope) {
+    if (!fxOpen[scope]) return "";
+    const sel = fxSel(scope);
+    const rows = fxFields(scope).map(f => { const o = f.opts(); if (!o.length) return ""; const on = sel[f.key] || [];
+      return `<div class="fx-row"><span class="fx-l">${esc(f.label)}${on.length ? ` · ${on.length}` : ""}</span><span class="chips">${o.map(([v, l]) => `<button type="button" class="chip" data-fxv="${esc(scope)}|${esc(f.key)}|${esc(v)}" aria-pressed="${on.includes(v)}">${esc(l)}</button>`).join("")}</span></div>`; }).join("");
+    return `<section class="panel fx-panel" aria-label="Filter"><div class="panel-head"><span class="panel-name">Filter</span><span class="panel-tools">${fxCount(scope) ? `<button type="button" class="btn ghost" data-fxclear="${scope}">Clear filters</button>` : ""}<button type="button" class="x" data-fxopen="${scope}" aria-label="Close filters">×</button></span></div>
+      <div class="hint">Tap choices to keep only matching entries. Choices in one row mean "any of these"; different rows must all match.</div>${rows || '<div class="pl-none">Nothing to filter by yet.</div>'}</section>`;
+  }
+  function fxRerender(scope) { const s = FX_SRC[scope]; if (s && s.render) s.render(); }
+  document.addEventListener("click", e => {
+    const o = e.target.closest("[data-fxopen]"); if (o) { e.preventDefault(); const k = o.dataset.fxopen; fxOpen[k] = !fxOpen[k]; fxRerender(k); return; }
+    const c = e.target.closest("[data-fxclear]"); if (c) { e.preventDefault(); const k = c.dataset.fxclear; FX[k] = {}; fxSave(); fxRerender(k); return; }
+    const v = e.target.closest("[data-fxv]"); if (v) { e.preventDefault(); const parts = v.dataset.fxv.split("|"), k = parts[0], f = parts[1], val = parts.slice(2).join("|"); const cur = (FX[k] = FX[k] || {})[f] || []; FX[k][f] = cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val]; if (!FX[k][f].length) delete FX[k][f]; fxSave(); fxRerender(k); }
+  });
   const cpOpenMgr = {};
   // The whole master database (every section together, as seen in Layers)
   CP_PAGEDB._all = { label: "every entry", list: () => TYPES.flatMap(T => data[T.key] || []), save: (x) => { const T = TYPES.find(Y => (data[Y.key] || []).some(e => e.id === x.id)); return T ? saveEntry(T.key, x) : null; }, render: () => renderDatabase() };
@@ -4494,10 +4570,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   
   let settledFit = false, graphVisible = false, gNodes = [], gLinks = [], sim = null, hoverId = null, fitted = false, gSel = null, gMsg = "";
   let transform = { x: 0, y: 0, k: 1 };
-  const gOpts = { projects: true, areas: true, pages: true, archive: true, routine: true, orphans: true, done: true, labels: true };
+  const gOpts = { projects: true, areas: true, pages: true, archive: true, routine: true, orphans: true, done: true, labels: true, fxDim: false };
   try { Object.assign(gOpts, JSON.parse(localStorage.getItem("chevy.graph.opts") || "{}")); } catch (e) {}
-  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false; $("gIdeas").checked = gOpts.ideas !== false; $("gValues").checked = gOpts.values !== false; $("gGoals").checked = gOpts.goals !== false;
-  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gIdeas", "ideas"], ["gValues", "values"], ["gGoals", "goals"], ["gRoutines", "routine"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
+  let gFind = null, gFindT = 0;
+  FX_SRC.graph = { fields: fxEntryFields, render: () => { fitted = false; renderGraph(); } };
+  $("gProjects").checked = gOpts.projects; $("gAreas").checked = gOpts.areas; $("gPages").checked = gOpts.pages; $("gOrphans").checked = gOpts.orphans; $("gDone").checked = gOpts.done; $("gLabels").checked = gOpts.labels; $("gArchive").checked = gOpts.archive !== false; $("gRoutines").checked = gOpts.routine !== false; $("gIdeas").checked = gOpts.ideas !== false; $("gValues").checked = gOpts.values !== false; $("gGoals").checked = gOpts.goals !== false; $("gFxDim").checked = !!gOpts.fxDim;
+  [["gProjects", "projects"], ["gAreas", "areas"], ["gPages", "pages"], ["gArchive", "archive"], ["gIdeas", "ideas"], ["gValues", "values"], ["gGoals", "goals"], ["gRoutines", "routine"], ["gFxDim", "fxDim"], ["gOrphans", "orphans"], ["gDone", "done"], ["gLabels", "labels"]].forEach(([id, k]) => $(id).addEventListener("change", e => {
     gOpts[k] = e.target.checked;
     try { localStorage.setItem("chevy.graph.opts", JSON.stringify(gOpts)); } catch (err) {}
     if (k === "labels") draw(); else { fitted = false; renderGraph(); }
@@ -4529,11 +4607,16 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function setEmpty(html) { const el = $("graphEmpty"); el.hidden = !html; if (html) el.innerHTML = html; }
 
   function renderGraph() {
+    if ($("gFxSlot")) $("gFxSlot").innerHTML = fxBtn("graph");
+    if ($("gFx")) $("gFx").innerHTML = fxPanel("graph");
     $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>` + `<span><i class="tdot t-ideas" style="width:11px;height:11px;margin:0"></i>Idea</span><span><i class="tdot t-values" style="width:11px;height:11px;margin:0"></i>Value</span><span><i class="tdot t-goals" style="width:11px;height:11px;margin:0"></i>Goal</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
     const prev = new Map(gNodes.map(n => [n.id, n]));
     let items = [...byId.values()].filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
     if (gOpts.routine !== false) items = items.concat(routines.map(r => ({ type: "routine", e: { id: r.id, title: (r.emoji || rtEmoji(r)) + " " + (r.name || "Untitled routine"), status: "", color: COLORS.includes(r.color) ? r.color : "" } })));
+    const fxOn = fxCount("graph") > 0;
+    if (fxOn && !gOpts.fxDim) items = items.filter(x => fxPass("graph", x));
+    const dimSet = fxOn && gOpts.fxDim ? new Set(items.filter(x => !fxPass("graph", x)).map(x => x.e.id)) : null;
     const ids = new Set(items.map(x => x.e.id));
     const links = [];
     adj.forEach((set, a) => set.forEach(b => { if (a < b && ids.has(a) && ids.has(b)) links.push({ source: a, target: b }); }));
@@ -4543,7 +4626,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     gNodes = items.map(({ type, e }) => {
       const o = prev.get(e.id);
       return Object.assign(o || { x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200 },
-        { id: e.id, type, title: e.title || "Untitled", status: e.status || "", color: colorOf(e), degree: deg.get(e.id) || 0 });
+        { id: e.id, type, title: e.title || "Untitled", status: e.status || "", color: colorOf(e), degree: deg.get(e.id) || 0, dim: !!(dimSet && dimSet.has(e.id)) });
     });
     gLinks = links.map(l => ({ ...l }));
     $("graphCount").textContent = [...TYPES.map(T => { const n = gNodes.filter(x => x.type === T.key).length; return T.archive ? `${n} archived` : `${n} ${n === 1 ? T.singular : T.label.toLowerCase()}`; }), (() => { const n = gNodes.filter(x => x.type === "routine").length; return `${n} routine${n === 1 ? "" : "s"}`; })()].join(" · ") + ` · ${gLinks.length} link${gLinks.length === 1 ? "" : "s"}`;
@@ -4592,7 +4675,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.lineTo(l.target.x, l.target.y); ctx.stroke();
     });
     gNodes.forEach(n => {
-      ctx.globalAlpha = hi && !hi.has(n.id) ? 0.2 : 1;
+      ctx.globalAlpha = n.dim && n.id !== gFind ? 0.12 : hi && !hi.has(n.id) ? 0.2 : 1;
       const r = radius(n);
       ctx.beginPath();
       if (n.type === "routine") { const d = r * 1.15; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; i ? ctx.lineTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)) : ctx.moveTo(n.x + d * Math.cos(a), n.y + d * Math.sin(a)); } ctx.closePath(); }
@@ -4606,11 +4689,19 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (n.color) { ctx.lineWidth = 3 / transform.k; ctx.strokeStyle = cssVar("--c-" + n.color); ctx.stroke(); }
       if (n.id === hoverId || n.id === gSel) { ctx.lineWidth = (n.id === gSel ? 4 : 2.5) / transform.k; ctx.strokeStyle = n.id === gSel ? accent : ink; ctx.stroke(); }
     });
+    const fn = gFind && gNodes.find(n => n.id === gFind);
+    if (fn) { // the entry found with the search box: a pulsing ring around it
+      const age = (performance.now() - gFindT) / 1000, pulse = age < 3 ? (Math.sin(age * 6) + 1) * 4 : 0;
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(fn.x, fn.y, radius(fn) * 1.3 + 8 + pulse, 0, Math.PI * 2);
+      ctx.lineWidth = 3.5 / transform.k; ctx.strokeStyle = accent; ctx.stroke();
+      ctx.globalAlpha = 0.18; ctx.fillStyle = accent; ctx.fill(); ctx.globalAlpha = 1;
+    }
     const showAll = gOpts.labels && transform.k > 0.5;
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     ctx.font = `500 ${12 / Math.max(transform.k, 0.8)}px "IBM Plex Sans", system-ui, sans-serif`;
     gNodes.forEach(n => {
-      const focus = hi && hi.has(n.id);
+      const focus = (hi && hi.has(n.id)) || n.id === gFind;
+      if (n.dim && !focus) return;
       if (!showAll && !focus) return;
       ctx.globalAlpha = hi && !focus ? 0.2 : 1;
       const t = n.title.length > 32 ? n.title.slice(0, 31) + "…" : n.title;
@@ -4655,7 +4746,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     sel.call(zoom).on("dblclick.zoom", null);
     let downAt = null;
     sel.on("pointerdown.gsel", e => { downAt = nodeAt(...d3.pointer(e, canvas)) ? null : [e.clientX, e.clientY]; });
-    sel.on("pointerup.gsel", e => { if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5 && gSel) { gSel = null; gMsg = ""; renderGSel(); draw(); } downAt = null; });
+    sel.on("pointerup.gsel", e => { if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5 && (gSel || gFind)) { gSel = null; gFind = null; gMsg = ""; renderGSel(); draw(); } downAt = null; });
     sel.on("pointermove.hover", e => {
       if (e.pointerType !== "mouse") return;
       const n = nodeAt(...d3.pointer(e, canvas)), id = n ? n.id : null;
@@ -4750,6 +4841,43 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     gNodes.forEach(n => { n.fx = null; n.fy = null; n.x *= 0.25; n.y *= 0.25; n.vx = 0; n.vy = 0; });
     sim.alpha(0.9).restart(); fitted = false; settledFit = false; setTimeout(fitGraph, 700);
   });
+  // ----- Find an exact entry on the graph: type, pick it, and it's centered, selected and ringed -----
+  let gQHits = [], gQAct = 0;
+  function gQAll() {
+    return [...[...byId.values()].map(({ type, e }) => ({ id: e.id, type, title: e.title || "Untitled" })), ...routines.map(r => ({ id: r.id, type: "routine", title: r.name || "Untitled routine" }))];
+  }
+  function gQRender() {
+    const q = ($("gQ").value || "").trim().toLowerCase(), box = $("gQList");
+    if (!q) { box.hidden = true; box.innerHTML = ""; gQHits = []; return; }
+    const rank = (t) => { t = t.toLowerCase(); return t === q ? 0 : t.startsWith(q) ? 1 : t.split(/\s+/).some(w => w.startsWith(q)) ? 2 : t.includes(q) ? 3 : 9; };
+    gQHits = gQAll().map(x => ({ ...x, r: rank(x.title) })).filter(x => x.r < 9).sort((a, b) => a.r - b.r || a.title.localeCompare(b.title)).slice(0, 10);
+    gQAct = Math.min(gQAct, Math.max(0, gQHits.length - 1));
+    const shown = new Set(gNodes.filter(n => !n.dim).map(n => n.id));
+    const label = (x) => x.type === "routine" ? "Routine" : TYPE[x.type] ? TYPE[x.type].singular : "";
+    box.innerHTML = gQHits.length ? gQHits.map((x, i) => `<button type="button" class="g-qhit${i === gQAct ? " on" : ""}" role="option" aria-selected="${i === gQAct}" data-gqpick="${esc(x.id)}"><i class="tdot t-${x.type === "routine" ? "routine" : x.type}" aria-hidden="true"></i><span class="g-qt">${esc(x.title)}</span><span class="g-qk">${esc(label(x))}${shown.has(x.id) ? "" : " · hidden"}</span></button>`).join("") : '<div class="g-qnone">No entry matches.</div>';
+    box.hidden = false;
+  }
+  function gFocusOn(id) {
+    const n = gNodes.find(m => m.id === id), x = gQAll().find(m => m.id === id);
+    $("gQList").hidden = true;
+    if (!n) { notice(`"${x ? x.title : "That entry"}" is hidden right now. Clear the filter, or turn its database on under Display.`); return; }
+    gFind = id; gFindT = performance.now();
+    if (byId.get(id)) { gSel = id; gMsg = ""; renderGSel(); }
+    $("gQ").value = n.title;
+    if (zoom && W) { const k = Math.max(transform.k, 1.4); d3.select(canvas).transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(W / 2 - n.x * k, H / 2 - n.y * k).scale(k)); }
+    const tick = () => { draw(); if (gFind === id && performance.now() - gFindT < 3200) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }
+  $("gQ").addEventListener("input", () => { gQAct = 0; if (!$("gQ").value.trim()) { gFind = null; draw(); } gQRender(); });
+  $("gQ").addEventListener("focus", gQRender);
+  $("gQ").addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (!gQHits.length) return; gQAct = (gQAct + (e.key === "ArrowDown" ? 1 : -1) + gQHits.length) % gQHits.length; gQRender(); }
+    else if (e.key === "Enter") { e.preventDefault(); if (gQHits[gQAct]) gFocusOn(gQHits[gQAct].id); }
+    else if (e.key === "Escape") { $("gQList").hidden = true; }
+  });
+  $("gQList").addEventListener("mousedown", e => e.preventDefault());
+  $("gQList").addEventListener("click", e => { const b = e.target.closest("[data-gqpick]"); if (b) gFocusOn(b.dataset.gqpick); });
+  document.addEventListener("click", e => { if (!e.target.closest(".g-find")) $("gQList").hidden = true; });
   try {
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
     new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -5948,8 +6076,11 @@ Don't invent appointments or facts that aren't listed.`);
     (CPROPS._all || []).forEach(d => { const c = [d.key, d.label, 170, true]; DB_COLS.push(c); DB_COL[d.key] = c; });
     dbs.cols = dbNormCols(dbs.cols);
   }
+  FX_SRC.layers = { fields: fxEntryFields, render: () => renderDatabase() };
   function renderDatabase() {
     refreshDbCols();
+    if ($("dbFxSlot")) $("dbFxSlot").innerHTML = fxBtn("layers");
+    if ($("dbFx")) $("dbFx").innerHTML = fxPanel("layers");
     if ($("dbCpMgr")) $("dbCpMgr").innerHTML = cpOpenMgr._all ? cpMgrHtml("_all", "the whole database (every entry, every section)") : "";
     renderProjRoutines(); renderDbSort();
     if (!$("dbBody") || $("view-database").hidden) return;
@@ -5957,7 +6088,7 @@ Don't invent appointments or facts that aren't listed.`);
     const all = [...TYPES.flatMap(T => data[T.key].map(e => ({ type: T.key, e }))), ...rtRows];
     const q = dbQ.trim().toLowerCase();
     const base = all.filter(x => (!dbs.types.length || dbs.types.includes(x.type)) && (!dbs.status.length || (x.type !== "routine" && dbs.status.includes(x.e.status || "Not started")))
-      && (!q || [x.e.title, x.e.subtitle, x.e.body, ...tagsOf(x.e)].join(" ").toLowerCase().includes(q)));
+      && (!q || [x.e.title, x.e.subtitle, x.e.body, ...tagsOf(x.e)].join(" ").toLowerCase().includes(q)) && fxPass("layers", x));
     // Layer overview: one tile per layer with a bar sized by how many entries sit in it
     const counts = Object.fromEntries([...LAYERS, "none"].map(l => [l, 0]));
     base.forEach(x => { const ls = layersOf(x.e); if (!ls.length) counts.none++; ls.forEach(l => counts[l]++); });
@@ -6007,7 +6138,7 @@ Don't invent appointments or facts that aren't listed.`);
     };
     const tr = (x) => `<tr class="row db-row${(x.e.status || "") === "Done" ? " done" : ""}${x.type === "routine" ? " ec-purple" : ecClass(x.e)}">${dbShown().map(c => cellOf(x, c.key)).join("")}</tr>`;
     const table = (list) => `<div class="table-wrap db-table"><table style="width:${totalW}px">${colgroup}${head}<tbody>${list.map(tr).join("")}</tbody></table></div>`;
-    if (!rows.length) { $("dbBody").innerHTML = `<div class="empty"><strong>Nothing here</strong>${all.length ? "Try another layer or clear the filters." : "Add a project, area or resource to see it here."}</div>`; return; }
+    if (!rows.length) { $("dbBody").innerHTML = `<div class="empty"><strong>Nothing here</strong>${all.length ? `Try another layer or clear the filters.${fxCount("layers") ? ' <button type="button" class="btn ghost" data-fxclear="layers">Clear filters</button>' : ""}` : "Add a project, area or resource to see it here."}</div>`; return; }
     if (!dbs.group || dbs.layer) { $("dbBody").innerHTML = (dbs.layer ? `<div class="db-lhead"><span class="db-big">${dbs.layer === "none" ? "—" : "L" + dbs.layer}</span><span>${dbs.layer === "none" ? "No layer yet" : "Layer " + dbs.layer} · ${rows.length}</span></div>` : "") + table(rows); return; }
     $("dbBody").innerHTML = [...LAYERS, "none"].map(l => { const list = rows.filter(x => inLayer(x, l)); return list.length ? `<section class="db-sec"><div class="db-lhead"><span class="db-big">${l === "none" ? "—" : "L" + l}</span><span>${l === "none" ? "No layer yet" : "Layer " + l} · ${list.length}</span></div>${table(list)}</section>` : ""; }).join("")
       ;
@@ -6018,7 +6149,7 @@ Don't invent appointments or facts that aren't listed.`);
     const s = e.target.closest("[data-dbstatus]"); if (s) { const k = s.dataset.dbstatus; dbs.status = dbs.status.includes(k) ? dbs.status.filter(x => x !== k) : [...dbs.status, k]; saveDb(); renderDatabase(); return; }
     const so = e.target.closest("[data-dbsort]"); if (so) { const k = so.dataset.dbsort; if (k !== "title" && dbs.sorts.length === 1 && dbs.sorts[0].key === "title" && dbs.sorts[0].dir === "asc") dbs.sorts = []; dbs.sorts = cycleSort(dbs.sorts, k, ["created", "updated", "focus"].includes(k) ? "desc" : "asc"); saveDb(); renderDatabase(); return; }
     if (e.target.closest("[data-dbsortclear]")) { dbs.sorts = []; saveDb(); renderDatabase(); return; }
-    if (e.target.closest("[data-dbclear]")) { Object.assign(dbs, { layer: "", types: [], status: [] }); dbQ = ""; $("dbQ").value = ""; saveDb(); renderDatabase(); return; }
+    if (e.target.closest("[data-dbclear]")) { Object.assign(dbs, { layer: "", types: [], status: [] }); FX.layers = {}; fxSave(); dbQ = ""; $("dbQ").value = ""; saveDb(); renderDatabase(); return; }
     const ro2 = e.target.closest("[data-dbroutine]"); if (ro2) { pl.sub = "routines"; savePl(); plKeepSub = true; const id = ro2.dataset.dbroutine; rtView.over[id] = true; location.hash = "planner"; setTimeout(() => { const c = document.querySelector(`[data-rtcard="${id}"]`); if (c) { c.scrollIntoView({ block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1400); } }, 80); return; }
     const r = e.target.closest("[data-dbopen]"); if (r) { dbClosePop(); openEditor(r.dataset.dbtype2, r.dataset.dbopen); return; }
     const pb = e.target.closest("[data-dbpop]"); if (pb) { dbOpenPop(pb.dataset.dbpop, pb.dataset.dbt, pb.dataset.dbe, pb); return; }
@@ -7408,17 +7539,20 @@ ${text}
   document.addEventListener("change", async e => { const t = e.target.closest && e.target.closest("[data-invdlgtitle]"); if (!t) return; const x = inventory.find(i => i.id === invOpen); if (x) { await saveItem({ ...x, title: t.value.trim().slice(0, 120) }); renderInventory(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && invOpen && !$("invOverlay").hidden) $("invDialog").querySelector("[data-invdlgclose]").click(); });
   CP_PAGEDB.inventory = { label: "Inventory", list: () => inventory, save: (x) => saveItem(x), render: () => renderInventory() };
+  FX_SRC.inventory = { fields: () => [{ key: "room", label: "Room", opts: () => [...new Set([...rooms, ...inventory.map(x => x.room).filter(Boolean)])].sort((a, b) => a.localeCompare(b)).map(r => [r, r]).concat([["__none", "No room"]]), get: (x) => [x.room || "__none"] }, ...fxCpFields("inventory")], render: () => renderInventory() };
   function renderInventory() {
     const el = $("invBody"); if (!el) return;
     const ro = !!PUBLIC, q = inv.q.trim().toLowerCase();
-    let list = inventory.filter(x => (!inv.room || (inv.room === "__none" ? !x.room : x.room === inv.room)) && (!q || (x.title || "").toLowerCase().includes(q) || (x.room || "").toLowerCase().includes(q)));
+    let list = inventory.filter(x => (!inv.room || (inv.room === "__none" ? !x.room : x.room === inv.room)) && (!q || (x.title || "").toLowerCase().includes(q) || (x.room || "").toLowerCase().includes(q)) && fxPass("inventory", x));
     list.sort((a, b) => inv.sort === "room" ? ((a.room || "~").localeCompare(b.room || "~") || (a.title || "").localeCompare(b.title || "")) : (a.title || "").localeCompare(b.title || ""));
     const usedRooms = [...new Set([...rooms, ...inventory.map(x => x.room).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
     $("invCount").textContent = `${inventory.length} item${inventory.length === 1 ? "" : "s"} · ${rooms.length} room${rooms.length === 1 ? "" : "s"}`;
     el.innerHTML = `${ro ? "" : `<div class="inv-add"><input id="invNew" type="text" placeholder="Add an item, like Winter coats" autocomplete="off" aria-label="New item name"><select id="invNewRoom" aria-label="Room for the new item">${roomOpts("")}</select><button type="button" class="btn primary" data-invadd>Add</button>${cpDefs("inventory").length ? `<div class="cp-newrow" id="invNewProps">${cpNewFields("inventory")}</div>` : ""}</div>`}
       <div class="inv-tools"><input type="search" id="invQ" class="search" placeholder="Search items…" value="${esc(inv.q)}" aria-label="Search items">
         <span class="chips" role="group" aria-label="Room"><button type="button" class="chip" data-invroom="" aria-pressed="${!inv.room}">All rooms</button>${usedRooms.map(r => `<button type="button" class="chip" data-invroom="${esc(r)}" aria-pressed="${inv.room === r}">${esc(r)} · ${inventory.filter(x => x.room === r).length}</button>`).join("")}${inventory.some(x => !x.room) ? `<button type="button" class="chip" data-invroom="__none" aria-pressed="${inv.room === "__none"}">No room · ${inventory.filter(x => !x.room).length}</button>` : ""}</span>
+        ${fxBtn("inventory")}
         ${ro ? "" : `<button type="button" class="btn toggle" data-invrooms aria-expanded="${inv.roomsOpen}">Manage rooms</button><button type="button" class="btn cp-plus" data-cpmgr="inventory">＋ Add property</button><button type="button" class="btn ai-btn" data-aiopen="inventory">✨ Ask AI</button><button type="button" class="btn primary" data-invnewpage>+ New item</button>`}</div>
+      ${fxPanel("inventory")}
       ${aiFindHtml("inventory")}
       ${cpOpenMgr.inventory ? cpMgrHtml("inventory", "Inventory") : ""}
       ${!ro && inv.roomsOpen ? `<section class="panel inv-rooms"><div class="panel-head"><span class="panel-name">Rooms</span><button class="x" type="button" data-invrooms aria-label="Close rooms">×</button></div>
@@ -7430,7 +7564,7 @@ ${text}
           <td data-label="Room">${ro ? esc(x.room || "—") : `<select class="db-inline" data-invsel="${esc(x.id)}" aria-label="Room for ${esc(x.title || "item")}">${roomOpts(x.room || "")}</select>`}</td>
           ${cpDefs("inventory").map(P => `<td class="cp-cell" data-label="${esc(P.label)}">${cpInline(P, x, "inventory")}</td>`).join("")}
           ${ro ? "" : `<td class="inv-x"><button type="button" class="btn ghost danger" data-invdel="${esc(x.id)}">${invDel === x.id ? "Tap again to delete" : "Delete"}</button></td>`}</tr>`).join("")}
-      </tbody></table></div>` : `<div class="empty"><strong>${inventory.length ? "Nothing matches" : "No items yet"}</strong>${inventory.length ? "Try another room or clear the search." : ro ? "" : "Type an item above, pick its room, and press Add."}</div>`}`;
+      </tbody></table></div>` : `<div class="empty"><strong>${inventory.length ? "Nothing matches" : "No items yet"}</strong>${inventory.length ? `Try another room or clear the search.${fxCount("inventory") ? ' <button type="button" class="btn ghost" data-fxclear="inventory">Clear filters</button>' : ""}` : ro ? "" : "Type an item above, pick its room, and press Add."}</div>`}`;
   }
   $("invBody").addEventListener("click", async e => {
     if (e.target.closest("[data-invadd]")) {
@@ -7494,11 +7628,13 @@ ${text}
   const mlChip = (v) => `<span class="ml-chip">${esc(v)}</span>`;
   cpIAddHooks.meals = () => { renderMeals(); if (ml.open) renderMealDialog(); };
   CP_PAGEDB.meals = { label: "Meals", list: () => meals, save: (x) => saveMeal(x), render: () => { renderMeals(); if (ml.open) renderMealDialog(); } };
+  FX_SRC.meals = { fields: () => [{ key: "status", label: "Status", opts: () => [["Not started", "Not started"], ["In progress", "In progress"], ["Done", "Done"], ["", "No status"]], get: (m) => [m.status || ""] }, ...fxCpFields("meals")], render: () => renderMeals() };
   function renderMeals() {
     const el = $("mlBody"); if (!el) return;
     const ro = !!PUBLIC, q = ml.q.trim().toLowerCase();
     let list = meals.filter(m => (ml.archived || !isArchivedMeal(m)) && (!q || [m.title, m.ingredients, (m.ingList || []).join(" "), mlArr(m.cuisine).join(" "), mlArr(m.category).join(" ")].join(" ").toLowerCase().includes(q)));
     ML_FIELDS.forEach(([k]) => { const sel = (ml.f[k] || []); if (sel.length) list = list.filter(m => mlArr(m[k]).some(v => sel.includes(v))); });
+    list = list.filter(m => fxPass("meals", m));
     list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     $("mlCount").textContent = `${meals.filter(m => !isArchivedMeal(m)).length} meals${meals.some(isArchivedMeal) ? ` · ${meals.filter(isArchivedMeal).length} archived` : ""}`;
     const card = (m) => `<button type="button" class="ml-card${mealCover(m) ? " has-cover" : ""}" data-mlopen="${esc(m.id)}">${mealCover(m) ? `<span class="ml-cover"><img src="${esc(mealCover(m))}" alt="" loading="lazy" style="${mealCoverPos(m)}"></span>` : ""}<span class="ml-emo" aria-hidden="true">${esc(m.icon || "🍽️")}</span><span class="ml-body"><b>${esc(m.title || "Untitled")}</b><span class="ml-tags">${[...mlArr(m.category).filter(c => c !== (ml.group === "category" ? "" : "")), ...mlArr(m.menu), ...mlArr(m.cuisine)].slice(0, 5).map(mlChip).join("")}</span>${mlArr(m.method).length ? `<span class="ml-meta">${esc(mlArr(m.method).join(" · "))}</span>` : ""}</span></button>`;
@@ -7510,7 +7646,9 @@ ${text}
         <input type="search" id="mlQ" class="search" placeholder="Search meals or ingredients…" value="${esc(ml.q)}" aria-label="Search meals">
         <span class="chips" role="group" aria-label="Group by"><span class="ml-gl">Group by</span>${[["category", "Category"], ["menu", "Menu"], ["cuisine", "Cuisine"], ["method", "Method"], ["none", "None"]].map(([k, l]) => `<button type="button" class="chip" data-mlgroup="${k}" aria-pressed="${ml.group === k}">${l}</button>`).join("")}</span>
         <label class="switch"><input type="checkbox" id="mlArch"${ml.archived ? " checked" : ""}> Show archived</label>
+        ${fxBtn("meals")}
         ${ro ? "" : `<button type="button" class="btn ai-btn" data-aiopen="meals">✨ Ask AI</button><button type="button" class="btn cp-plus" data-cpmgr="meals">＋ Add property</button><button type="button" class="btn primary" data-mlnew>+ New meal</button>`}</div>
+      ${fxPanel("meals")}
       ${aiFindHtml("meals")}
       ${cpOpenMgr.meals ? cpMgrHtml("meals", "Meals") : ""}
       <div class="ml-filters">${filt}${Object.values(ml.f).some(a => a && a.length) ? '<button type="button" class="btn ghost" data-mlclear>Clear filters</button>' : ""}</div>
@@ -7547,7 +7685,7 @@ ${text}
     const o = e.target.closest("[data-mlopen]"); if (o) { ml.open = o.dataset.mlopen; ml.del = false; renderMealDialog(); return; }
     const g = e.target.closest("[data-mlgroup]"); if (g) { ml.group = g.dataset.mlgroup; saveMlView(); renderMeals(); return; }
     const f = e.target.closest("[data-mlf]"); if (f) { const [k, v] = f.dataset.mlf.split("|"); const cur = ml.f[k] || []; ml.f = { ...ml.f, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }; saveMlView(); renderMeals(); return; }
-    if (e.target.closest("[data-mlclear]")) { ml.f = {}; saveMlView(); renderMeals(); return; }
+    if (e.target.closest("[data-mlclear]")) { ml.f = {}; FX.meals = {}; fxSave(); saveMlView(); renderMeals(); return; }
     if (e.target.closest("[data-mlnew]")) { const m = { id: mlNewId(), title: "", icon: "🍽️", category: [], menu: [], cuisine: [], method: [], created: today(), createdAt: new Date().toISOString() }; await saveMeal(m); ml.open = m.id; renderMealDialog(); setTimeout(() => { const t = $("mlDialog").querySelector(".ml-title"); if (t) t.focus(); }, 0); }
   });
   $("mlBody").addEventListener("change", e => { if (e.target.id === "mlArch") { ml.archived = e.target.checked; saveMlView(); renderMeals(); } });
