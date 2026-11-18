@@ -2245,14 +2245,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const v = rec ? rec[P.field] : undefined, at = `data-cpi="${k}|${esc(rec.id)}|${P.key}" aria-label="${esc(P.label)}"`;
     if (PUBLIC) return K.cprop.cell(rec, P);
     switch (P.ptype) {
-      case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${esc(P.label)}${P.ptype === "currency" ? " ($)" : P.ptype === "percent" ? " (%)" : ""}">`;
-      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
-      case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
+      case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${P.ptype === "currency" ? "$" : P.ptype === "percent" ? "%" : ""}">`;
+      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
       case "check": return `<input type="checkbox" class="cp-chk" ${at}${v ? " checked" : ""}>`;
-      case "select": return `<select class="db-inline cp-in" ${at} data-cpkey="${P.key}"><option value="">${esc(P.label)}: —</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
+      case "select": return `<select class="db-inline cp-in" ${at} data-cpkey="${P.key}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
       case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="cp-multi">${(P.options || []).map(o => `<button type="button" class="chip" data-cpim="${k}|${esc(rec.id)}|${P.key}" data-val="${esc(o)}" aria-pressed="${on.includes(o)}">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}" data-cpim-for="${k}|${esc(rec.id)}|${P.key}" title="Add a new option">＋</button></span>`; }
       case "rating": return `<span class="cp-rate">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-cpir="${k}|${esc(rec.id)}|${P.key}" data-n="${n}" aria-label="${n} stars" aria-pressed="${n <= (Number(v) || 0)}">★</button>`).join("")}</span>`;
-      default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}" placeholder="${esc(P.label)}">`;
+      default: return `<input type="text" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
     }
   }
   document.addEventListener("click", e => { const b = e.target.closest("[data-cpmgr]"); if (!b) return; const k = b.dataset.cpmgr; cpOpenMgr[k] = true; if (b.hasAttribute("data-cpclose") && k === "meals") { ml.open = null; $("mlOverlay").hidden = true; } CP_PAGEDB[k].render(); setTimeout(() => { const i = document.querySelector(`[data-cpdb="${k}"] [data-cpnewname]`); if (i) { i.scrollIntoView({ block: "center", behavior: "smooth" }); i.focus(); } }, 30); });
