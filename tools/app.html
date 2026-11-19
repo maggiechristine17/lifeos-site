@@ -298,6 +298,13 @@ body.dk-open { overflow: hidden; }
 .dk-thumb { position: relative; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: #fff; cursor: pointer; display: block; width: 100%; }
 .dk-thumb:hover { border-color: #b8e05a; }
 .dk-scale { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; pointer-events: none; text-align: left; }
+.pa-when { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pa-when select { max-width: 220px; }
+.cal-mode { display: flex; gap: 4px; margin-bottom: 8px; }
+.cal-mode button { flex: 1; font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 7px; border: 1px solid var(--panel-line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.cal-mode button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.cal-hint { font-size: 12px; color: var(--muted); margin: -2px 0 6px; }
+.cal-d.inr { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -2227,7 +2234,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const hourLabel = (h) => { if (!h) return ""; const n = Number(h); return (n % 12 || 12) + (n < 12 ? " AM" : " PM"); };
   // One date or one time is just that; two make a range
   const timeRange = (a, b) => a && b && a !== b ? hourLabel(a) + "–" + hourLabel(b) : hourLabel(a || b);
-  const whenText = (e) => { const s = e.focusStart, en = e.focusEnd; const d = s && en && s !== en ? fmtRange(s, en) : (s || en ? fmt(s || en) : ""); return [d, timeRange(e.timeStart, e.timeEnd)].filter(Boolean).join(" · "); };
+  const whenText = (e) => { const s = e.focusStart, en = e.focusEnd; const d = s && en && s !== en ? fmtRange(s, en) : (s || en ? fmt(s || en) : ""); let w = ""; if (!d) { if (e.week) w = "Week of " + fmt(e.week); else if (e.quarter) { try { const q = qByKey(e.quarter); w = q ? q.label : e.quarter; } catch (er) { w = e.quarter; } } } return [d || w, timeRange(e.timeStart, e.timeEnd)].filter(Boolean).join(" · "); };
   const hourOpts = (sel, blank) => `<option value="">${blank}</option>` + WHEN_HOURS.map(h => `<option value="${h}"${h === sel ? " selected" : ""}>${hourLabel(h)}</option>`).join("");
   const thisWeek = () => { const d = new Date(); const dow = (d.getDay() + 6) % 7; const s = new Date(d); s.setDate(d.getDate() - dow); const e = new Date(s); e.setDate(s.getDate() + 6); return [iso(s), iso(e)]; };
   const thisMonth = () => { const d = new Date(); return [iso(new Date(d.getFullYear(), d.getMonth(), 1)), iso(new Date(d.getFullYear(), d.getMonth() + 1, 0))]; };
@@ -2290,6 +2297,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
   const CP_PAGEDB = {};
   const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
+  // ---------- Rule: every date can be one day or a range. A date input with data-endid="X" gets a "Date range" choice in the calendar; the last day goes into the hidden input X. ----------
+  let deSeq = 0;
+  const dEnd = (val) => { const id = "dEnd" + (++deSeq); return { id, html: `<input type="date" id="${id}" class="date-hid" data-nodatebtn tabindex="-1" hidden value="${esc(val || "")}">` }; };
+  const dRange = (a, b) => a ? (b && b !== a ? `${fmt(a)} – ${fmt(b)}` : fmt(a)) : "";
   // ---------- Rule: every dropdown that picks entries also offers "＋ New …" to create one right there ----------
   // Add NE(type) (plain id) or NE(type, true) ("type|id") as an option; picking it asks for a title, creates the entry, then selects it.
   const NE = (type, pair) => TYPE[type] ? `<option value="__newent:${type}:${pair ? "pair" : "id"}">＋ New ${TYPE[type].singular}…</option>` : "";
@@ -2393,7 +2404,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (PUBLIC) return K.cprop.cell(rec, P);
     switch (P.ptype) {
       case "number": case "currency": case "percent": return `<input type="number" step="any" class="db-inline cp-in" ${at} value="${v == null ? "" : esc(v)}" placeholder="${P.ptype === "currency" ? "$" : P.ptype === "percent" ? "%" : ""}">`;
-      case "url": case "email": case "date": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
+      case "date": { const E = dEnd(rec ? rec[P.field + "_end"] : ""); return `<input type="date" class="db-inline cp-in" ${at} data-endid="${E.id}" value="${esc(v || "")}">${E.html}`; }
+      case "url": case "email": return `<input type="${P.ptype}" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
       case "phone": return `<input type="tel" class="db-inline cp-in" ${at} value="${esc(v || "")}">`;
       case "check": return `<input type="checkbox" class="cp-chk" ${at}${v ? " checked" : ""}>`;
       case "select": return `<select class="db-inline cp-in" ${at} data-cpkey="${P.key}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
@@ -2446,7 +2458,8 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         case "multi": return `<span class="cp-multi" data-cpnewm="${P.key}"><span class="cp-mlabel">${esc(P.label)}:</span>${(P.options || []).map(o => `<button type="button" class="chip" data-cpnewchip data-val="${esc(o)}" aria-pressed="false">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}">＋</button></span>`;
         case "rating": return `<select class="cp-in" ${at}><option value="">${esc(P.label)}: —</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}">${"★".repeat(n)}</option>`).join("")}</select>`;
         case "number": case "currency": case "percent": return `<input type="number" step="any" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
-        case "date": case "url": case "email": return `<input type="${P.ptype}" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
+        case "date": { const E = dEnd(""); return `<input type="date" class="cp-in" ${at} data-endid="${E.id}" placeholder="${esc(P.label)}">${E.html}`; }
+        case "url": case "email": return `<input type="${P.ptype}" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
         case "phone": return `<input type="tel" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
         default: return `<input type="text" class="cp-in" ${at} placeholder="${esc(P.label)}">`;
       } }).join("");
@@ -2456,7 +2469,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     cpDefs(k).forEach(P => {
       if (P.ptype === "multi") { const box = root.querySelector(`[data-cpnewm="${P.key}"]`); if (box) out[P.key] = [...box.querySelectorAll('[data-cpnewchip][aria-pressed="true"]')].map(b => b.dataset.val); return; }
       const el = root.querySelector(`[data-cpnew="${P.key}"]`); if (!el) return;
-      if (P.ptype === "check") out[P.key] = el.checked; else if (["number", "currency", "percent", "rating"].includes(P.ptype)) { if (el.value !== "") out[P.key] = Number(el.value); } else if (el.value && el.value !== "__newopt") out[P.key] = el.value.trim();
+      if (P.ptype === "check") out[P.key] = el.checked; else if (["number", "currency", "percent", "rating"].includes(P.ptype)) { if (el.value !== "") out[P.key] = Number(el.value); } else if (el.value && el.value !== "__newopt") { out[P.key] = el.value.trim(); if (P.ptype === "date" && el.dataset.endid && $(el.dataset.endid) && $(el.dataset.endid).value) out[P.key + "_end"] = $(el.dataset.endid).value; }
     });
     return out;
   }
@@ -2598,6 +2611,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   document.addEventListener("change", async e => {
     const i = e.target.closest && e.target.closest("[data-cpi]"); if (!i || i.value === "__newopt") return; const [k, id, key] = i.dataset.cpi.split("|"), P = cpDefs(k).find(x => x.key === key); if (!P) return;
     const val = P.ptype === "check" ? i.checked : ["number", "currency", "percent"].includes(P.ptype) ? (i.value === "" ? "" : Number(i.value)) : i.value.trim();
+    if (P.ptype === "date" && i.dataset.endid) { const D = CP_PAGEDB[k], rec = D && D.list().find(x => x.id === id), en = document.getElementById(i.dataset.endid); if (D && rec) { await D.save({ ...rec, [key]: val, [key + "_end"]: en ? en.value : "", updatedAt: new Date().toISOString() }); return; } }
     await cpSet(k, id, key, val);
   });
   document.addEventListener("click", async e => {
@@ -3130,7 +3144,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       show: (e, P) => { const v = e ? e[P.field] : undefined; switch (P.ptype) {
         case "check": return v ? "Yes" : "";
         case "multi": return Array.isArray(v) ? v.join(", ") : "";
-        case "date": return v ? fmt(String(v).slice(0, 10)) : "";
+        case "date": return v ? dRange(String(v).slice(0, 10), String(e[P.field + "_end"] || "").slice(0, 10)) : "";
         case "currency": return v === "" || v == null || isNaN(v) ? "" : "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         case "percent": return v === "" || v == null || isNaN(v) ? "" : Number(v) + "%";
         case "rating": return v ? "★".repeat(Number(v)) : "";
@@ -3158,7 +3172,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           case "url": return `${L}<input id="${id}" type="url" value="${esc(v || "")}" placeholder="https://…">`;
           case "email": return `${L}<input id="${id}" type="email" value="${esc(v || "")}" placeholder="name@example.com">`;
           case "phone": return `${L}<input id="${id}" type="tel" value="${esc(v || "")}" placeholder="(555) 555-5555">`;
-          case "date": return `${L}<input id="${id}" type="date" value="${esc(v || "")}">`;
+          case "date": return `${L}<input id="${id}" type="date" data-endid="${id}-end" value="${esc(v || "")}"><input type="date" id="${id}-end" class="date-hid" data-nodatebtn tabindex="-1" hidden value="${esc((e && e[P.field + "_end"]) || "")}">`;
           case "check": return `<label class="pub-toggle" for="${id}"><input type="checkbox" id="${id}"${v ? " checked" : ""}><span class="pub-switch" aria-hidden="true"></span><span>${esc(P.label)}</span></label>`;
           case "select": return `${L}<select id="${id}" data-cpkey="${P.key}"><option value="">—</option>${(P.options || []).map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("")}<option value="__newopt">＋ New option…</option></select>`;
           case "multi": { const on = Array.isArray(v) ? v : []; return `<span class="flabel">${esc(P.label)}</span><div class="cp-multi" id="${id}">${(P.options || []).map(o => `<button type="button" class="chip" data-cpm aria-pressed="${on.includes(o)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}<button type="button" class="chip cp-optplus" data-cpaddopt="${P.key}" title="Add a new option">＋ New option</button></div>`; }
@@ -3171,6 +3185,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
           case "check": out[P.field] = el.checked; break;
           case "multi": out[P.field] = [...el.querySelectorAll('[data-cpm][aria-pressed="true"]')].map(b => b.dataset.val); break;
           case "rating": out[P.field] = Number(el.dataset.v) || 0; break;
+          case "date": out[P.field] = el.value.trim(); out[P.field + "_end"] = ($("ed-" + P.key + "-end") || {}).value || ""; break;
           default: out[P.field] = el.value.trim();
         } },
     },
@@ -7026,14 +7041,15 @@ Don't invent appointments or facts that aren't listed.`);
     // 1. Workflow circle: every entry should connect to the step before it and the step after it
     const subs = [];
     WF_CHAIN.forEach((A, i) => { const B = WF_CHAIN[(i + 1) % WF_CHAIN.length];
-      // A project is complete without any resource, so projects are never flagged for "no resource after them"
-      const noB = paIn(A) && !(A === "projects" && B === "pages") ? paEntries(A).filter(e => !wfLinked(e.id, B).length && ok("ln" + B, e)) : [], noA = paIn(B) ? paEntries(B).filter(e => !wfLinked(e.id, A).length && ok("ln" + A, e)) : [];
+      // Links that are never required: a project doesn't need a resource, a resource doesn't need a project, a resource doesn't need a value, a value doesn't need a resource
+      const optional = (A === "projects" && B === "pages") || (A === "pages" && B === "values");
+      const noB = paIn(A) && !optional ? paEntries(A).filter(e => !wfLinked(e.id, B).length && ok("ln" + B, e)) : [], noA = paIn(B) && !optional ? paEntries(B).filter(e => !wfLinked(e.id, A).length && ok("ln" + A, e)) : [];
       if (noB.length) subs.push({ title: `${TYPE[A].label} with no ${TYPE[B].singular} after them`, items: noB.map(e => ({ type: A, e, fix: "link", other: B, g: "ln" + B })) });
       if (noA.length) subs.push({ title: `${TYPE[B].label} with no ${TYPE[A].singular} before them`, items: noA.map(e => ({ type: B, e, fix: "link", other: A, g: "ln" + A })) });
     });
-    G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. A project is complete without a resource. Pick one to link it.", subs });
+    G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. Resources are optional: projects and values don\u2019t need one, and a resource doesn\u2019t need a project or a value. Pick one to link it.", subs });
     const one = (key, icon, title, desc, types, miss, fix) => G.push({ key, icon, title, desc, subs: [{ items: types.filter(paIn).flatMap(t => paEntries(t).filter(e => miss(e, t) && ok(key, e)).map(e => ({ type: t, e, fix, g: key }))) }] });
-    one("when", "📅", "No When", "Projects and goals without a date. Click the date to pick one on the calendar.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd, "when");
+    one("when", "📅", "No When", "Projects and goals with no When. Pick just one: a quarter, a week, a date (or a date range), or a time. Whatever is broader fills in by itself: a date fills its week and quarter, a week fills its quarter, and a time goes on today.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd && !e.quarter && !e.week, "when");
     one("status", "🚦", "No status", "Click a status to set it.", ["projects", "goals"], e => !e.status, "status");
     one("layers", "🧩", "No layer", "Click the layer it belongs to.", PA_TYPES, e => !layersOf(e).length, "layer");
     one("color", "🎨", "No color", "No color of its own and none from an area. Click a color.", PA_TYPES, e => !colorOf(e), "color");
@@ -7046,7 +7062,12 @@ Don't invent appointments or facts that aren't listed.`);
   function paFixHtml(x) {
     const id = esc(x.e.id), ty = esc(x.type);
     if (x.fix === "link") { const cand = wfAll(x.other); return `<select data-palink="${id}" aria-label="Link a ${TYPE[x.other].singular}"><option value="">＋ Link a ${TYPE[x.other].singular}…</option>${cand.map(o => `<option value="${esc(o.id)}">${esc(emojiOf(o, x.other))} ${esc(o.title || "Untitled")}</option>`).join("")}${NE(x.other)}</select>`; }
-    if (x.fix === "when") return `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" aria-label="Date for ${esc(x.e.title || "entry")}"><button type="button" class="pa-chip" data-padate>📅 Pick a date</button></span>`;
+    if (x.fix === "when") { const E = dEnd(""), qs = whenQOpts(null).slice(0, 4), nm = esc(x.e.title || "entry");
+      const weeks = qs.slice(0, 2).map(q => `<optgroup label="${esc(q.label)}">${whenWeekOpts(q.key, "").replace(/<option value="">[^<]*<\/option>/, "").replace(/value="/g, `value="${q.key}|`)}</optgroup>`).join("");
+      return `<span class="pa-when"><select data-pawq="${id}" data-patype="${ty}" aria-label="Quarter for ${nm}"><option value="">1 · Quarter…</option>${qs.map(q => `<option value="${q.key}">${esc(q.label)} · ${esc(fmt(q.start))} – ${esc(fmt(q.end))}</option>`).join("")}</select>
+        <select data-paww="${id}" data-patype="${ty}" aria-label="Week for ${nm}"><option value="">2 · Week…</option>${weeks}</select>
+        <span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" data-endid="${E.id}" data-rangesame="1" aria-label="Date for ${nm}">${E.html}<button type="button" class="pa-chip" data-padate>3 · 📅 Date or range</button></span>
+        <select data-pawt="${id}" data-patype="${ty}" aria-label="Time for ${nm}"><option value="">4 · Time (today)…</option>${WHEN_HOURS.map(h => `<option value="${h}">${hourLabel(h)}</option>`).join("")}</select></span>`; }
     if (x.fix === "status") return STATUSES.filter(st => st.v !== "Done").map(st => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="status" data-paval="${esc(st.v)}">${esc(st.v)}</button>`).join("");
     if (x.fix === "layer") return PA_LAYER.map((n, i) => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="layers" data-paval="${i}" title="Layer ${i}: ${n}">${i} ${n}</button>`).join("");
     if (x.fix === "color") return COLORS.map(c => `<button type="button" class="pa-dot" style="background:var(--ec-${c})" data-paset="${id}" data-patype="${ty}" data-pafield="color" data-paval="${c}" title="${c}" aria-label="${c}"></button>`).join("");
@@ -7087,7 +7108,10 @@ Don't invent appointments or facts that aren't listed.`);
   $("paPop").addEventListener("change", async e => {
     const t = e.target;
     if (t.dataset.palink !== undefined) { if (t.value) { await wfLink(t.dataset.palink, t.value); paDone(); } return; }
-    if (t.dataset.padateinp !== undefined) { const v = t.value; if (v) { await wfPatch(t.dataset.patype, t.dataset.padateinp, { focusStart: v, focusEnd: v }); paDone(); } return; }
+    if (t.dataset.padateinp !== undefined) { const v = t.value, en = (t.dataset.endid && $(t.dataset.endid) ? $(t.dataset.endid).value : "") || v; if (v) { await wfPatch(t.dataset.patype, t.dataset.padateinp, { focusStart: v, focusEnd: en, week: whenAutoW(v), quarter: whenAutoQ(v) }); paDone(); } return; }
+    if (t.dataset.pawq !== undefined) { if (t.value) { await wfPatch(t.dataset.patype, t.dataset.pawq, { quarter: t.value, week: "" }); paDone(); } return; }
+    if (t.dataset.paww !== undefined) { if (t.value) { const [qk, wk] = t.value.split("|"); await wfPatch(t.dataset.patype, t.dataset.paww, { quarter: qk, week: wk }); paDone(); } return; }
+    if (t.dataset.pawt !== undefined) { if (t.value) { const d = today(); await wfPatch(t.dataset.patype, t.dataset.pawt, { focusStart: d, focusEnd: d, timeStart: t.value, week: whenAutoW(d), quarter: whenAutoQ(d) }); paDone(); } return; }
   });
   paReady = true;
   // ---------- 🔗 Google: look through Drive, read files, talk about them, and edit Google Docs (by typing or voice) ----------
@@ -8025,7 +8049,7 @@ ${text}
         ${cpDefs("meals").map(P => `<div class="ml-f"><span class="flabel">${esc(P.label)}</span>${cpInline(P, m, "meals")}</div>`).join("")}
         ${ro ? "" : `<div class="ml-f">${cpIAddHtml("meals")}</div>`}
         <div class="ml-f ml-row"><label><span class="flabel">Status</span>${ro ? esc(m.status || "—") : `<select data-mltext="status"><option value="">—</option>${["Not started", "In progress", "Done"].map(s => `<option${m.status === s ? " selected" : ""}>${s}</option>`).join("")}</select>`}</label>
-          <label><span class="flabel">Date</span>${ro ? esc(m.date ? fmt(m.date) : "—") : `<input type="date" data-mltext="date" value="${esc(m.date || "")}">`}</label>
+          <label><span class="flabel">Date</span>${ro ? esc(m.date ? dRange(m.date, m.dateEnd) : "—") : `<input type="date" data-mltext="date" data-endid="mlDateEnd" value="${esc(m.date || "")}"><input type="date" id="mlDateEnd" class="date-hid" data-nodatebtn tabindex="-1" hidden value="${esc(m.dateEnd || "")}">`}</label>
           <span><span class="flabel">Added</span>${esc(m.created ? fmt(m.created) : "—")}</span></div>
         <div class="ml-f"><span class="flabel">Recipe link</span>${ro ? (link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\/(www\.)?/, "").slice(0, 70))}</a>` : "—") : `<div class="ml-linkrow"><input type="url" data-mltext="link" value="${esc(m.link || "")}" placeholder="https://…" aria-label="Recipe link">${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Open ↗</a>` : ""}</div>`}</div>
         ${(m.ingList || []).length ? `<div class="ml-f"><span class="flabel">Main ingredients</span><span class="chips">${m.ingList.map(mlChip).join("")}</span></div>` : ""}
@@ -8063,7 +8087,7 @@ ${text}
   });
   $("mlOverlay").addEventListener("change", async e => {
     const m = meals.find(x => x.id === ml.open); if (!m || PUBLIC) return;
-    const t = e.target.closest("[data-mltext]"); if (t) { const k = t.dataset.mltext; const v = k === "title" ? t.value.trim() : t.value; if ((m[k] || "") !== v) await saveMeal({ ...m, [k]: v, updatedAt: new Date().toISOString() }); }
+    const t = e.target.closest("[data-mltext]"); if (t) { const k = t.dataset.mltext; const v = k === "title" ? t.value.trim() : t.value; const en = k === "date" && $("mlDateEnd") ? $("mlDateEnd").value : null; if ((m[k] || "") !== v || (en !== null && (m.dateEnd || "") !== en)) await saveMeal({ ...m, [k]: v, ...(en !== null ? { dateEnd: en } : {}), updatedAt: new Date().toISOString() }); }
   });
   $("mlOverlay").addEventListener("keydown", async e => {
     if (e.key === "Escape") { mlClose(); return; }
@@ -8160,16 +8184,16 @@ ${text}
     const t = today(), L = gmLevel(gm.xp), lo = gmFloor(L), hi = gmFloor(L + 1), pct = Math.round((gm.xp - lo) / (hi - lo) * 100);
     const quests = gmQuests(), byKey = new Map(quests.map(q => [q.key, q])), picks = gmDay(t), seen = new Set(gm.seen);
     const todayXp = gm.log.filter(l => l.d === t).reduce((a, l) => a + l.x, 0), streak = gmStreak(), doneN = picks.filter(k => gmPinDone(k, seen)).length;
-    const dueLbl = (id, tid, due, name, done) => done ? (due ? `<span class="gm-qs">📅 ${esc(fmt(due))}</span>` : "") : `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-gmdateinp="${esc(id)}" data-gmdatetid="${esc(tid || "")}" value="${esc(due)}" aria-label="Date for ${esc(name)}"><button type="button" class="gm-due${due && due < t ? " late" : due === t ? " now" : ""}" data-gmdate="${esc(id)}" title="Change the date for ${esc(name)}">📅 ${!due ? "＋ Add date" : due < t ? `Overdue · ${esc(fmt(due))}` : due === t ? "Today" : esc(fmt(due))}</button></span>`;
+    const dueLbl = (id, tid, due, name, done, dueEnd) => { const E = dEnd(dueEnd || ""); return done ? (due ? `<span class="gm-qs">📅 ${esc(dRange(due, dueEnd))}</span>` : "") : `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-gmdateinp="${esc(id)}" data-gmdatetid="${esc(tid || "")}" data-endid="${E.id}" value="${esc(due)}" aria-label="Date for ${esc(name)}">${E.html}<button type="button" class="gm-due${due && due < t ? " late" : due === t ? " now" : ""}" data-gmdate="${esc(id)}" title="Change the date for ${esc(name)}">📅 ${!due ? "＋ Add date" : due < t ? `Overdue · ${esc(fmt(due))}` : due === t && !dueEnd ? "Today" : esc(dueEnd && dueEnd !== due ? dRange(due, dueEnd) : fmt(due))}</button></span>`; };
     const pickBtn = (k, name) => picks.includes(k) ? `<button type="button" class="gm-mini on" data-gmunpick="${esc(k)}" aria-label="Unpin ${esc(name)}">📌 Pinned</button>` : `<button type="button" class="gm-mini add" data-gmpick="${esc(k)}" data-gmname="${esc(name)}" aria-label="Pin ${esc(name)}">📌 Pin</button>`;
     // One card per project: the project on top (subtitle + its date), then every checkbox step under it with its own date.
     // onlyKeys: in Today's plan, show just the picked steps (the project heading always shows).
     const card = (e, onlyKeys) => {
       const pk = "p:" + e.id, pdue = (e.focusEnd || e.focusStart || "").slice(0, 10), name = e.title || "Untitled";
       const steps = taskList(e).filter(x => (x.text || "").trim()).filter(x => !onlyKeys || onlyKeys.has("t:" + e.id + ":" + x.id));
-      const stepHtml = steps.map(x => { const k = "t:" + e.id + ":" + x.id, dn = !!x.done; return `<li class="gm-st${dn ? " done" : ""}${picks.includes(k) ? " picked" : ""}"><button type="button" class="gm-check sm${dn ? " on" : ""}" data-gmstep="${esc(k)}" aria-pressed="${dn}" aria-label="${dn ? "Mark not done" : "Mark done"}: ${esc(x.text)}">${dn ? "✓" : ""}</button><div class="gm-qt"><span class="gm-stn">${esc(x.text)}</span>${dueLbl(e.id, x.id, (x.due || "").slice(0, 10), x.text, dn)}</div>${dn ? "" : `<span class="gm-xp">+${GM_XP.task}</span>${pickBtn(k, x.text)}`}</li>`; }).join("");
+      const stepHtml = steps.map(x => { const k = "t:" + e.id + ":" + x.id, dn = !!x.done; return `<li class="gm-st${dn ? " done" : ""}${picks.includes(k) ? " picked" : ""}"><button type="button" class="gm-check sm${dn ? " on" : ""}" data-gmstep="${esc(k)}" aria-pressed="${dn}" aria-label="${dn ? "Mark not done" : "Mark done"}: ${esc(x.text)}">${dn ? "✓" : ""}</button><div class="gm-qt"><span class="gm-stn">${esc(x.text)}</span>${dueLbl(e.id, x.id, (x.due || "").slice(0, 10), x.text, dn, (x.dueEnd || "").slice(0, 10))}</div>${dn ? "" : `<span class="gm-xp">+${GM_XP.task}</span>${pickBtn(k, x.text)}`}</li>`; }).join("");
       const allDone = taskList(e).some(x => (x.text || "").trim()) && taskList(e).filter(x => (x.text || "").trim()).every(x => x.done);
-      return `<li class="gm-card${picks.includes(pk) ? " picked" : ""}"><div class="gm-ph"><button type="button" class="gm-check${gmArm === pk ? " arm" : ""}" data-gmdone="${esc(pk)}" aria-label="Finish the project ${esc(name)}">${gmArm === pk ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${entLink("projects", e.id, `${esc(emojiOf(e, "projects") || "")} ${esc(name)}`)}</span>${e.subtitle ? `<span class="gm-psub">${esc(e.subtitle)}</span>` : ""}<span class="gm-qs">${dueLbl(e.id, "", pdue, name, false)}${allDone ? ` · <span class="gm-ready">All steps done. Tick the circle to finish the project.</span>` : ""}</span></div><span class="gm-xp">+${GM_XP.project}</span>${pickBtn(pk, name)}</div>${stepHtml ? `<ul class="gm-steps">${stepHtml}</ul>` : ""}</li>`;
+      return `<li class="gm-card${picks.includes(pk) ? " picked" : ""}"><div class="gm-ph"><button type="button" class="gm-check${gmArm === pk ? " arm" : ""}" data-gmdone="${esc(pk)}" aria-label="Finish the project ${esc(name)}">${gmArm === pk ? "Sure?" : ""}</button><div class="gm-qt"><span class="gm-qn">${entLink("projects", e.id, `${esc(emojiOf(e, "projects") || "")} ${esc(name)}`)}</span>${e.subtitle ? `<span class="gm-psub">${esc(e.subtitle)}</span>` : ""}<span class="gm-qs">${dueLbl(e.id, "", e.focusStart && e.focusEnd && e.focusStart !== e.focusEnd ? e.focusStart.slice(0, 10) : pdue, name, false, e.focusStart && e.focusEnd && e.focusStart !== e.focusEnd ? e.focusEnd.slice(0, 10) : "")}${allDone ? ` · <span class="gm-ready">All steps done. Tick the circle to finish the project.</span>` : ""}</span></div><span class="gm-xp">+${GM_XP.project}</span>${pickBtn(pk, name)}</div>${stepHtml ? `<ul class="gm-steps">${stepHtml}</ul>` : ""}</li>`;
     };
     const gone = (k) => `<li class="gm-q done"><span class="gm-check on" aria-hidden="true">${seen.has(k) ? "✓" : "–"}</span><div class="gm-qt"><span class="gm-qn">${esc((gm.pn && gm.pn[k]) || "Quest")}</span><span class="gm-qs">${seen.has(k) ? "Done!" : "No longer open"}</span></div></li>`;
     const openP = (data.projects || []).filter(e => !e._pub && e.status !== "Done");
@@ -8252,9 +8276,9 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   $("gmBody").addEventListener("change", async ev => {
     const i = ev.target.closest && ev.target.closest("[data-gmdateinp]"); if (!i) return;
     const e = (data.projects || []).find(x => x.id === i.dataset.gmdateinp); gmDateEd = ""; if (!e) { renderGame(); return; }
-    const v = i.value || "", fs = (e.focusStart || "").slice(0, 10), tid = i.dataset.gmdatetid;
-    if (tid) { try { await saveEntry("projects", { ...e, tasks: taskList(e).map(x => x.id === tid ? { ...x, due: v } : x), updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); } renderGame(); return; }
-    const next = { ...e, focusEnd: v, focusStart: !v ? "" : (!fs || fs > v ? v : e.focusStart), updatedAt: new Date().toISOString() };
+    const v = i.value || "", fs = (e.focusStart || "").slice(0, 10), tid = i.dataset.gmdatetid, en = (i.dataset.endid && $(i.dataset.endid) ? $(i.dataset.endid).value : "") || "";
+    if (tid) { try { await saveEntry("projects", { ...e, tasks: taskList(e).map(x => x.id === tid ? { ...x, due: v, dueEnd: en && en !== v ? en : "" } : x), updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); } renderGame(); return; }
+    const next = en && v && en !== v ? { ...e, focusStart: v, focusEnd: en, updatedAt: new Date().toISOString() } : { ...e, focusEnd: v, focusStart: !v ? "" : (!fs || fs > v ? v : e.focusStart), updatedAt: new Date().toISOString() };
     try { await saveEntry("projects", next); } catch (err) { notice(err.message); }
     renderGame();
   });
@@ -8383,15 +8407,17 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   }
   // Dates are only ever picked from a calendar pop-up: every date field shows as a button (📅 + the chosen date), never as typeable numbers
   const calPop = (() => {
-    let el = null, inp = null, anchor = null, vy = 0, vm = 0;
+    let el = null, inp = null, anchor = null, vy = 0, vm = 0, endI = null, rng = false, first1 = "";
     const pad2 = n => String(n).padStart(2, "0"), isoOf = (y, m, d) => y + "-" + pad2(m + 1) + "-" + pad2(d);
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     function close() { if (el) el.hidden = true; inp = null; }
     function draw() {
       const first = new Date(vy, vm, 1).getDay(), days = new Date(vy, vm + 1, 0).getDate(), cur = inp.value, now = new Date(), tIso = isoOf(now.getFullYear(), now.getMonth(), now.getDate());
+      const rs = rng ? (first1 || (endI && endI.value ? cur : "")) : "", re = rng && !first1 && endI ? endI.value : "";
       let cells = ""; for (let i = 0; i < first; i++) cells += '<span></span>';
-      for (let d = 1; d <= days; d++) { const v = isoOf(vy, vm, d); cells += `<button type="button" class="cal-d${v === cur ? " sel" : ""}${v === tIso ? " today" : ""}" data-cal="${v}">${d}</button>`; }
-      el.innerHTML = `<div class="cal-h"><button type="button" class="cal-nav" data-calmove="-1" aria-label="Previous month">‹</button><b>${MONTHS[vm]} ${vy}</b><button type="button" class="cal-nav" data-calmove="1" aria-label="Next month">›</button></div><div class="cal-w">${["S", "M", "T", "W", "T", "F", "S"].map(x => `<span>${x}</span>`).join("")}</div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" class="btn" data-cal="${tIso}">Today</button><button type="button" class="btn ghost" data-cal="">Clear</button></div>`;
+      for (let d = 1; d <= days; d++) { const v = isoOf(vy, vm, d), sel = rng ? (v === rs || v === re) : v === cur, inr = rng && rs && re && v > rs && v < re; cells += `<button type="button" class="cal-d${sel ? " sel" : ""}${inr ? " inr" : ""}${v === tIso ? " today" : ""}" data-cal="${v}">${d}</button>`; }
+      const modeRow = endI ? `<div class="cal-mode" role="group" aria-label="One day or a range"><button type="button" data-calmode="one" aria-pressed="${!rng}">One day</button><button type="button" data-calmode="range" aria-pressed="${rng}">Date range</button></div>${rng ? `<div class="cal-hint">${first1 ? "Now pick the last day" : "Pick the first day"}</div>` : ""}` : "";
+      el.innerHTML = modeRow + `<div class="cal-h"><button type="button" class="cal-nav" data-calmove="-1" aria-label="Previous month">‹</button><b>${MONTHS[vm]} ${vy}</b><button type="button" class="cal-nav" data-calmove="1" aria-label="Next month">›</button></div><div class="cal-w">${["S", "M", "T", "W", "T", "F", "S"].map(x => `<span>${x}</span>`).join("")}</div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" class="btn" data-cal="${tIso}">Today</button><button type="button" class="btn ghost" data-cal="">Clear</button></div>`;
     }
     function open(input, anchorEl) {
       if (!el) {
@@ -8399,14 +8425,18 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         el.addEventListener("mousedown", e => e.stopPropagation()); el.addEventListener("click", e => {
           e.stopPropagation(); const mv = e.target.closest("[data-calmove]"), pk = e.target.closest("[data-cal]");
           if (mv) { vm += +mv.dataset.calmove; if (vm < 0) { vm = 11; vy--; } if (vm > 11) { vm = 0; vy++; } draw(); return; }
-          if (pk && inp) { const i = inp; i.value = pk.dataset.cal; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); close(); }
+          const md = e.target.closest("[data-calmode]"); if (md) { rng = md.dataset.calmode === "range"; first1 = ""; draw(); return; }
+          if (pk && inp) { const i = inp, v = pk.dataset.cal;
+            if (endI && rng && v) { if (!first1) { first1 = v; draw(); return; } const a = first1 < v ? first1 : v, b = first1 < v ? v : first1; endI.value = a === b ? (i.dataset.rangesame ? a : "") : b; i.value = a; }
+            else { i.value = v; if (endI) endI.value = v && i.dataset.rangesame ? v : ""; }
+            i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); close(); }
         });
         document.addEventListener("mousedown", e => { if (el && !el.hidden && !el.contains(e.target) && !(anchor && anchor.contains(e.target))) close(); }, true);
         document.addEventListener("keydown", e => { if (e.key === "Escape" && el && !el.hidden) { close(); } }, true);
         window.addEventListener("resize", close);
       }
       if (inp === input && !el.hidden) { close(); return; }
-      inp = input; anchor = anchorEl || input;
+      inp = input; anchor = anchorEl || input; endI = input.dataset.endid ? document.getElementById(input.dataset.endid) : null; first1 = ""; rng = !!(endI && endI.value && endI.value !== input.value);
       const base = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? new Date(input.value + "T12:00:00") : new Date(); vy = base.getFullYear(); vm = base.getMonth();
       draw(); el.hidden = false;
       const r = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
@@ -8417,13 +8447,13 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   })();
   (function () {
     const fmtD = v => { if (!v) return ""; const d = new Date(v + "T12:00:00"); return isNaN(d) ? v : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
-    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, t = v ? fmtD(v) : "Pick a date"; b.disabled = inp.disabled; b.classList.toggle("empty", !v); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = !v || inp.disabled; };
+    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, en = inp.dataset.endid && document.getElementById(inp.dataset.endid), ev2 = en ? en.value : "", t = v ? (ev2 && ev2 !== v ? fmtD(v) + " – " + fmtD(ev2) : fmtD(v)) : (en ? "Pick a date or range" : "Pick a date"); b.disabled = inp.disabled; b.classList.toggle("empty", !v); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = !v || inp.disabled; };
     const enhance = (inp) => {
       if (inp._db || inp.hasAttribute("data-nodatebtn") || inp.closest("[data-nodatebtn]")) return;
       const b = document.createElement("button"); b.type = "button"; b.className = "date-btn"; b.setAttribute("aria-label", (inp.getAttribute("aria-label") || "Date") + ": open the calendar");
       b.innerHTML = '<span class="db-i" aria-hidden="true">📅</span><span class="db-t"></span><span class="db-x" role="button" aria-label="Clear the date" title="Clear">✕</span>';
       inp.classList.add("date-hid"); inp.tabIndex = -1; inp.parentNode.insertBefore(b, inp); inp._db = b; sync(inp);
-      b.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); if (ev.target.closest(".db-x")) { inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); sync(inp); return; } calPop.open(inp, b); });
+      b.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); if (ev.target.closest(".db-x")) { inp.value = ""; if (inp.dataset.endid && document.getElementById(inp.dataset.endid)) document.getElementById(inp.dataset.endid).value = ""; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); sync(inp); return; } calPop.open(inp, b); });
       inp.addEventListener("change", () => sync(inp)); inp.addEventListener("input", () => sync(inp));
     };
     const sweep = () => { document.querySelectorAll('input[type="date"]').forEach(i => { enhance(i); sync(i); }); };
