@@ -8123,7 +8123,7 @@ ${text}
     while (days.has(iso(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
-  let gmDidTab = "today", gmTab = (() => { try { return localStorage.getItem("chevy.gm.tab") || ""; } catch (e) { return ""; } })();
+  let gmDidTab = "today", gmTab = "projects"; // Projects is the default tab every time the page opens
   // Done today log: the past 72 hours, and everything older on its own tab
   const gmDidSplit = () => { const cut = Date.now() - 72 * 3600e3, at = (x) => Date.parse(x.at || (x.d + "T12:00:00")); const L = (gm.did || []).slice().reverse(); return { recent: L.filter(x => at(x) >= cut), older: L.filter(x => at(x) < cut) }; };
   const gmDidList = (L, none) => { if (!L.length) return `<p class="gm-hint">${none}</p>`; const t = today(), days = [...new Set(L.map(x => x.d))]; return days.map(d => `<div class="gm-dayh">${d === t ? "Today" : esc(fmt(d))}</div><ul class="gm-dl">${L.filter(x => x.d === d).map(x => `<li><span class="tm">${esc(x.tm || "")}</span><span class="tx">${esc(x.t)}</span><button type="button" class="x" data-gmdeldid="${esc(x.id)}" aria-label="Remove">✕</button></li>`).join("")}</ul>`).join(""); };
@@ -8174,7 +8174,7 @@ ${text}
     const allP = openP.slice().sort(bySoon);
     const todayP = openP.filter(e => onP.has(e.id) || (firstDue(e) && firstDue(e) <= t)); // for the "on today" count
     if (gmTab === "today" || gmTab === "more") gmTab = "projects";
-    if (!["pinned", "projects"].includes(gmTab)) gmTab = picks.length ? "pinned" : "projects";
+    if (!["pinned", "projects"].includes(gmTab)) gmTab = "projects";
     const TP = tdParts(), dDay = new Date(t + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     el.innerHTML = `<div class="gm">
       <section class="gm-hero" aria-label="Today and your progress">
@@ -8185,7 +8185,7 @@ ${text}
       </section>
       ${gmToast ? `<div class="gm-toast" role="status">${esc(gmToast)}</div>` : ""}
       <section class="gm-sec" id="gmToday"><h2 class="gm-h2row">Today${PUBLIC ? "" : `<button type="button" class="btn primary gm-addp" data-gmaddp>＋ Add project</button>`}</h2>
-        <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${picks.length}</span></button><button type="button" role="tab" data-gmtab="projects" aria-selected="${gmTab === "projects"}">🗂 Projects <span class="gm-tn">${allP.length}</span></button></div>
+        <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="projects" aria-selected="${gmTab === "projects"}">🗂 Projects <span class="gm-tn">${allP.length}</span></button><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${picks.length}</span></button></div>
         ${gmTab === "pinned" ? `<p class="gm-hint">${!picks.length ? `Nothing pinned yet. Tap <b>📌 Pin</b> on any project, step or entry in the other tabs. Pinning your first one today earns <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything pinned is done. Perfect day! 🎉" : `Finish everything pinned for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
         <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing pinned yet</li>'}</ul>`
         : `<p class="gm-hint"><label class="switch td-sw"><input type="checkbox" data-tdshow${td.show ? " checked" : ""}> Show other things on today</label> Every open project, earliest date first. Projects with no date are at the end. Tap 📌 Pin to move one to Pinned.</p>
