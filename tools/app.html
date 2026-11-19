@@ -2290,6 +2290,24 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // To give a new page database this, add it to CP_PAGEDB with its list, save and render functions.
   const CP_PAGEDB = {};
   const cpDefs = (k) => (CPROPS[k] || []).map(d => ({ key: d.key, kind: "cprop", ptype: d.ptype, label: d.label, field: d.key, options: d.options || [] }));
+  // ---------- Rule: every dropdown that picks entries also offers "＋ New …" to create one right there ----------
+  // Add NE(type) (plain id) or NE(type, true) ("type|id") as an option; picking it asks for a title, creates the entry, then selects it.
+  const NE = (type, pair) => TYPE[type] ? `<option value="__newent:${type}:${pair ? "pair" : "id"}">＋ New ${TYPE[type].singular}…</option>` : "";
+  const NEG = (types, pair) => `<optgroup label="Create new">${types.map(t => NE(t, pair)).join("")}</optgroup>`;
+  document.addEventListener("change", e => {
+    const sel = e.target; if (!sel || sel.tagName !== "SELECT" || !String(sel.value).startsWith("__newent:")) return;
+    e.stopImmediatePropagation();
+    const [, type, fmt] = sel.value.split(":"); sel.value = "";
+    const old = sel.parentNode.querySelector(".cp-optadd"); if (old) old.remove();
+    sel.insertAdjacentHTML("afterend", `<span class="cp-optadd ne-add"><input type="text" placeholder="New ${esc(TYPE[type].singular)} title" maxlength="200" aria-label="New ${esc(TYPE[type].singular)} title"><button type="button" class="btn small primary">Add</button><button type="button" class="btn small">Cancel</button></span>`);
+    const box = sel.nextElementSibling, inp = box.querySelector("input");
+    const go = async () => { const v = inp.value.trim(); if (!v) { inp.focus(); return; } box.remove(); const ne = await wfCreate(type, v); buildAdj();
+      const val = fmt === "pair" ? type + "|" + ne.id : ne.id, o = document.createElement("option"); o.value = val; o.textContent = v; sel.appendChild(o); sel.value = val; sel.dispatchEvent(new Event("change", { bubbles: true })); notice(`Added ${TYPE[type].singular} "${v}".`); };
+    box.querySelector(".primary").onclick = (ev) => { ev.stopPropagation(); go(); }; box.querySelectorAll("button")[1].onclick = (ev) => { ev.stopPropagation(); box.remove(); };
+    box.addEventListener("click", ev => ev.stopPropagation());
+    inp.addEventListener("keydown", ev => { ev.stopPropagation(); if (ev.key === "Enter") { ev.preventDefault(); go(); } if (ev.key === "Escape") box.remove(); });
+    inp.focus();
+  }, true);
   // ---------- Rule: every entry title shown anywhere is clickable and opens that entry ----------
   // Use entLink(type, id, innerHtml) for any title that isn't already a button that opens it.
   const entLink = (type, id, html) => `<button type="button" class="ent-link" data-entopen="${esc(type)}|${esc(id)}" title="Open">${html}</button>`;
@@ -4872,7 +4890,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <div class="g-tip">Tap another shape to link it. Tap a linked one to unlink it.</div>
       ${gMsg ? `<div class="g-msg" role="status">${esc(gMsg)}</div>` : ""}
       ${ls.length ? `<ul>${ls.map(y => `<li class="lk-li${lkCls(y)}"><span>${lkIn(y)}</span><button type="button" class="tdel" data-gunlink="${esc(y.e.id)}" aria-label="Unlink ${esc(y.e.title || "Untitled")}">×</button></li>`).join("")}</ul>` : '<div class="g-tip">No links yet.</div>'}
-      <select class="qe-sel" id="gLinkAdd" aria-label="Link to"><option value="">+ Link to…</option>${opts}</select>
+      <select class="qe-sel" id="gLinkAdd" aria-label="Link to"><option value="">+ Link to…</option>${opts}${NEG(TYPES.filter(T => !T.archive).map(T => T.key))}</select>
       <div class="g-actions"><button type="button" class="btn" data-gnew>+ New linked entry</button></div>`;
     box.hidden = false;
   }
@@ -5845,7 +5863,7 @@ Don't invent appointments or facts that aren't listed.`);
     const deckSec = (label, arr) => { const a = arr.filter(match); return a.length ? `<div class="cd-dlabel">${label} · ${a.length}</div>${a.map(cdCard).join("")}` : ""; };
     const deckCount = deck.none.length + deck.earlier.length + deck.later.length;
     const areaSec = `<div class="cd-areas"><div class="cd-dlabel">Area, resource &amp; archive cards${areaDeck.length ? " · " + areaDeck.length : ""}</div>
-      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an entry into a card"><option value="">+ Add a card from Areas, Resources or Archive…</option>${areaRest.map(([k, l]) => l.length ? `<optgroup label="${esc(TYPE[k].label)}">${l.map(a => `<option value="${esc(k + "|" + a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</optgroup>` : "").join("")}</select>
+      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an entry into a card"><option value="">+ Add a card from Areas, Resources or Archive…</option>${areaRest.map(([k, l]) => l.length ? `<optgroup label="${esc(TYPE[k].label)}">${l.map(a => `<option value="${esc(k + "|" + a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</optgroup>` : "").join("")}${NEG(areaRest.map(([k]) => k).filter(k => TYPE[k] && !TYPE[k].archive), true)}</select>
       ${areaDeck.filter(match).map(cdCard).join("")}${!areaDeck.length && !areaCards.length ? '<div class="pl-none">Pick an area, resource or archive entry above to make it a card you can place.</div>' : ""}</div>`;
     const days = [0, 1, 2, 3, 4, 5, 6].map(i => dIso(dn(thisMon) + i));
     const wi = isoWeekInfo(thisMon);
@@ -5997,7 +6015,7 @@ Don't invent appointments or facts that aren't listed.`);
       <div class="task-add pl-rnew"><input id="plRNew" type="text" placeholder="New routine, like Morning walk" autocomplete="off" aria-label="New routine name"><button type="button" class="btn" data-plrnew>Add</button></div>
       <div class="pl-msub">In focus that day</div>
       <div class="pl-picks">${focus.length ? focus.map(row).join("") : '<span class="pl-none">Nothing else in focus that day.</span>'}</div>
-      <select class="qe-sel" id="plAny" aria-label="Pick any entry"><option value="">+ Pick from any database…</option>${TYPES.map(T => { const its = plPool().filter(x => x.type === T.key && !x.e._pub && !blocksOf(x.e).some(b => b.date === date && b.slot === slot)).sort(titleSort); return its.length ? `<optgroup label="${esc(T.label)}">${its.map(x => `<option value="${esc(T.key + "|" + x.e.id)}">${esc(x.e.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("")}</select>
+      <select class="qe-sel" id="plAny" aria-label="Pick any entry"><option value="">+ Pick from any database…</option>${TYPES.map(T => { const its = plPool().filter(x => x.type === T.key && !x.e._pub && !blocksOf(x.e).some(b => b.date === date && b.slot === slot)).sort(titleSort); return its.length ? `<optgroup label="${esc(T.label)}">${its.map(x => `<option value="${esc(T.key + "|" + x.e.id)}">${esc(x.e.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("")}${NEG(TYPES.filter(T => !T.archive).map(T => T.key), true)}</select>
       <input type="search" class="search pl-q" id="plQ" placeholder="Find any other entry…" value="${esc(q)}" aria-label="Find any other entry">
       ${q.trim() ? `<div class="pl-picks pl-all">${others.length ? others.map(row).join("") : '<span class="pl-none">No matches.</span>'}</div>`
         : browse ? `<div class="pl-msub">All projects (${others.length}) · type to search everything</div><div class="pl-picks pl-all">${others.length ? others.map(row).join("") : '<span class="pl-none">No other projects.</span>'}</div>` : ""}`;
@@ -7026,7 +7044,7 @@ Don't invent appointments or facts that aren't listed.`);
   const paCount = () => { if (PUBLIC) return 0; const ids = new Set(); paGroups().forEach(g => g.subs.forEach(s => s.items.forEach(x => ids.add(x.e.id)))); return ids.size; };
   function paFixHtml(x) {
     const id = esc(x.e.id), ty = esc(x.type);
-    if (x.fix === "link") { const cand = wfAll(x.other); return cand.length ? `<select data-palink="${id}" aria-label="Link a ${TYPE[x.other].singular}"><option value="">＋ Link a ${TYPE[x.other].singular}…</option>${cand.map(o => `<option value="${esc(o.id)}">${esc(emojiOf(o, x.other))} ${esc(o.title || "Untitled")}</option>`).join("")}</select>` : `<span class="pa-type">No ${TYPE[x.other].label.toLowerCase()} yet</span>`; }
+    if (x.fix === "link") { const cand = wfAll(x.other); return `<select data-palink="${id}" aria-label="Link a ${TYPE[x.other].singular}"><option value="">＋ Link a ${TYPE[x.other].singular}…</option>${cand.map(o => `<option value="${esc(o.id)}">${esc(emojiOf(o, x.other))} ${esc(o.title || "Untitled")}</option>`).join("")}${NE(x.other)}</select>`; }
     if (x.fix === "when") return `<span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" aria-label="Date for ${esc(x.e.title || "entry")}"><button type="button" class="pa-chip" data-padate>📅 Pick a date</button></span>`;
     if (x.fix === "status") return STATUSES.filter(st => st.v !== "Done").map(st => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="status" data-paval="${esc(st.v)}">${esc(st.v)}</button>`).join("");
     if (x.fix === "layer") return PA_LAYER.map((n, i) => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="layers" data-paval="${i}" title="Layer ${i}: ${n}">${i} ${n}</button>`).join("");
@@ -7537,7 +7555,7 @@ ${text}
       const i = WF_CHAIN.indexOf(type); if (i < 0) return "";
       const up = WF_CHAIN[(i + WF_CHAIN.length - 1) % WF_CHAIN.length], par = wfLinked(e.id, up), rest = wfAll(up).filter(x => !par.includes(x));
       return par.map(x => linkChip(x, e.id, chipIcon(up, x))).join("") + (PUBLIC ? (par.length ? "" : `<span class="wf-none">Starting point</span>`) :
-        `<select class="wf-fsel${par.length ? "" : " empty"}" data-wflinkto="${esc(e.id)}" data-wfltype="${up}" aria-label="Where this came from"><option value="">${par.length ? "+ Add…" : `Starting point: pick ${/^[aeiou]/.test(TYPE[up].singular) ? "an " + TYPE[up].singular : "a " + TYPE[up].singular}…`}</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}</select>`);
+        `<select class="wf-fsel${par.length ? "" : " empty"}" data-wflinkto="${esc(e.id)}" data-wfltype="${up}" aria-label="Where this came from"><option value="">${par.length ? "+ Add…" : `Starting point: pick ${/^[aeiou]/.test(TYPE[up].singular) ? "an " + TYPE[up].singular : "a " + TYPE[up].singular}…`}</option>${rest.map(x => `<option value="${esc(x.id)}">${name(x)}</option>`).join("")}${NE(up)}</select>`);
     };
     // Children: the linked entries of the next kind, with a dropdown (existing or new) to add one
     const childPart = (e, type, opts = {}) => {
@@ -7564,13 +7582,13 @@ ${text}
       top: fromPart(e, "areas"), mid: `${emo(e, "areas")}${titleIn("areas", e, "Area")}${openBtn("areas", e.id)}`, label: "Goals",
       bottom: childPart(e, "areas", { rows: (kids) => `<div class="wf-list">${kids.map(g => `<div class="wf-row"><span class="wf-dot">🎯</span><input class="wf-in" data-wfedit="goals" data-wfid="${esc(g.id)}" data-wffield="title" value="${esc(g.title || "")}" aria-label="Goal"${ro}>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(e.id)}" data-wfo="${esc(g.id)}" title="Take this goal off the area (the goal stays)">×</button>`}</div>`).join("") || (PUBLIC ? empty("No goals yet.") : "")}</div>`,
         inline: `<input class="wf-in" data-wfgnew="${esc(e.id)}" placeholder="+ Add a goal" maxlength="200" aria-label="New goal">`,
-        extra: (() => { const rest = wfAll("goals").filter(g => !wfLinked(e.id, "goals").includes(g)); return rest.length ? `<select class="wf-sel" data-wfchild="${esc(e.id)}" data-wfctype="goals" aria-label="Add an existing goal"><option value="">+ Add an existing goal…</option>${rest.map(g => `<option value="${esc(g.id)}">${name(g)}</option>`).join("")}</select>` : ""; })() }),
+        extra: (() => { const rest = wfAll("goals").filter(g => !wfLinked(e.id, "goals").includes(g)); return `<select class="wf-sel" data-wfchild="${esc(e.id)}" data-wfctype="goals" aria-label="Add an existing goal"><option value="">+ Add an existing goal…</option>${rest.map(g => `<option value="${esc(g.id)}">${name(g)}</option>`).join("")}${NE("goals")}</select>`; })() }),
     })).join("");
     // 3. Projects and timing (one card per goal)
     const projRows = (kids, owner) => `<div class="wf-list">${kids.map(p => `<div class="wf-prow"><div class="wf-row">${emo(p, "projects")}<button type="button" class="wf-ptitle" data-wfopen="projects" data-wfid="${esc(p.id)}">${name(p)}</button>${PUBLIC ? "" : `<button type="button" class="wf-x" data-wfunlink="${esc(owner)}" data-wfo="${esc(p.id)}" title="Take this project off the goal (the project stays)">×</button>`}</div><div class="wf-when"><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusStart" value="${esc(p.focusStart || "")}" aria-label="Start"${ro}><span>→</span><input type="date" class="wf-date" data-wfedit="projects" data-wfid="${esc(p.id)}" data-wffield="focusEnd" value="${esc(p.focusEnd || "")}" aria-label="End"${ro}></div></div>`).join("") || empty("No projects yet.")}</div>`;
     const goalCards = S.goals.map(g => { const areaProjects = [...new Set(wfLinked(g.id, "areas").flatMap(a => wfLinked(a.id, "projects")))], kids = wfLinked(g.id, "projects"), linked = areaProjects.filter(p => !kids.includes(p)), others = data.projects.filter(p => !kids.includes(p) && !linked.includes(p)).sort((a, b) => titleSort({ e: a }, { e: b }));
       return card("goals", g, { top: fromPart(g, "goals"), mid: `<span class="wf-dot">🎯</span>${titleIn("goals", g, "Goal")}${openBtn("goals", g.id)}${del("goals", g.id)}`, label: "Projects and timing",
-        bottom: childPart(g, "goals", { rows: (k) => projRows(k, g.id), inline: `<select class="wf-sel" data-wfchild="${esc(g.id)}" data-wfctype="projects" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="Projects of this goal's area">${linked.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}</select>
+        bottom: childPart(g, "goals", { rows: (k) => projRows(k, g.id), inline: `<select class="wf-sel" data-wfchild="${esc(g.id)}" data-wfctype="projects" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="Projects of this goal's area">${linked.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${NE("projects")}</select>
           <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.id)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.id)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.id)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.id)}">Add</button></div></div>` }) }); }).join("");
     // 4. Resources (one card per project of the goals above)
     const kindSeg = (src, id, cur) => PUBLIC ? `<span class="wf-kind ro">${cur === "rt" ? "Routine" : cur === "sched" ? "Scheduled" : "One time"}</span>` : `<span class="wf-kind" role="group" aria-label="What kind">${[["one", "One time"], ["sched", "Scheduled"], ["rt", "Routine"]].map(([k, l]) => `<button type="button" data-wfkind="${k}" data-wfksrc="${src}" data-wfkid="${esc(id)}" aria-pressed="${cur === k}">${l}</button>`).join("")}</span>`;
