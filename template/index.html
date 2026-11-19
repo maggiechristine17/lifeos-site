@@ -7118,7 +7118,7 @@ Don't invent appointments or facts that aren't listed.`);
     one("layers", "🧩", "No layer", "Click the layer it belongs to.", PA_TYPES, e => !layersOf(e).length, "layer");
     one("color", "🎨", "No color", "No color of its own and none from an area. Click a color.", PA_TYPES, e => !colorOf(e), "color");
     one("subtitle", "✏️", "No subtitle or steps", "Type a subtitle and press Enter. (An area's subtitle is made from its goals, so areas are not listed.)", ["projects", "goals", "pages", "values"], e => !(e.subtitle || "").trim() && !taskList(e).length, "subtitle");
-    one("tags", "🏷️", "No tags", "Type tags separated by commas and press Enter.", PA_TYPES, e => !(Array.isArray(e.tags) && e.tags.length), "tags");
+    // Tags are optional, so entries are never flagged for having none
     G.forEach(g => { g.n = g.subs.reduce((a, s) => a + s.items.length, 0); });
     return G;
   }
