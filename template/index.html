@@ -7090,11 +7090,12 @@ Don't invent appointments or facts that aren't listed.`);
     // 1. Workflow circle: every entry should connect to the step before it and the step after it
     const subs = [];
     WF_CHAIN.forEach((A, i) => { const B = WF_CHAIN[(i + 1) % WF_CHAIN.length];
-      const noB = paIn(A) ? paEntries(A).filter(e => !wfLinked(e.id, B).length && ok("ln" + B, e)) : [], noA = paIn(B) ? paEntries(B).filter(e => !wfLinked(e.id, A).length && ok("ln" + A, e)) : [];
+      // A project is complete without any resource, so projects are never flagged for "no resource after them"
+      const noB = paIn(A) && !(A === "projects" && B === "pages") ? paEntries(A).filter(e => !wfLinked(e.id, B).length && ok("ln" + B, e)) : [], noA = paIn(B) ? paEntries(B).filter(e => !wfLinked(e.id, A).length && ok("ln" + A, e)) : [];
       if (noB.length) subs.push({ title: `${TYPE[A].label} with no ${TYPE[B].singular} after them`, items: noB.map(e => ({ type: A, e, fix: "link", other: B, g: "ln" + B })) });
       if (noA.length) subs.push({ title: `${TYPE[B].label} with no ${TYPE[A].singular} before them`, items: noA.map(e => ({ type: B, e, fix: "link", other: A, g: "ln" + A })) });
     });
-    G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. Pick one to link it.", subs });
+    G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. A project is complete without a resource. Pick one to link it.", subs });
     const one = (key, icon, title, desc, types, miss, fix) => G.push({ key, icon, title, desc, subs: [{ items: types.filter(paIn).flatMap(t => paEntries(t).filter(e => miss(e, t) && ok(key, e)).map(e => ({ type: t, e, fix, g: key }))) }] });
     one("when", "📅", "No When", "Projects and goals without a date. Click the date to pick one on the calendar.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd, "when");
     one("status", "🚦", "No status", "Click a status to set it.", ["projects", "goals"], e => !e.status, "status");
