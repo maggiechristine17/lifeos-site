@@ -8234,8 +8234,11 @@ ${text}
     // Today's projects: When includes today, a step dated today, or overdue. More projects: every other open project.
     const onP = new Set(onAll.filter(x => x.type === "projects").map(x => x.e.id));
     const bySoon = (a, b) => (firstDue(a) || "9").localeCompare(firstDue(b) || "9") || (a.title || "").localeCompare(b.title || "");
-    const todayP = openP.filter(e => onP.has(e.id) || (firstDue(e) && firstDue(e) < t)).sort(bySoon), moreP = openP.filter(e => !todayP.includes(e)).sort(bySoon);
-    if (!["pinned", "today", "more"].includes(gmTab)) gmTab = picks.length ? "pinned" : "today";
+    // Projects: every open project, earliest date first (projects with no date at the end)
+    const allP = openP.slice().sort(bySoon);
+    const todayP = openP.filter(e => onP.has(e.id) || (firstDue(e) && firstDue(e) <= t)); // for the "on today" count
+    if (gmTab === "today" || gmTab === "more") gmTab = "projects";
+    if (!["pinned", "projects"].includes(gmTab)) gmTab = picks.length ? "pinned" : "projects";
     const TP = tdParts(), dDay = new Date(t + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     el.innerHTML = `<div class="gm">
       <section class="gm-hero" aria-label="Today and your progress">
@@ -8246,14 +8249,12 @@ ${text}
       </section>
       ${gmToast ? `<div class="gm-toast" role="status">${esc(gmToast)}</div>` : ""}
       <section class="gm-sec" id="gmToday"><h2 class="gm-h2row">Today${PUBLIC ? "" : `<button type="button" class="btn primary gm-addp" data-gmaddp>＋ Add project</button>`}</h2>
-        <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${picks.length}</span></button><button type="button" role="tab" data-gmtab="today" aria-selected="${gmTab === "today"}">☀️ Today's projects <span class="gm-tn">${todayP.length + onOther.length}</span></button><button type="button" role="tab" data-gmtab="more" aria-selected="${gmTab === "more"}">More projects <span class="gm-tn">${moreP.length}</span></button></div>
+        <div class="layout-tabs gm-tabs" role="tablist" aria-label="Today"><button type="button" role="tab" data-gmtab="pinned" aria-selected="${gmTab === "pinned"}">📌 Pinned <span class="gm-tn">${picks.length}</span></button><button type="button" role="tab" data-gmtab="projects" aria-selected="${gmTab === "projects"}">🗂 Projects <span class="gm-tn">${allP.length}</span></button></div>
         ${gmTab === "pinned" ? `<p class="gm-hint">${!picks.length ? `Nothing pinned yet. Tap <b>📌 Pin</b> on any project, step or entry in the other tabs. Pinning your first one today earns <b>+${GM_XP.plan} XP</b>.` : doneN === picks.length ? "Everything pinned is done. Perfect day! 🎉" : `Finish everything pinned for a <b>+${GM_XP.perfect} XP</b> bonus.`}</p>
         <ul class="gm-list">${planHtml || '<li class="gm-q empty">Nothing pinned yet</li>'}</ul>`
-        : gmTab === "today" ? `<p class="gm-hint"><label class="switch td-sw"><input type="checkbox" data-tdshow${td.show ? " checked" : ""}> Show what's scheduled</label> Projects whose When includes today, with a step dated today, or overdue. Below them, everything else on today. Tap 📌 Pin to move one to Pinned.</p>
-        <ul class="gm-list">${todayP.map(e => card(e)).join("") || '<li class="gm-q empty">No projects for today.</li>'}</ul>
-        ${onOther.length ? `<h3 class="wf-subh">Also on today <span>${onOther.length}</span></h3><ul class="gm-list">${onOther.map(x => otherRow(x)).join("")}</ul>` : ""}`
-        : `<p class="gm-hint">Every other open project. Tap 📌 Pin to move one to Pinned.</p>
-        <ul class="gm-list">${moreP.map(e => card(e)).join("") || '<li class="gm-q empty">No other open projects.</li>'}</ul>`}
+        : `<p class="gm-hint"><label class="switch td-sw"><input type="checkbox" data-tdshow${td.show ? " checked" : ""}> Show other things on today</label> Every open project, earliest date first. Projects with no date are at the end. Tap 📌 Pin to move one to Pinned.</p>
+        <ul class="gm-list">${allP.map(e => card(e)).join("") || '<li class="gm-q empty">No open projects.</li>'}</ul>
+        ${onOther.length ? `<h3 class="wf-subh">Also on today <span>${onOther.length}</span></h3><ul class="gm-list">${onOther.map(x => otherRow(x)).join("")}</ul>` : ""}`}
       </section>
       <section class="gm-sec"><h2>Done today <span class="gm-count">${(gm.did || []).filter(x => x.d === t).length} logged today</span></h2>
         <form class="gm-did" data-gmdidform><input type="text" id="gmDidIn" placeholder="Type something you did, then press Enter" maxlength="300" autocomplete="off" aria-label="Something you did today"><button type="submit" class="btn primary">Add</button></form>
@@ -8274,7 +8275,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     const dt = t.closest("[data-gmdate]"); if (dt) { const i = dt.parentNode.querySelector("input"); if (i) calPop.open(i, dt); return; }
     const f = t.closest("[data-gmfilter]"); if (f) { gmFilter = f.dataset.gmfilter; renderGame(); return; }
     if (t.closest("[data-gmnewp]")) { openEditor("projects"); return; }
-    if (t.closest("[data-gmaddp]")) { openEditor("projects", null, gmTab === "more" ? {} : { preset: { focusStart: today(), focusEnd: today() } }); return; }
+    if (t.closest("[data-gmaddp]")) { openEditor("projects", null, gmTab === "pinned" ? { preset: { focusStart: today(), focusEnd: today() } } : {}); return; }
     const gt = t.closest("[data-gmtab]"); if (gt) { gmTab = gt.dataset.gmtab; try { localStorage.setItem("chevy.gm.tab", gmTab); } catch (e) {} renderGame(); return; }
     const dtb = t.closest("[data-gmdidtab]"); if (dtb) { gmDidTab = dtb.dataset.gmdidtab; renderGame(); return; }
     const pk = t.closest("[data-gmpick]"); if (pk) { const l = gmDay(d); if (!l.includes(pk.dataset.gmpick)) { const q = gmQuests().find(x => x.key === pk.dataset.gmpick); gm.picks = { [d]: [...l, pk.dataset.gmpick] }; gm.pn = Object.fromEntries([...l, pk.dataset.gmpick].map(k => [k, k === pk.dataset.gmpick ? (q ? q.title : (pk.dataset.gmname || "Pinned")) : ((gm.pn || {})[k] || "Quest")])); saveGm(); } renderGame(); return; }
