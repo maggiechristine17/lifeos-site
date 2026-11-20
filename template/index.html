@@ -369,6 +369,8 @@ body.dk-open { overflow: hidden; }
 .cal-mode button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
 .cal-hint { font-size: 12px; color: var(--muted); margin: -2px 0 6px; }
 .cal-d.inr { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.tabs .tab[data-view="archive"] { margin-left: auto; }
+.tab-sep:has(+ .tab[data-view="archive"]) { display: none; }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -6258,7 +6260,7 @@ Don't invent appointments or facts that aren't listed.`);
     (CPROPS._all || []).forEach(d => { const c = [d.key, d.label, 170, true]; DB_COLS.push(c); DB_COL[d.key] = c; });
     dbs.cols = dbNormCols(dbs.cols);
   }
-  FX_SRC.layers = { fields: fxEntryFields, render: () => renderDatabase() };
+  FX_SRC.layers = { fields: () => fxEntryFields().map(f => f.key === "type" ? { ...f, opts: () => f.opts().filter(([k]) => !(TYPE[k] && TYPE[k].archive)) } : f), render: () => renderDatabase() };
   function renderDatabase() {
     refreshDbCols();
     if ($("dbFxSlot")) $("dbFxSlot").innerHTML = fxBtn("layers");
@@ -6267,7 +6269,7 @@ Don't invent appointments or facts that aren't listed.`);
     renderProjRoutines(); renderDbSort();
     if (!$("dbBody") || $("view-database").hidden) return;
     const rtRows = routines.map(r => ({ type: "routine", r, e: { id: r.id, title: r.name || "Untitled routine", emoji: rtEmoji(r), layers: ["7"], created: (r.createdAt || "").slice(0, 10), updatedAt: r.updatedAt || r.createdAt || "" } }));
-    const all = [...TYPES.flatMap(T => data[T.key].map(e => ({ type: T.key, e }))), ...rtRows];
+    const all = [...TYPES.filter(T => !T.archive).flatMap(T => data[T.key].map(e => ({ type: T.key, e }))), ...rtRows]; // Layers never includes the Archive
     const q = dbQ.trim().toLowerCase();
     const base = all.filter(x => (!dbs.types.length || dbs.types.includes(x.type)) && (!dbs.status.length || (x.type !== "routine" && dbs.status.includes(x.e.status || "Not started")))
       && (!q || [x.e.title, x.e.subtitle, x.e.body, ...tagsOf(x.e)].join(" ").toLowerCase().includes(q)) && fxPass("layers", x));
@@ -8433,7 +8435,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   document.addEventListener("click", e => { if (!e.target.closest("[data-modetoggle]")) return; uiMode = uiMode === "lite" ? "full" : "lite"; applyMode(); if (uiMode === "lite") window.scrollTo({ top: 0, behavior: "smooth" }); });
   // A link to another tab (like a routine opening in Planner) switches to Full page so it can show
   window.addEventListener("hashchange", () => { if (!PUBLIC && uiMode === "lite" && !["#game", "#today", ""].includes(location.hash)) { uiMode = "full"; applyMode(); } });
-  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "database", label: "Layers", kind: "tool" }, { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }])];
+  const TABS = [...(PUBLIC ? [{ key: "home", label: "Home", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }] : [{ key: "game", label: "Today", kind: "tool" }, { key: "planner", label: "Planner", kind: "tool" }]), ...TYPES.filter(T => !T.archive && !T.wf).map(T => ({ key: T.key, label: T.label, kind: "db" })), { key: "database", label: "Layers", kind: "tool" }, { key: "workflow", label: "Workflow", kind: "tool" }, { key: "obsidian", label: "Obsidian", kind: "tool" }, { key: "graph", label: "Graph", kind: "tool" }, ...(PUBLIC ? [] : [{ key: "home", label: "Pages", kind: "tool" }]), ...TYPES.filter(T => T.archive).map(T => ({ key: T.key, label: T.label, kind: "db" }))]; // Archive sits at the far right
   $("tabs").innerHTML = TABS.map((t, i) => (i && TABS[i - 1].kind !== t.kind ? '<span class="tab-sep" aria-hidden="true"></span>' : "") + `<button class="tab${t.kind === "tool" ? " tool" : ""}" role="tab" type="button" data-view="${t.key}" aria-selected="false">${t.kind === "tool" ? TOOL_ICON[t.key] : ""}<span>${t.label}</span></button>`).join("");
   applyMode();
   // ----- Custom properties (Notion-style): defined per database, saved in settings/customProps -----
