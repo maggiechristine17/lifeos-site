@@ -7051,7 +7051,7 @@ Don't invent appointments or facts that aren't listed.`);
     });
     G.push({ key: "links", icon: "🔗", title: "Workflow connections", desc: "Around the circle (Values → Areas → Goals → Projects → Resources → back to Values), each entry links to the step before it and the step after it. Resources are optional: projects and values don\u2019t need one, and a resource doesn\u2019t need a project or a value. Pick one to link it.", subs });
     const one = (key, icon, title, desc, types, miss, fix) => G.push({ key, icon, title, desc, subs: [{ items: types.filter(paIn).flatMap(t => paEntries(t).filter(e => miss(e, t) && ok(key, e)).map(e => ({ type: t, e, fix, g: key }))) }] });
-    one("when", "📅", "No When", "Projects and goals with no When. Pick just one: a quarter, a week, a date (or a date range), or a time. Whatever is broader fills in by itself: a date fills its week and quarter, a week fills its quarter, and a time goes on today.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd && !e.quarter && !e.week, "when");
+    one("when", "📅", "No When", "Projects and goals with no When. Pick just one: a quarter, a week, a date, or a time. Whatever is broader fills in by itself: a date fills its week and quarter, a week fills its quarter, and a time goes on today.", ["projects", "goals"], e => !e.focusStart && !e.focusEnd && !e.quarter && !e.week, "when");
     one("status", "🚦", "No status", "Click a status to set it.", ["projects", "goals"], e => !e.status, "status");
     one("layers", "🧩", "No layer", "Click the layer it belongs to.", PA_TYPES, e => !layersOf(e).length, "layer");
     one("color", "🎨", "No color", "No color yet (white isn't a color). There are five colors: red, orange, yellow, green and blue. Click one.", PA_TYPES, e => !colorOf(e), "color");
@@ -7068,7 +7068,7 @@ Don't invent appointments or facts that aren't listed.`);
       const weeks = qs.slice(0, 2).map(q => `<optgroup label="${esc(q.label)}">${whenWeekOpts(q.key, "").replace(/<option value="">[^<]*<\/option>/, "").replace(/value="/g, `value="${q.key}|`)}</optgroup>`).join("");
       return `<span class="pa-when"><select data-pawq="${id}" data-patype="${ty}" aria-label="Quarter for ${nm}"><option value="">1 · Quarter…</option>${qs.map(q => `<option value="${q.key}">${esc(q.label)} · ${esc(fmt(q.start))} – ${esc(fmt(q.end))}</option>`).join("")}</select>
         <select data-paww="${id}" data-patype="${ty}" aria-label="Week for ${nm}"><option value="">2 · Week…</option>${weeks}</select>
-        <span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" data-endid="${E.id}" data-rangesame="1" aria-label="Date for ${nm}">${E.html}<button type="button" class="pa-chip" data-padate>3 · 📅 Date or range</button></span>
+        <span class="gm-dw"><input type="date" class="date-hid" data-nodatebtn tabindex="-1" data-padateinp="${id}" data-patype="${ty}" data-endid="${E.id}" data-rangesame="1" aria-label="Date for ${nm}">${E.html}<button type="button" class="pa-chip" data-padate>3 · 📅 Date</button></span>
         <select data-pawt="${id}" data-patype="${ty}" aria-label="Time for ${nm}"><option value="">4 · Time (today)…</option>${WHEN_HOURS.map(h => `<option value="${h}">${hourLabel(h)}</option>`).join("")}</select></span>`; }
     if (x.fix === "status") return STATUSES.filter(st => st.v !== "Done").map(st => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="status" data-paval="${esc(st.v)}">${esc(st.v)}</button>`).join("");
     if (x.fix === "layer") return PA_LAYER.map((n, i) => `<button type="button" class="pa-chip" data-paset="${id}" data-patype="${ty}" data-pafield="layers" data-paval="${i}" title="Layer ${i}: ${n}">${i} ${n}</button>`).join("");
@@ -8421,7 +8421,8 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
       for (let d = 1; d <= days; d++) { const v = isoOf(vy, vm, d), sel = rng ? (v === rs || v === re) : mode === "until" ? v === ev : v === cur, inr = rng && rs && re && v > rs && v < re; cells += `<button type="button" class="cal-d${sel ? " sel" : ""}${inr ? " inr" : ""}${v === tIso ? " today" : ""}" data-cal="${v}">${d}</button>`; }
       const MODES = [["one", "One day"], ["range", "Start → end"], ...(inp.dataset.rangeopen ? [["from", "Start only"], ["until", "End only"]] : [])];
       const HINT = { range: first1 ? "Now pick the end date" : "Pick the start date", from: "Pick the start date (no end)", until: "Pick the end date (no start)" };
-      const modeRow = endI ? `<div class="cal-mode" role="group" aria-label="What kind of date">${MODES.map(([k, l]) => `<button type="button" data-calmode="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div>${HINT[mode] ? `<div class="cal-hint">${HINT[mode]}</div>` : ""}` : "";
+      const DATE_RANGES = false; // Rule (Nov 20): every date is just one date — no ranges, start-only or end-only
+      const modeRow = endI && DATE_RANGES ? `<div class="cal-mode" role="group" aria-label="What kind of date">${MODES.map(([k, l]) => `<button type="button" data-calmode="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div>${HINT[mode] ? `<div class="cal-hint">${HINT[mode]}</div>` : ""}` : "";
       el.innerHTML = modeRow + `<div class="cal-h"><button type="button" class="cal-nav" data-calmove="-1" aria-label="Previous month">‹</button><b>${MONTHS[vm]} ${vy}</b><button type="button" class="cal-nav" data-calmove="1" aria-label="Next month">›</button></div><div class="cal-w">${["S", "M", "T", "W", "T", "F", "S"].map(x => `<span>${x}</span>`).join("")}</div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" class="btn" data-cal="${tIso}">Today</button><button type="button" class="btn ghost" data-cal="">Clear</button></div>`;
     }
     function open(input, anchorEl) {
@@ -8444,7 +8445,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         window.addEventListener("resize", close);
       }
       if (inp === input && !el.hidden) { close(); return; }
-      inp = input; anchor = anchorEl || input; endI = input.dataset.endid ? document.getElementById(input.dataset.endid) : null; first1 = ""; { const a = input.value, b = endI ? endI.value : ""; mode = !endI ? "one" : a && b && a !== b ? "range" : input.dataset.rangeopen && a && !b ? "from" : input.dataset.rangeopen && !a && b ? "until" : "one"; }
+      inp = input; anchor = anchorEl || input; endI = input.dataset.endid ? document.getElementById(input.dataset.endid) : null; first1 = ""; { const a = input.value, b = endI ? endI.value : ""; mode = true ? "one" : !endI ? "one" : a && b && a !== b ? "range" : input.dataset.rangeopen && a && !b ? "from" : input.dataset.rangeopen && !a && b ? "until" : "one"; }
       const base = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? new Date(input.value + "T12:00:00") : new Date(); vy = base.getFullYear(); vm = base.getMonth();
       draw(); el.hidden = false;
       const r = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
@@ -8455,7 +8456,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   })();
   (function () {
     const fmtD = v => { if (!v) return ""; const d = new Date(v + "T12:00:00"); return isNaN(d) ? v : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
-    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, en = inp.dataset.endid && document.getElementById(inp.dataset.endid), ev2 = en ? en.value : "", t = v ? (ev2 && ev2 !== v ? fmtD(v) + " – " + fmtD(ev2) : en && inp.dataset.rangeopen && !ev2 ? "From " + fmtD(v) : fmtD(v)) : ev2 ? "Until " + fmtD(ev2) : (en ? "Pick a date or range" : "Pick a date"); b.disabled = inp.disabled; b.classList.toggle("empty", !v && !ev2); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = (!v && !ev2) || inp.disabled; };
+    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, en = inp.dataset.endid && document.getElementById(inp.dataset.endid), ev2 = en ? en.value : "", t = v ? (ev2 && ev2 !== v ? fmtD(v) + " – " + fmtD(ev2) : en && inp.dataset.rangeopen && !ev2 ? "From " + fmtD(v) : fmtD(v)) : ev2 ? "Until " + fmtD(ev2) : "Pick a date"; b.disabled = inp.disabled; b.classList.toggle("empty", !v && !ev2); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = (!v && !ev2) || inp.disabled; };
     const enhance = (inp) => {
       if (inp._db || inp.hasAttribute("data-nodatebtn") || inp.closest("[data-nodatebtn]")) return;
       const b = document.createElement("button"); b.type = "button"; b.className = "date-btn"; b.setAttribute("aria-label", (inp.getAttribute("aria-label") || "Date") + ": open the calendar");
