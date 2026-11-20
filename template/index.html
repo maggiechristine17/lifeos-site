@@ -8343,8 +8343,8 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
     const i = ev.target.closest && ev.target.closest("[data-gmdateinp]"); if (!i) return;
     const e = (data.projects || []).find(x => x.id === i.dataset.gmdateinp); gmDateEd = ""; if (!e) { renderGame(); return; }
     const v = i.value || "", fs = (e.focusStart || "").slice(0, 10), tid = i.dataset.gmdatetid, en = (i.dataset.endid && $(i.dataset.endid) ? $(i.dataset.endid).value : "") || "";
-    if (tid) { try { await saveEntry("projects", { ...e, tasks: taskList(e).map(x => x.id === tid ? { ...x, due: v, dueEnd: en && en !== v ? en : "" } : x), updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); } renderGame(); return; }
-    const next = en && v && en !== v ? { ...e, focusStart: v, focusEnd: en, updatedAt: new Date().toISOString() } : { ...e, focusEnd: v, focusStart: !v ? "" : (!fs || fs > v ? v : e.focusStart), updatedAt: new Date().toISOString() };
+    if (tid) { try { await saveEntry("projects", { ...e, tasks: taskList(e).map(x => x.id === tid ? { ...x, due: v, dueEnd: "" } : x), updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); } renderGame(); return; }
+    const next = { ...e, focusStart: v, focusEnd: v, updatedAt: new Date().toISOString() }; // one date: picking a day moves the whole When to that day
     try { await saveEntry("projects", next); } catch (err) { notice(err.message); }
     renderGame();
   });
