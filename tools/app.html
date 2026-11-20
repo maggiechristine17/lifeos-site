@@ -3209,7 +3209,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       test: (e, P, f) => { const d = (e[P.field] || e.created || e.createdTime || "").slice(0, 10); if (f.from && (!d || d < f.from)) return false; if (f.to && (!d || d > f.to)) return false; return true; },
       sortVal: (e, P) => e[P.field] || e.created || e.createdTime || "",
       search: (e, P) => fmt(e[P.field] || e.created || e.createdTime),
-      filterHtml: (P, id) => `<span class="flabel">${P.label}</span><div class="range"><span>From</span><input type="date" data-part="from" aria-label="${P.label} from"><span>To</span><input type="date" data-part="to" aria-label="${P.label} to"></div><div class="chips" data-dyn></div>`,
+      filterHtml: (P, id) => `<span class="flabel">${P.label}</span><div class="range">${(() => { const id = "dEnd" + (++deSeq); return `<input type="date" data-part="from" data-endid="${id}" data-rangesame="1" data-rangeopen="1" aria-label="${P.label}"><input type="date" data-part="to" id="${id}" class="date-hid" data-nodatebtn tabindex="-1" hidden aria-label="${P.label} to">`; })()}</div><div class="chips" data-dyn></div>`,
       sync: (box, f) => {
         box.querySelector('[data-part="from"]').value = f.from; box.querySelector('[data-part="to"]').value = f.to;
         box.querySelector("[data-dyn]").innerHTML = PAST_PRESETS.map(p => `<button type="button" class="chip" aria-pressed="${presetOn(p, f.from, f.to)}" data-act="preset" data-val="${p.key}">${p.label}</button>`).join("");
@@ -3257,7 +3257,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       },
       sortVal: (e, P) => e[P.start] || e[P.end] || "",
       search: (e, P) => whenText(e),
-      filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="range"><span>From</span><input type="date" data-part="from" aria-label="${P.label} from"><span>To</span><input type="date" data-part="to" aria-label="${P.label} to"></div><div class="chips" data-dyn></div>`,
+      filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="range">${(() => { const id = "dEnd" + (++deSeq); return `<input type="date" data-part="from" data-endid="${id}" data-rangesame="1" data-rangeopen="1" aria-label="${P.label}"><input type="date" data-part="to" id="${id}" class="date-hid" data-nodatebtn tabindex="-1" hidden aria-label="${P.label} to">`; })()}</div><div class="chips" data-dyn></div>`,
       sync: (box, f, P) => {
         const a = box.querySelector('[data-part="from"]'), b = box.querySelector('[data-part="to"]');
         a.value = f.from; b.value = f.to; a.disabled = b.disabled = f.none;
@@ -3274,7 +3274,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       editHtml: (P, e) => { const qs = whenQOpts(e), wq = (e && e.quarter) || whenAutoQ(e?.[P.start] || e?.[P.end] || ""); return `<span class="flabel">${P.label}</span><div class="when-grid">
         <span class="when-l">Exact time</span><div class="drange"><select id="ed-${P.key}-ts" aria-label="${P.label} start time">${hourOpts(e?.[P.tStart] || "", "Start time")}</select><select id="ed-${P.key}-te" aria-label="${P.label} end time">${hourOpts(e?.[P.tEnd] || "", "End time")}</select></div>
         <span class="when-l">Time block</span><div><select id="ed-${P.key}-blk" aria-label="Time block"><option value="">No time block</option>${SLOTS.map(x => `<option value="${x.k}"${(e && e.whenSlot) === x.k ? " selected" : ""}>${x.label}</option>`).join("")}</select></div>
-        <span class="when-l">Dates</span><div class="drange"><input id="ed-${P.key}-s" type="date" aria-label="${P.label} start date" value="${esc(e?.[P.start] || "")}"><input id="ed-${P.key}-e" type="date" aria-label="${P.label} end date" value="${esc(e?.[P.end] || "")}"></div>
+        <span class="when-l">Dates</span><div class="drange"><input id="ed-${P.key}-s" type="date" data-endid="ed-${P.key}-e" data-rangesame="1" data-rangeopen="1" aria-label="${P.label} dates" value="${esc(e?.[P.start] || "")}"><input id="ed-${P.key}-e" type="date" class="date-hid" data-nodatebtn tabindex="-1" hidden aria-label="${P.label} end date" value="${esc(e?.[P.end] || "")}"></div>
         <span class="when-l">Week</span><div><select id="ed-${P.key}-wk" aria-label="Week">${whenWeekOpts(wq, (e && e.week) || whenAutoW(e?.[P.start] || e?.[P.end] || ""))}</select></div>
         <span class="when-l">Quarter</span><div><select id="ed-${P.key}-q" aria-label="Quarter"><option value="">No quarter</option>${qs.map(q => `<option value="${q.key}"${wq === q.key ? " selected" : ""}>${q.label} · ${esc(fmt(q.start))} – ${esc(fmt(q.end))}</option>`).join("")}</select></div>
       </div><div class="pub-hint">Fill in the narrowest thing you know. A time picks its time block; dates pick their week and quarter; a week picks its quarter.</div>`; },      read: (P, out) => {
@@ -6289,7 +6289,7 @@ Don't invent appointments or facts that aren't listed.`);
     const head = `<div class="pl-mh2"><b>${entLink("auto", e.id, esc(e.title || "Untitled"))}</b><button type="button" class="x" data-dbpopx aria-label="Close">×</button></div>`;
     let body = "";
     if (f.kind === "layer") body = FIXED_LAYER[f.type] ? `<div class="pl-msub">${esc(TYPE[f.type].label)} are always Layer ${FIXED_LAYER[f.type]}. Change its Database to give it another layer.</div>` : `<div class="pl-msub">Layer</div><div class="layer-pick">${LAYERS.map(l => `<button type="button" class="layer-toggle" aria-pressed="${layersOf(e).includes(l)}" data-dblt="${l}">${l}</button>`).join("")}</div>`;
-    if (f.kind === "focus") body = `<div class="pl-msub">When</div><div class="db-drange"><label>Start date<input type="date" id="dbFs" value="${esc(e.focusStart || "")}"></label><label>End date<input type="date" id="dbFe" value="${esc(e.focusEnd || "")}"></label><label>Start time<select id="dbTs">${hourOpts(e.timeStart || "", "—")}</select></label><label>End time<select id="dbTe">${hourOpts(e.timeEnd || "", "—")}</select></label></div><div class="pl-macts"><button type="button" class="btn primary" data-dbfsave>Save</button> <button type="button" class="btn" data-dbfclear>Clear</button></div><div class="err" id="dbFerr"></div>`;
+    if (f.kind === "focus") body = `<div class="pl-msub">When</div><div class="db-drange"><label>Dates<input type="date" id="dbFs" data-endid="dbFe" data-rangesame="1" data-rangeopen="1" value="${esc(e.focusStart || "")}"><input type="date" id="dbFe" class="date-hid" data-nodatebtn tabindex="-1" hidden value="${esc(e.focusEnd || "")}"></label><label>Start time<select id="dbTs">${hourOpts(e.timeStart || "", "—")}</select></label><label>End time<select id="dbTe">${hourOpts(e.timeEnd || "", "—")}</select></label></div><div class="pl-macts"><button type="button" class="btn primary" data-dbfsave>Save</button> <button type="button" class="btn" data-dbfclear>Clear</button></div><div class="err" id="dbFerr"></div>`;
     if (f.kind === "color") { const own = ownColor(e), ac = areaColorFor(e); body = `<div class="pl-msub">Color</div><div class="qe-colors"><button type="button" class="chip" data-dbcolor="" aria-pressed="${!own}"><i class="swatch sw-${ac || "white"}" aria-hidden="true"></i>${ac ? "From area (" + ac + ")" : "No color"}</button>${COLORS.map(c => `<button type="button" class="chip" data-dbcolor="${c}" aria-pressed="${own === c}"><i class="swatch sw-${c}" aria-hidden="true"></i>${c[0].toUpperCase() + c.slice(1)}</button>`).join("")}</div>`; }
     if (f.kind === "status") body = `<div class="pl-msub">Status</div><div class="qe-colors">${STATUSES.map(st => `<button type="button" class="chip" data-dbstat="${esc(st.v)}" aria-pressed="${(e.status || "Not started") === st.v}">${esc(st.v)}</button>`).join("")}</div>`;
     if (f.kind === "type") body = `<div class="pl-msub">Database</div><select class="qe-sel" id="dbTypeSel">${dbOptions(f.type, isSched(e, f.type))}</select>`;
@@ -7616,7 +7616,7 @@ ${text}
     const goalCards = S.goals.map(g => { const areaProjects = [...new Set(wfLinked(g.id, "areas").flatMap(a => wfLinked(a.id, "projects")))], kids = wfLinked(g.id, "projects"), linked = areaProjects.filter(p => !kids.includes(p)), others = data.projects.filter(p => !kids.includes(p) && !linked.includes(p)).sort((a, b) => titleSort({ e: a }, { e: b }));
       return card("goals", g, { top: fromPart(g, "goals"), mid: `<span class="wf-dot">🎯</span>${titleIn("goals", g, "Goal")}${openBtn("goals", g.id)}${del("goals", g.id)}`, label: "Projects and timing",
         bottom: childPart(g, "goals", { rows: (k) => projRows(k, g.id), inline: `<select class="wf-sel" data-wfchild="${esc(g.id)}" data-wfctype="projects" aria-label="Assign a project"><option value="">+ Assign a project…</option>${linked.length ? `<optgroup label="Projects of this goal's area">${linked.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${others.length ? `<optgroup label="Other projects">${others.map(p => `<option value="${esc(p.id)}">${name(p)}</option>`).join("")}</optgroup>` : ""}${NE("projects")}</select>
-          <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.id)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.id)}" aria-label="Start"><span>→</span><input type="date" class="wf-date" data-wfpend="${esc(g.id)}" aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.id)}">Add</button></div></div>` }) }); }).join("");
+          <div class="wf-newp"><input class="wf-in" data-wfpnew="${esc(g.id)}" placeholder="+ New project" maxlength="200" aria-label="New project"><div class="wf-when"><input type="date" class="wf-date" data-wfpstart="${esc(g.id)}" data-endid="wfpe-${esc(g.id)}" data-rangesame="1" data-rangeopen="1" aria-label="Dates"><input type="date" class="date-hid" id="wfpe-${esc(g.id)}" data-wfpend="${esc(g.id)}" data-nodatebtn tabindex="-1" hidden aria-label="End"><button type="button" class="btn small-go" data-wfpadd="${esc(g.id)}">Add</button></div></div>` }) }); }).join("");
     // 4. Resources (one card per project of the goals above)
     const kindSeg = (src, id, cur) => PUBLIC ? `<span class="wf-kind ro">${cur === "rt" ? "Routine" : cur === "sched" ? "Scheduled" : "One time"}</span>` : `<span class="wf-kind" role="group" aria-label="What kind">${[["one", "One time"], ["sched", "Scheduled"], ["rt", "Routine"]].map(([k, l]) => `<button type="button" data-wfkind="${k}" data-wfksrc="${src}" data-wfkid="${esc(id)}" aria-pressed="${cur === k}">${l}</button>`).join("")}</span>`;
     const resCards = S.projects.map(p => card("projects", p, { top: fromPart(p, "projects"), mid: `${emo(p, "projects")}${titleIn("projects", p, "Project")}${openBtn("projects", p.id)}<span class="wf-break"></span>${kindSeg("p", p.id, p.scheduled ? "sched" : "one")}${wfDate(p) ? `<span class="wf-break"></span><span class="wf-meta wf-mdate">${esc(wfDate(p))}</span>` : ""}`, label: "Resources",
@@ -8409,16 +8409,19 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   }
   // Dates are only ever picked from a calendar pop-up: every date field shows as a button (📅 + the chosen date), never as typeable numbers
   const calPop = (() => {
-    let el = null, inp = null, anchor = null, vy = 0, vm = 0, endI = null, rng = false, first1 = "";
+    let el = null, inp = null, anchor = null, vy = 0, vm = 0, endI = null, rng = false, mode = "one", first1 = "";
     const pad2 = n => String(n).padStart(2, "0"), isoOf = (y, m, d) => y + "-" + pad2(m + 1) + "-" + pad2(d);
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     function close() { if (el) el.hidden = true; inp = null; }
     function draw() {
       const first = new Date(vy, vm, 1).getDay(), days = new Date(vy, vm + 1, 0).getDate(), cur = inp.value, now = new Date(), tIso = isoOf(now.getFullYear(), now.getMonth(), now.getDate());
-      const rs = rng ? (first1 || (endI && endI.value ? cur : "")) : "", re = rng && !first1 && endI ? endI.value : "";
+      rng = mode === "range"; const ev = endI ? endI.value : "";
+      const rs = rng ? (first1 || (ev ? cur : "")) : "", re = rng && !first1 ? ev : "";
       let cells = ""; for (let i = 0; i < first; i++) cells += '<span></span>';
-      for (let d = 1; d <= days; d++) { const v = isoOf(vy, vm, d), sel = rng ? (v === rs || v === re) : v === cur, inr = rng && rs && re && v > rs && v < re; cells += `<button type="button" class="cal-d${sel ? " sel" : ""}${inr ? " inr" : ""}${v === tIso ? " today" : ""}" data-cal="${v}">${d}</button>`; }
-      const modeRow = endI ? `<div class="cal-mode" role="group" aria-label="One day or a range"><button type="button" data-calmode="one" aria-pressed="${!rng}">One day</button><button type="button" data-calmode="range" aria-pressed="${rng}">Date range</button></div>${rng ? `<div class="cal-hint">${first1 ? "Now pick the last day" : "Pick the first day"}</div>` : ""}` : "";
+      for (let d = 1; d <= days; d++) { const v = isoOf(vy, vm, d), sel = rng ? (v === rs || v === re) : mode === "until" ? v === ev : v === cur, inr = rng && rs && re && v > rs && v < re; cells += `<button type="button" class="cal-d${sel ? " sel" : ""}${inr ? " inr" : ""}${v === tIso ? " today" : ""}" data-cal="${v}">${d}</button>`; }
+      const MODES = [["one", "One day"], ["range", "Start → end"], ...(inp.dataset.rangeopen ? [["from", "Start only"], ["until", "End only"]] : [])];
+      const HINT = { range: first1 ? "Now pick the end date" : "Pick the start date", from: "Pick the start date (no end)", until: "Pick the end date (no start)" };
+      const modeRow = endI ? `<div class="cal-mode" role="group" aria-label="What kind of date">${MODES.map(([k, l]) => `<button type="button" data-calmode="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div>${HINT[mode] ? `<div class="cal-hint">${HINT[mode]}</div>` : ""}` : "";
       el.innerHTML = modeRow + `<div class="cal-h"><button type="button" class="cal-nav" data-calmove="-1" aria-label="Previous month">‹</button><b>${MONTHS[vm]} ${vy}</b><button type="button" class="cal-nav" data-calmove="1" aria-label="Next month">›</button></div><div class="cal-w">${["S", "M", "T", "W", "T", "F", "S"].map(x => `<span>${x}</span>`).join("")}</div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" class="btn" data-cal="${tIso}">Today</button><button type="button" class="btn ghost" data-cal="">Clear</button></div>`;
     }
     function open(input, anchorEl) {
@@ -8427,10 +8430,13 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         el.addEventListener("mousedown", e => e.stopPropagation()); el.addEventListener("click", e => {
           e.stopPropagation(); const mv = e.target.closest("[data-calmove]"), pk = e.target.closest("[data-cal]");
           if (mv) { vm += +mv.dataset.calmove; if (vm < 0) { vm = 11; vy--; } if (vm > 11) { vm = 0; vy++; } draw(); return; }
-          const md = e.target.closest("[data-calmode]"); if (md) { rng = md.dataset.calmode === "range"; first1 = ""; draw(); return; }
+          const md = e.target.closest("[data-calmode]"); if (md) { mode = md.dataset.calmode; first1 = ""; draw(); return; }
           if (pk && inp) { const i = inp, v = pk.dataset.cal;
             if (endI && rng && v) { if (!first1) { first1 = v; draw(); return; } const a = first1 < v ? first1 : v, b = first1 < v ? v : first1; endI.value = a === b ? (i.dataset.rangesame ? a : "") : b; i.value = a; }
+            else if (endI && mode === "from") { i.value = v; endI.value = ""; }
+            else if (endI && mode === "until") { i.value = ""; endI.value = v; }
             else { i.value = v; if (endI) endI.value = v && i.dataset.rangesame ? v : ""; }
+            if (endI) endI.dispatchEvent(new Event("change", { bubbles: true }));
             i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); close(); }
         });
         document.addEventListener("mousedown", e => { if (el && !el.hidden && !el.contains(e.target) && !(anchor && anchor.contains(e.target))) close(); }, true);
@@ -8438,7 +8444,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         window.addEventListener("resize", close);
       }
       if (inp === input && !el.hidden) { close(); return; }
-      inp = input; anchor = anchorEl || input; endI = input.dataset.endid ? document.getElementById(input.dataset.endid) : null; first1 = ""; rng = !!(endI && endI.value && endI.value !== input.value);
+      inp = input; anchor = anchorEl || input; endI = input.dataset.endid ? document.getElementById(input.dataset.endid) : null; first1 = ""; { const a = input.value, b = endI ? endI.value : ""; mode = !endI ? "one" : a && b && a !== b ? "range" : input.dataset.rangeopen && a && !b ? "from" : input.dataset.rangeopen && !a && b ? "until" : "one"; }
       const base = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? new Date(input.value + "T12:00:00") : new Date(); vy = base.getFullYear(); vm = base.getMonth();
       draw(); el.hidden = false;
       const r = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
@@ -8449,7 +8455,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   })();
   (function () {
     const fmtD = v => { if (!v) return ""; const d = new Date(v + "T12:00:00"); return isNaN(d) ? v : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
-    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, en = inp.dataset.endid && document.getElementById(inp.dataset.endid), ev2 = en ? en.value : "", t = v ? (ev2 && ev2 !== v ? fmtD(v) + " – " + fmtD(ev2) : fmtD(v)) : (en ? "Pick a date or range" : "Pick a date"); b.disabled = inp.disabled; b.classList.toggle("empty", !v); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = !v || inp.disabled; };
+    const sync = (inp) => { const b = inp._db; if (!b) return; const v = inp.value, en = inp.dataset.endid && document.getElementById(inp.dataset.endid), ev2 = en ? en.value : "", t = v ? (ev2 && ev2 !== v ? fmtD(v) + " – " + fmtD(ev2) : en && inp.dataset.rangeopen && !ev2 ? "From " + fmtD(v) : fmtD(v)) : ev2 ? "Until " + fmtD(ev2) : (en ? "Pick a date or range" : "Pick a date"); b.disabled = inp.disabled; b.classList.toggle("empty", !v && !ev2); const lab = b.querySelector(".db-t"); if (lab.textContent !== t) lab.textContent = t; b.querySelector(".db-x").hidden = (!v && !ev2) || inp.disabled; };
     const enhance = (inp) => {
       if (inp._db || inp.hasAttribute("data-nodatebtn") || inp.closest("[data-nodatebtn]")) return;
       const b = document.createElement("button"); b.type = "button"; b.className = "date-btn"; b.setAttribute("aria-label", (inp.getAttribute("aria-label") || "Date") + ": open the calendar");
