@@ -371,6 +371,16 @@ body.dk-open { overflow: hidden; }
 .cal-d.inr { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .tabs .tab[data-view="archive"] { margin-left: auto; }
 .tab-sep:has(+ .tab[data-view="archive"]) { display: none; }
+.gg-doc { user-select: text; }
+.imp-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.imp { border: 1px solid var(--panel-line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; background: var(--panel-input); }
+.imp .pl-msub { display: flex; justify-content: space-between; align-items: center; }
+.imp-it { border-top: 1px solid var(--panel-line); padding: 10px 0; display: grid; gap: 6px; }
+.imp-it.off { opacity: .5; }
+.imp-r1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.imp-r1 input[type=text] { flex: 1; min-width: 160px; }
+.imp-it textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; }
+.imp-why { font-size: 12px; color: var(--muted); }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -1756,7 +1766,7 @@ input.gm-date { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px so
 .gg-tag.ok { color: var(--good, #7bd88f); border-color: currentColor; }
 .gg-text { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
 .gg-text summary { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--muted); }
-.gg-doc { max-height: 32vh; overflow-y: auto; font-size: 14px; padding-top: 6px; }
+.gg-doc { max-height: 55vh; overflow-y: auto; font-size: 14px; padding-top: 6px; }
 .gg-chat { display: flex; flex-direction: column; gap: 8px; min-height: 120px; max-height: 40vh; overflow-y: auto; }
 .gg-msg { display: flex; }
 .gg-msg.u { justify-content: flex-end; }
@@ -7250,7 +7260,7 @@ Don't invent appointments or facts that aren't listed.`);
   }
   async function ggPick(id) {
     const f = gg.files.find(x => x.id === id) || (gg.sel && gg.sel.id === id ? gg.sel : null); if (!f) return;
-    gg.sel = f; gg.text = ""; gg.textLoading = true; gg.showText = true; renderGg();
+    gg.sel = f; gg.text = ""; gg.textLoading = true; gg.showText = true; gg.imp = null; gg.selText = ""; renderGg();
     try { gg.text = await ggRead(id); } catch (e) { gg.text = ""; gg.err = ggErr(e); }
     gg.textLoading = false; renderGg();
   }
@@ -7323,6 +7333,78 @@ Don't invent appointments or facts that aren't listed.`);
     try { rec.start(); ggRec = rec; gg.status = "Listening… tap 🎤 again when you're done, then Send."; renderGg(); } catch (e) { ggRec = null; gg.status = "The microphone couldn't start here."; renderGg(); }
   }
   const ggWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" }); };
+  // ----- 📥 Bring a Google file into LifeOS: Claude suggests where each piece goes; nothing is added until I approve -----
+  const IMP_TYPES = ["pages", "values", "areas", "goals", "projects"];
+  gg.imp = null; gg.selText = "";
+  function impPrompt(src, text) {
+    const bdp = bdPrompt(""), a = bdp.indexOf("Entry kinds (type):"), b = bdp.indexOf("My existing entries");
+    const rules = a >= 0 && b > a ? bdp.slice(a, b).trim() : "";
+    const ex = liveEntries().filter(x => IMP_TYPES.includes(x.type) && !x.e._pub).slice(0, 500).map(x => `- [${x.type}] ${x.e.title || "Untitled"}${layersOf(x.e).length ? " (L" + layersOf(x.e).join(",") + ")" : ""}`).join("\n") || "(none)";
+    return `You are filing information from one of Maggie's documents into her LifeOS database. Today is ${today()}.
+
+${rules}
+
+Only use these types: ${IMP_TYPES.join(", ")}.
+
+Her existing entries (type, title, layer):
+${ex}
+
+Task: read the text below (${src === "selection" ? "a part she selected" : "the whole document"} from the Google file "${gg.sel ? gg.sel.title : "a document"}") and decide where each useful piece of information belongs.
+- When a piece belongs with an existing entry, use action "add" with target set to that entry's exact title, and put the new information in body.
+- Otherwise use action "new" with a short title that follows her grammar rules (values: gerund phrase; areas: noun; goals: verb plus a number or date; projects: verb plus object; resources: a noun or a title), a type, a layer (only for pages; one digit), a color ("" unless clearly fitting) and body.
+- Facts about her life belong in Layer 1 resources. Group related facts together instead of one entry per sentence.
+- Keep her own wording where you can. Don't invent anything that isn't in the text. Skip filler.
+- linkTo: exact titles of existing entries this should be linked to (can be empty).
+- why: one short sentence saying why it goes there.
+Return ONLY a JSON array of {"action","type","title","target","layer","color","subtitle","body","linkTo","why"}.
+
+Text:
+"""
+${text.slice(0, 40000)}
+"""`;
+  }
+  async function impRun(src) {
+    const text = src === "selection" ? gg.selText : gg.text;
+    if (!text || !text.trim()) { gg.imp = { items: [], busy: false, msg: src === "selection" ? "Select some text in the document first." : "This file has no readable text." }; renderGg(); return; }
+    if (ggSample === undefined) { try { ggSample = await window.LIFEOS_USE("sample"); } catch (e) { ggSample = null; } }
+    if (!ggSample) { gg.imp = { items: [], busy: false, msg: "Asking Claude isn't available in this view. Open LifeOS inside Claude, signed in." }; renderGg(); return; }
+    gg.imp = { items: [], busy: true, msg: "", src }; renderGg();
+    try {
+      const res = await ggSample(impPrompt(src, text), { cache: false, modelTier: "default" });
+      const m = ((res && res.text) || "").match(/\[[\s\S]*\]/); const arr = m ? JSON.parse(m[0]) : [];
+      const byTitle = (t) => liveEntries().find(x => (x.e.title || "").trim().toLowerCase() === String(t || "").trim().toLowerCase());
+      gg.imp.items = arr.map((o, i) => { const tg = o.action === "add" ? byTitle(o.target) : null; const type = IMP_TYPES.includes(o.type) ? o.type : "pages";
+        return { k: "i" + i, on: true, action: tg ? "add" : "new", type: tg ? tg.type : type, target: tg ? tg.e.id : "", title: String(o.title || "").slice(0, 200), layer: /^\d$/.test(String(o.layer || "")) ? String(o.layer) : (type === "pages" ? "1" : ""), color: COLORS.includes(o.color) ? o.color : "", subtitle: String(o.subtitle || ""), body: String(o.body || "").trim(), links: (Array.isArray(o.linkTo) ? o.linkTo : []).map(byTitle).filter(Boolean).map(x => x.e.id), why: String(o.why || "") }; }).filter(x => x.body || x.title);
+      gg.imp.msg = gg.imp.items.length ? "" : "Claude didn't find anything to add from this text.";
+    } catch (e) { gg.imp.msg = "Couldn't finish: " + ((e && e.message) || "error"); if (e && e.code === "not_granted") ggSample = null; }
+    gg.imp.busy = false; renderGg();
+  }
+  function impHtml() {
+    const I = gg.imp; if (!I) return "";
+    const typeOpt = (cur) => IMP_TYPES.map(t => `<option value="${t}"${t === cur ? " selected" : ""}>${esc(TYPE[t].singular[0].toUpperCase() + TYPE[t].singular.slice(1))}</option>`).join("");
+    const tgtOpt = (cur) => `<option value="">Pick an entry…</option>` + LIVE_TYPES().filter(T => IMP_TYPES.includes(T.key)).map(T => { const l = data[T.key].filter(e => !e._pub).slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")); return l.length ? `<optgroup label="${esc(T.label)}">${l.map(e => `<option value="${esc(T.key + "|" + e.id)}"${e.id === cur ? " selected" : ""}>${esc(e.title || "Untitled")}</option>`).join("")}</optgroup>` : ""; }).join("");
+    const n = I.items.filter(x => x.on).length;
+    return `<section class="imp" aria-label="Bring into LifeOS"><div class="pl-msub">📥 Bring into LifeOS${I.src ? ` · ${I.src === "selection" ? "selected text" : "whole file"}` : ""}<button type="button" class="x" data-impx aria-label="Close">×</button></div>
+      ${I.busy ? '<p class="gg-muted">Claude is reading it and working out where each piece goes…</p>' : ""}${I.msg ? `<p class="gg-status">${esc(I.msg)}</p>` : ""}
+      ${I.items.length ? `<p class="gg-muted">Here's what Claude would add. Change anything, untick what you don't want, then tap Add.</p>` + I.items.map(x => `<div class="imp-it${x.on ? "" : " off"}" data-impk="${x.k}">
+        <div class="imp-r1"><label class="switch"><input type="checkbox" data-impf="on"${x.on ? " checked" : ""}> Add</label>
+          <select data-impf="action" aria-label="New entry or add to one"><option value="new"${x.action === "new" ? " selected" : ""}>＋ New entry</option><option value="add"${x.action === "add" ? " selected" : ""}>↳ Add to an entry</option></select>
+          ${x.action === "add" ? `<select data-impf="target" aria-label="Which entry">${tgtOpt(x.target)}</select>${x.target && byId.get(x.target) ? entLink(byId.get(x.target).type, x.target, "Open") : ""}` : `<select data-impf="type" aria-label="Kind">${typeOpt(x.type)}</select><input type="text" data-impf="title" value="${esc(x.title)}" placeholder="Title" aria-label="Title">${x.type === "pages" ? `<select data-impf="layer" aria-label="Layer">${LAYERS.map(l => `<option value="${l}"${l === x.layer ? " selected" : ""}>Layer ${l}</option>`).join("")}</select>` : ""}`}</div>
+        ${x.why ? `<div class="imp-why">${esc(x.why)}</div>` : ""}
+        <textarea data-impf="body" rows="3" aria-label="What gets added">${esc(x.body)}</textarea>
+        ${x.links.length ? `<div class="imp-why">Links to: ${x.links.map(id => byId.get(id)).filter(Boolean).map(y => entLink(y.type, y.e.id, esc(y.e.title || "Untitled"))).join(", ")}</div>` : ""}</div>`).join("") + `<div class="dk-go"><span class="set-desc">${n} to add</span><button type="button" class="btn" data-impx>Cancel</button><button type="button" class="btn primary" data-impgo${n ? "" : " disabled"}>Add ${n} to LifeOS</button></div>` : ""}</section>`;
+  }
+  async function impApply() {
+    const I = gg.imp, src = gg.sel ? gg.sel.title : "Google Drive"; if (!I) return; let made = 0, added = 0;
+    for (const x of I.items.filter(y => y.on)) {
+      try {
+        if (x.action === "add") { const t = byId.get(x.target); if (!t) continue; const e = t.e; await saveEntry(t.type, { ...e, body: ((e.body || "").replace(/\s+$/, "") + `\n\n### From “${src}”\n\n` + x.body).trim(), links: [...new Set([...(e.links || []), ...x.links])], updatedAt: new Date().toISOString() }); added++; }
+        else if (x.title.trim()) { await wfCreate(x.type, x.title.trim(), { subtitle: x.subtitle, body: x.body, color: x.color, links: x.links, ...(x.type === "pages" && x.layer ? { layers: [x.layer] } : {}) }); made++; }
+      } catch (e) { notice(e.message || "Couldn't save one of them."); }
+    }
+    buildAdj(); gg.imp = { items: [], busy: false, msg: `Done: ${made} new ${made === 1 ? "entry" : "entries"}, ${added} added to existing ${added === 1 ? "entry" : "entries"}.` }; renderGg(); renderAll();
+  }
+  document.addEventListener("selectionchange", () => { const p = $("ggPop"); if (!p || p.hidden) return; const sl = document.getSelection(), d = p.querySelector(".gg-doc"); if (!sl || !d || !sl.rangeCount || !d.contains(sl.anchorNode)) return; const t = sl.toString(); if (t.trim() !== gg.selText.trim()) { gg.selText = t; const bt = p.querySelector("[data-impsel]"); if (bt) { bt.disabled = !t.trim(); bt.textContent = t.trim() ? `📥 Add selected text (${t.trim().length} characters)` : "📥 Add selected text"; } } });
   function renderGg() {
     const b = $("ggBody"); if (!b || $("ggPop").hidden) return;
     const keepIn = $("ggIn") ? $("ggIn").value : gg.input, focusIn = document.activeElement && document.activeElement.id === "ggIn";
@@ -7336,6 +7418,7 @@ Don't invent appointments or facts that aren't listed.`);
       </section>
       <section class="gg-main" aria-label="Talk about your files">
         ${s ? `<div class="gg-head"><span class="gg-ic" aria-hidden="true">${ggIcon(s.mimeType)}</span><b>${esc(s.title)}</b><span class="gg-tag ${isDoc ? "ok" : ""}">${isDoc ? "✏️ Editable from here" : "Read only here"}</span>${s.url ? `<a class="btn ghost" href="${esc(s.url)}" target="_blank" rel="noopener">Open in Google ↗</a>` : ""}<button type="button" class="btn ghost" data-ggclear>Close file</button></div>
+          <div class="imp-bar"><button type="button" class="btn" data-impsel${gg.selText.trim() ? "" : " disabled"}>📥 Add selected text${gg.selText.trim() ? ` (${gg.selText.trim().length} characters)` : ""}</button><button type="button" class="btn primary" data-impall${gg.text ? "" : " disabled"}>📥 Add the whole file to LifeOS</button><span class="gg-muted">Select text below to bring in just part of it.</span></div>${impHtml()}
           <details class="gg-text"${gg.showText ? " open" : ""}><summary>${gg.textLoading ? "Reading the file…" : "What's in it"}</summary><div class="gg-doc">${gg.textLoading ? "" : gg.text ? renderMd(gg.text.slice(0, 30000)) : '<p class="gg-muted">No readable text.</p>'}</div></details>`
           : `<div class="gg-head"><b>Pick a file on the left, or just ask.</b><span class="gg-muted">Claude can search your Drive for you.</span></div>`}
         <div class="gg-chat" id="ggChat" aria-live="polite">${gg.chat.length ? gg.chat.map(m => `<div class="gg-msg ${m.role === "user" ? "u" : "a"}"><div class="gg-bub">${m.role === "user" ? esc(m.text) : (m.text ? renderMd(m.text) : "…")}</div></div>`).join("") : `<p class="gg-muted">Try: “Summarize this document.” · “What did I write about the house?” · “Add a line at the end that says call the lawyer Friday.” · “Change ‘placeholder’ to my first rule.”</p>`}</div>
@@ -7353,12 +7436,21 @@ Don't invent appointments or facts that aren't listed.`);
   }
   const ggOpen = (v) => { if (!v && ggRec) { try { ggRec.stop(); } catch (e) {} } const p = $("ggPop"); p.hidden = !v; $("ggBtn").setAttribute("aria-expanded", String(v)); if (v) { renderGg(); if (!gg.files.length && !gg.loading) ggLoad(false); } };
   $("ggBtn").addEventListener("click", e => { e.stopPropagation(); ggOpen($("ggPop").hidden); });
+  const impItem = (el) => { const w = el.closest("[data-impk]"); return w && gg.imp ? gg.imp.items.find(x => x.k === w.dataset.impk) : null; };
+  $("ggPop").addEventListener("input", e => { const f = e.target.dataset && e.target.dataset.impf; if (!f || !["title", "body"].includes(f)) return; const x = impItem(e.target); if (x) x[f] = e.target.value; });
+  $("ggPop").addEventListener("change", e => { const f = e.target.dataset && e.target.dataset.impf; if (!f || ["title", "body"].includes(f)) return; const x = impItem(e.target); if (!x) return;
+    if (f === "on") x.on = e.target.checked; else if (f === "target") { const [t, id] = e.target.value.split("|"); x.target = id || ""; if (t) x.type = t; } else { x[f] = e.target.value; if (f === "type" && x.type === "pages" && !x.layer) x.layer = "1"; }
+    renderGg(); });
   $("ggPop").addEventListener("click", e => {
     if (e.target.closest("[data-ggclose]") || e.target === $("ggPop")) { ggOpen(false); return; }
     const k = e.target.closest("[data-ggkind]"); if (k) { gg.kind = k.dataset.ggkind; gg.q = $("ggQ").value; ggLoad(false); return; }
     const pk = e.target.closest("[data-ggpick]"); if (pk) { ggPick(pk.dataset.ggpick); return; }
     if (e.target.closest("[data-ggmore]")) { ggLoad(true); return; }
-    if (e.target.closest("[data-ggclear]")) { gg.sel = null; gg.text = ""; renderGg(); return; }
+    if (e.target.closest("[data-ggclear]")) { gg.sel = null; gg.text = ""; gg.imp = null; gg.selText = ""; renderGg(); return; }
+    if (e.target.closest("[data-impsel]")) { impRun("selection"); return; }
+    if (e.target.closest("[data-impall]")) { impRun("whole"); return; }
+    if (e.target.closest("[data-impx]")) { gg.imp = null; renderGg(); return; }
+    if (e.target.closest("[data-impgo]")) { impApply(); return; }
     if (e.target.closest("[data-ggsend]")) { ggSend(); return; }
     if (e.target.closest("[data-ggstop]")) { if (ggAbort) ggAbort.abort(); return; }
     if (e.target.closest("[data-ggmic]")) { ggMic(); return; }
