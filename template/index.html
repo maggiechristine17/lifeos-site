@@ -2801,6 +2801,41 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     }
     return saveEntryRaw(type, e);
   }
+  // ---------- System instructions inbox: rules Claude adds in code are written into the 📜 System instructions note the next time the owner opens LifeOS ----------
+  // Each item is added once (its marker, a heading inside its text, is checked first), at the end of the note. Only someone who can edit LifeOS writes it.
+  const SYSINST_ADDS = [
+    { marker: "### 🗄 Archived entries show only on the Archive tab", text: `
+
+## November 21, 2026
+
+### 🗄 Archived entries show only on the Archive tab (system-wide rule)
+- **Rule:** archived entries appear **only on the Archive tab**. Nothing else in LifeOS shows them, including features added later.
+- They're hidden in:
+  - The **Planner**, including its "Pick from any database" list. The weekly summary's "Finished" list, which came from the Archive, is gone too.
+  - Layers, the Graph (and its search), and Obsidian (no Archive folder or filter chip)
+  - Consolidate, the Slide deck and Cards on the Pages tab
+  - Every link picker and suggestion in the entry editor, and the link chips and "linked from" lists on other entries
+  - The Filter choices and the "Linked to" filter
+  - The AI text downloads and the Layers spreadsheet
+- Archived entries are still saved, and links to them are kept. They come back everywhere if I move an entry out of the Archive.
+- The **Full backup** download still includes the Archive, so the backup is complete.
+
+### 📥 How Claude adds rules to this note
+- Because LifeOS is shared publicly, Claude can't write to this note directly. Claude adds new rules to LifeOS's code instead. The next time I open LifeOS (as its owner), the page writes them into this note under the right date. Each rule is added only once.` },
+  ];
+  let siBusy = false; const siDone = new Set();
+  async function sysInstSync() {
+    if (siBusy || PUBLIC || local || !loaded.pages) return;
+    const note = (data.pages || []).find(e => e.id === "gsysinst"); if (!note) return;
+    const todo = SYSINST_ADDS.filter(a => !siDone.has(a.marker) && !(note.body || "").includes(a.marker)); if (!todo.length) return;
+    siBusy = true;
+    try {
+      let u = null; try { u = await window.LIFEOS_USE("user"); } catch (e) {}
+      if (!u || !u.canEdit()) return;
+      const body = (note.body || "").replace(/\s+$/, "") + todo.map(a => a.text).join("") + "\n";
+      await saveEntryRaw("pages", { ...note, body, updatedAt: new Date().toISOString() }); todo.forEach(a => siDone.add(a.marker));
+    } catch (e) { /* tries again next time */ } finally { siBusy = false; }
+  }
   // Entries already marked Done (for example from before this rule) are moved once they load
   function sweepDone() {
     ["archive"].forEach(k => { if (!loaded[k]) return; data[k].filter(e => !e._pub && !archiving.has(e.id) && !(Array.isArray(e.layers) && e.layers.length)).forEach(e => { saveEntry(k, e).catch(() => {}); }); });
@@ -8616,7 +8651,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
         data[T.key] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if (!snap.metadata.fromCache) { loaded[T.key] = true; if (T.key === "projects") { clearTimeout(loadTimer); notice(""); } }
         renderAll();
-        if (!snap.metadata.fromCache) sweepDone();
+        if (!snap.metadata.fromCache) { sweepDone(); sysInstSync(); }
       }, err => {
         loaded[T.key] = true; clearTimeout(loadTimer);
         notice(err.code === "revoked" ? "This page can no longer reach your saved data." : `Your ${T.label.toLowerCase()} couldn't be loaded (${err.code}).`);
