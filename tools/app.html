@@ -2721,7 +2721,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   let archNoticeTimer = null;
   // Rule: projects and goals are always Layer 6; areas, ideas and values are always Layer 9
   const FIXED_LAYER = { projects: "6", areas: "9", ideas: "9", values: "9", goals: "6" };
-  const layerOk = (type, e) => !FIXED_LAYER[type] || (Array.isArray(e.layers) && e.layers.length === 1 && String(e.layers[0]) === FIXED_LAYER[type]);
+  const layerOk = (type, e) => !FIXED_LAYER[type] || (Array.isArray(e.layers) && e.layers.length > 0); // FIXED_LAYER is now only the starting layer: any entry's layer can be changed (Nov 22)
   async function saveEntry(type, e) {
     if (FIXED_LAYER[type] && !e._pub && !layerOk(type, e)) e = { ...e, layers: [FIXED_LAYER[type]] };
     if (!FIXED_LAYER[type] && !e._pub && !(Array.isArray(e.layers) && e.layers.length)) e = { ...e, layers: [autoLayer(e.title)] };
@@ -3088,7 +3088,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // ---------- Edit a property right where it's shown (tables, cards, feed) ----------
   const QE_KIND = (P) => P.kind === "tags" ? "tags" : P.key === "layers" ? "layer" : P.kind === "daterange" ? "focus" : P.kind === "color" ? "color" : P.kind === "links" ? "links" : P.kind === "status" ? "status" : P.kind === "dbmove" ? "type" : "";
   // Status, Database, Color, Layer and Created date change straight from a dropdown or date picker right where they're shown
-  const QE_NATIVE = (P, type) => P.kind === "status" || P.kind === "dbmove" || P.kind === "color" || (P.key === "layers" && !FIXED_LAYER[type]);
+  const QE_NATIVE = (P, type) => P.kind === "status" || P.kind === "dbmove" || P.kind === "color" || P.key === "layers";
   function qeControl(e, P, type, cls) {
     const a = `class="${cls}" data-qn="${esc(P.key)}" data-qnt="${esc(type)}" data-qne="${esc(e.id)}" aria-label="${esc(P.label)} for ${esc(e.title || "Untitled")}"`;
     if (P.kind === "status") return `<select ${a}>${STATUSES.map(st => `<option${st.v === (e.status || "Not started") ? " selected" : ""}>${st.v}</option>`).join("")}</select>`;
@@ -3368,7 +3368,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="chips" data-dyn></div>`,
       sync: (box, f, P) => { box.querySelector("[data-dyn]").innerHTML = P.options.map(o => `<button type="button" class="chip layer-chip" aria-pressed="${f.values.includes(o)}" data-act="status" data-val="${o}">${o}</button>`).join(""); },
       cell: (e, P) => { const v = K.multi.vals(e, P); return v.length ? `<span class="layers" title="${esc(P.label)} ${v.join(", ")}">${v.map(x => `<span class="layer">${x}</span>`).join("")}</span>` : '<span style="color:var(--muted)">—</span>'; },
-      editHtml: (P, e) => { const fx = P.key === "layers" && editing && FIXED_LAYER[editing.type]; const v = fx ? [fx] : e ? K.multi.vals(e, P) : []; const autoL = !fx && P.key === "layers" && editing ? autoLayer(e?.title) : ""; return `<div class="multi-edit"><span class="flabel">${P.label}${fx ? ` <span class="pub-hint">· ${esc(TYPE[editing.type].label)} are always Layer ${fx}</span>` : ""}${autoL ? ` <span class="pub-hint" id="ed-layer-auto">· Leave empty and it's picked for you (Layer ${autoL})</span>` : ""}</span><div class="layer-pick">${P.options.map(o => `<button type="button" class="layer-toggle" data-multi="${P.key}" data-val="${o}" aria-pressed="${v.includes(o)}" aria-label="${esc(P.label)} ${o}"${fx ? " disabled" : ""}>${o}</button>`).join("")}</div></div>`; },
+      editHtml: (P, e) => { const fx = false, dl = P.key === "layers" && editing && FIXED_LAYER[editing.type]; const v0 = e ? K.multi.vals(e, P) : [], v = !v0.length && dl ? [dl] : v0; const autoL = !fx && P.key === "layers" && editing ? autoLayer(e?.title) : ""; return `<div class="multi-edit"><span class="flabel">${P.label}${fx ? ` <span class="pub-hint">· ${esc(TYPE[editing.type].label)} are always Layer ${fx}</span>` : ""}${autoL ? ` <span class="pub-hint" id="ed-layer-auto">· Leave empty and it's picked for you (Layer ${autoL})</span>` : ""}</span><div class="layer-pick">${P.options.map(o => `<button type="button" class="layer-toggle" data-multi="${P.key}" data-val="${o}" aria-pressed="${v.includes(o)}" aria-label="${esc(P.label)} ${o}"${fx ? " disabled" : ""}>${o}</button>`).join("")}</div></div>`; },
       read: (P, out) => { out[P.field] = [...$("edFields").querySelectorAll(`[data-multi="${P.key}"][aria-pressed="true"]`)].map(b => b.dataset.val); },
     },
     color: {
@@ -6346,7 +6346,7 @@ Don't invent appointments or facts that aren't listed.`);
     const f = dbPopFor; if (!f) return; const e = dbEntry(f.type, f.id); if (!e) { dbClosePop(); return; }
     const head = `<div class="pl-mh2"><b>${entLink("auto", e.id, esc(e.title || "Untitled"))}</b><button type="button" class="x" data-dbpopx aria-label="Close">×</button></div>`;
     let body = "";
-    if (f.kind === "layer") body = FIXED_LAYER[f.type] ? `<div class="pl-msub">${esc(TYPE[f.type].label)} are always Layer ${FIXED_LAYER[f.type]}. Change its Database to give it another layer.</div>` : `<div class="pl-msub">Layer</div><div class="layer-pick">${LAYERS.map(l => `<button type="button" class="layer-toggle" aria-pressed="${layersOf(e).includes(l)}" data-dblt="${l}">${l}</button>`).join("")}</div>`;
+    if (f.kind === "layer") body = `<div class="pl-msub">Layer</div><div class="layer-pick">${LAYERS.map(l => `<button type="button" class="layer-toggle" aria-pressed="${layersOf(e).includes(l)}" data-dblt="${l}">${l}</button>`).join("")}</div>`;
     if (f.kind === "focus") body = `<div class="pl-msub">When</div><div class="db-drange"><label>Date<input type="date" id="dbFs" data-endid="dbFe" data-rangesame="1" data-rangeopen="1" value="${esc(e.focusStart || "")}"><input type="date" id="dbFe" class="date-hid" data-nodatebtn tabindex="-1" hidden value="${esc(e.focusEnd || "")}"></label><label>Start time<select id="dbTs">${hourOpts(e.timeStart || "", "—")}</select></label><label>End time<select id="dbTe">${hourOpts(e.timeEnd || "", "—")}</select></label></div><div class="pl-macts"><button type="button" class="btn primary" data-dbfsave>Save</button> <button type="button" class="btn" data-dbfclear>Clear</button></div><div class="err" id="dbFerr"></div>`;
     if (f.kind === "color") { const own = ownColor(e), ac = areaColorFor(e); body = `<div class="pl-msub">Color</div><div class="qe-colors"><button type="button" class="chip" data-dbcolor="" aria-pressed="${!own}"><i class="swatch sw-${ac || "white"}" aria-hidden="true"></i>${ac ? "From area (" + ac + ")" : "No color"}</button>${COLORS.map(c => `<button type="button" class="chip" data-dbcolor="${c}" aria-pressed="${own === c}"><i class="swatch sw-${c}" aria-hidden="true"></i>${c[0].toUpperCase() + c.slice(1)}</button>`).join("")}</div>`; }
     if (f.kind === "status") body = `<div class="pl-msub">Status</div><div class="qe-colors">${STATUSES.map(st => `<button type="button" class="chip" data-dbstat="${esc(st.v)}" aria-pressed="${(e.status || "Not started") === st.v}">${esc(st.v)}</button>`).join("")}</div>`;
@@ -8618,7 +8618,7 @@ ${TP.hold}      <section class="gm-sec"><h2>Recent wins</h2>
   (async () => {
     if (PUBLIC) {
       clearTimeout(loadTimer); local = true; db = null;
-      TYPES.forEach(T => { data[T.key] = (Array.isArray(PUBLIC[T.key]) ? PUBLIC[T.key] : []).filter(e => e && e.id).map(e => ({ ...e, layers: FIXED_LAYER[T.key] ? [FIXED_LAYER[T.key]] : (Array.isArray(e.layers) && e.layers.length ? e.layers : [autoLayer(e.title)]), _pub: true })); loaded[T.key] = true; });
+      TYPES.forEach(T => { data[T.key] = (Array.isArray(PUBLIC[T.key]) ? PUBLIC[T.key] : []).filter(e => e && e.id).map(e => ({ ...e, layers: Array.isArray(e.layers) && e.layers.length ? e.layers : [FIXED_LAYER[T.key] || autoLayer(e.title)], _pub: true })); loaded[T.key] = true; });
       vault.foldersLoaded = true;
       inventory = webOn("inventory") && Array.isArray(PUBLIC.inventory) ? PUBLIC.inventory.filter(x => x && x.id) : [];
       rooms = Array.isArray(PUBLIC.rooms) ? PUBLIC.rooms : [];
