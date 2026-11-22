@@ -2115,7 +2115,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       <label class="switch"><input type="checkbox" id="gProjects" checked> Projects</label>
       <label class="switch"><input type="checkbox" id="gAreas" checked> Areas</label>
       <label class="switch"><input type="checkbox" id="gPages" checked> Resources</label>
-      <label class="switch"><input type="checkbox" id="gArchive" checked> Archive</label><label class="switch"><input type="checkbox" id="gIdeas" checked> Ideas</label><label class="switch"><input type="checkbox" id="gValues" checked> Values</label><label class="switch"><input type="checkbox" id="gGoals" checked> Goals</label>
+      <label class="switch" hidden><input type="checkbox" id="gArchive"> Archive</label><label class="switch"><input type="checkbox" id="gIdeas" checked> Ideas</label><label class="switch"><input type="checkbox" id="gValues" checked> Values</label><label class="switch"><input type="checkbox" id="gGoals" checked> Goals</label>
       <label class="switch"><input type="checkbox" id="gRoutines" checked> Routines</label>
       <label class="switch"><input type="checkbox" id="gOrphans" checked> Show unlinked items</label>
       <label class="switch"><input type="checkbox" id="gDone" checked> Show done projects</label>
@@ -2362,14 +2362,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }
   // Fields shared by every entry in the master database (Layers and Graph)
   function fxEntryFields() {
-    const typeOpts = TYPES.map(T => [T.key, T.label]).concat([["routine", "Routines"]]);
+    const typeOpts = TYPES.filter(T => !T.archive).map(T => [T.key, T.label]).concat([["routine", "Routines"]]);
     const lay = (x) => x.type === "routine" ? ["7"] : (Array.isArray(x.e.layers) ? x.e.layers.map(String) : []);
     return [
       { key: "type", label: "Database", opts: () => typeOpts, get: (x) => [x.type] },
       { key: "status", label: "Status", opts: () => STATUSES.map(s => [s.v, s.v]), get: (x) => x.type === "routine" ? [] : [x.e.status || "Not started"] },
       { key: "layer", label: "Layer", opts: () => ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(l => [l, "Layer " + l]).concat([["none", "No layer"]]), get: (x) => { const l = lay(x); return l.length ? l : ["none"]; } },
       { key: "color", label: "Color", opts: () => COLORS.map(c => [c, c[0].toUpperCase() + c.slice(1)]).concat([["none", "No color"]]), get: (x) => [(x.type === "routine" ? x.e.color || "purple" : colorOf(x.e)) || "none"] },
-      { key: "tags", label: "Tags", opts: () => [...new Set(TYPES.flatMap(T => data[T.key].flatMap(tagsOf)))].sort((a, b) => a.localeCompare(b)).map(t => [t, t]), get: (x) => x.type === "routine" ? [] : tagsOf(x.e) },
+      { key: "tags", label: "Tags", opts: () => [...new Set(TYPES.filter(T => !T.archive).flatMap(T => data[T.key].flatMap(tagsOf)))].sort((a, b) => a.localeCompare(b)).map(t => [t, t]), get: (x) => x.type === "routine" ? [] : tagsOf(x.e) },
       { key: "public", label: "Show on website", opts: () => [["on", "On"], ["off", "Off"]], get: (x) => [(x.type === "routine" ? (x.r ? x.r.public : x.e.public) : x.e.public) === false ? "off" : "on"] },
       ...fxCpFields("_all", (x) => x.type === "routine" ? null : x.e),
     ];
@@ -2565,7 +2565,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   });
   // ---------- 🧲 Consolidate (Layers): pick several entries, merge everything in them into one, rename it, delete the rest ----------
   const cs = { open: false, q: "", sel: [], title: "", arm: false, busy: false };
-  const csAll = () => TYPES.flatMap(T => (data[T.key] || []).filter(e => !e._pub).map(e => ({ type: T.key, e })));
+  const csAll = () => TYPES.filter(T => !T.archive).flatMap(T => (data[T.key] || []).filter(e => !e._pub).map(e => ({ type: T.key, e })));
   const csFind = (id) => csAll().find(x => x.e.id === id);
   function renderCs() {
     const el = $("csBox"); if (!el) return; if (!cs.open) { el.innerHTML = ""; return; }
@@ -2693,7 +2693,11 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (id !== e.id && byId.has(id)) { adj.get(e.id).add(id); adj.get(id).add(e.id); }
     }));
   }
-  const linksOf = (id) => [...(adj.get(id) || [])].map(x => byId.get(x)).filter(Boolean).sort(titleSort);
+  // Rule: archived entries are shown only on the Archive tab, never anywhere else
+  const isArch = (type) => !!(TYPE[type] && TYPE[type].archive);
+  const liveEntries = () => [...byId.values()].filter(x => !isArch(x.type));
+  const LIVE_TYPES = () => TYPES.filter(T => !T.archive);
+  const linksOf = (id) => [...(adj.get(id) || [])].map(x => byId.get(x)).filter(x => x && !isArch(x.type)).sort(titleSort);
   const newId = (T) => T.idPrefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   const notice = (msg) => { const n = $("notice"); n.hidden = !msg; if (msg) n.textContent = msg; };
@@ -3386,7 +3390,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       filterHtml: (P, id) => `<label for="${id}">${P.label}</label><select id="${id}" data-part="to"></select><div class="chips" data-dyn></div>`,
       sync: (box, f) => {
         const sel = box.querySelector('[data-part="to"]');
-        sel.innerHTML = `<option value="">Linked to anything</option>` + TYPES.map(T => {
+        sel.innerHTML = `<option value="">Linked to anything</option>` + TYPES.filter(T => !T.archive).map(T => {
           const items = data[T.key].map(e => ({ e })).sort(titleSort);
           return items.length ? `<optgroup label="${T.label}">${items.map(({ e }) => `<option value="${esc(e.id)}"${e.id === f.to ? " selected" : ""}>Linked to: ${esc(e.title || "Untitled")}</option>`).join("")}</optgroup>` : "";
         }).join("");
@@ -4130,7 +4134,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       ? draft.links.map(id => byId.get(id)).filter(Boolean).sort(titleSort).map(x => `<span class="lchip${lkCls(x)}"><button type="button" class="go" data-goto="${esc(x.e.id)}">${lkIn(x)}</button><button type="button" data-unlink="${esc(x.e.id)}" aria-label="Remove link to ${esc(x.e.title)}">×</button></span>`).join("")
       : `<span class="none">No links yet.</span>`;
     let any = false;
-    const groups = TYPES.map(T => {
+    const groups = TYPES.filter(T => !T.archive).map(T => {
       const opts = data[T.key].filter(e => e.id !== editing.id && !draft.links.includes(e.id)).map(e => ({ e })).sort(titleSort);
       if (opts.length) any = true;
       return opts.length ? `<optgroup label="${T.label}">${opts.map(({ e }) => `<option value="${esc(e.id)}">${esc(e.title || "Untitled")}</option>`).join("")}</optgroup>` : "";
@@ -4144,7 +4148,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const q = inp.value.trim().toLowerCase();
     if (!q) { box.hidden = true; box.innerHTML = ""; return; }
     const words = q.split(/\s+/);
-    const hits = [...byId.values()].filter(x => x.e.id !== editing.id && !draft.links.includes(x.e.id) && TYPE[x.type])
+    const hits = liveEntries().filter(x => x.e.id !== editing.id && !draft.links.includes(x.e.id) && TYPE[x.type])
       .map(x => { const t = (x.e.title || "").toLowerCase(), hay = t + " " + (x.e.subtitle || "").toLowerCase(); if (!words.every(w => hay.includes(w))) return null; return { x, score: t.startsWith(q) ? 0 : t.split(/[^a-z0-9]+/).some(w => w.startsWith(words[0])) ? 1 : 2 }; })
       .filter(Boolean).sort((a, b) => a.score - b.score || (a.x.e.title || "").localeCompare(b.x.e.title || "")).slice(0, 8).map(h => h.x);
     if (lkSel >= hits.length) lkSel = 0;
@@ -4258,7 +4262,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const WIKI = /\[\[([^\[\]\n|]+)(?:\|([^\[\]\n]+))?\]\]/g;
   function findByTitle(t) {
     const q = t.trim().toLowerCase(); if (!q) return null;
-    for (const x of byId.values()) if ((x.e.title || "").trim().toLowerCase() === q) return x;
+    for (const x of liveEntries()) if ((x.e.title || "").trim().toLowerCase() === q) return x;
     return null;
   }
   function renderMd(src) {
@@ -4415,7 +4419,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!m) { hideSuggest(); return; }
     const q = m[1].trim().toLowerCase();
     sugg.start = m.index;
-    sugg.items = [...byId.values()].filter(x => x.e.id !== editing.id && (x.e.title || "").toLowerCase().includes(q))
+    sugg.items = liveEntries().filter(x => x.e.id !== editing.id && (x.e.title || "").toLowerCase().includes(q))
       .sort((a, b) => { const A = (a.e.title || "").toLowerCase().startsWith(q) ? 0 : 1, B = (b.e.title || "").toLowerCase().startsWith(q) ? 0 : 1; return A - B || titleSort(a, b); }).slice(0, 8);
     if (sugg.i >= sugg.items.length) sugg.i = 0;
     const box = $("suggest");
@@ -4678,7 +4682,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!confirmDelete) { confirmDelete = true; $("deleteBtn").textContent = "Click again to delete"; return; }
     const { type, id } = editing;
     try {
-      const others = [...byId.values()].filter(o => o.e.id !== id && Array.isArray(o.e.links) && o.e.links.includes(id));
+      const others = [...byId.values()].filter(o => o.e.id !== id && !isArch(o.type) && Array.isArray(o.e.links) && o.e.links.includes(id));
       await deleteEntry(type, id);
       for (const o of others) await saveEntry(o.type, { ...o.e, links: o.e.links.filter(x => x !== id), updatedAt: new Date().toISOString() });
       closeEditor();
@@ -4731,7 +4735,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     $("graphLegend").innerHTML = STATUSES.map(s => `<span><i style="background:var(${s.color})"></i>${s.v} project</span>`).join("") + `<span><i class="tdot t-areas" style="width:10px;height:10px;margin:0"></i>Area</span><span><i style="background:var(--hold);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)"></i>Routine</span><span><i style="background:var(--muted)"></i>Archived</span><span><i class="sq" style="background:var(--page)"></i>Resource</span>` + `<span><i class="tdot t-ideas" style="width:11px;height:11px;margin:0"></i>Idea</span><span><i class="tdot t-values" style="width:11px;height:11px;margin:0"></i>Value</span><span><i class="tdot t-goals" style="width:11px;height:11px;margin:0"></i>Goal</span>`;
     if (!window.d3) { setEmpty("<div><strong>The graph couldn't load</strong>Check your connection and reopen this page.</div>"); return; }
     const prev = new Map(gNodes.map(n => [n.id, n]));
-    let items = [...byId.values()].filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
+    let items = liveEntries().filter(({ type, e }) => gOpts[type] !== false && (gOpts.done || e.status !== "Done"));
     if (gOpts.routine !== false) items = items.concat(routines.map(r => ({ type: "routine", e: { id: r.id, title: (r.emoji || rtEmoji(r)) + " " + (r.name || "Untitled routine"), status: "", color: COLORS.includes(r.color) ? r.color : "" } })));
     const fxOn = fxCount("graph") > 0;
     if (fxOn && !gOpts.fxDim) items = items.filter(x => fxPass("graph", x));
@@ -4963,7 +4967,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   // ----- Find an exact entry on the graph: type, pick it, and it's centered, selected and ringed -----
   let gQHits = [], gQAct = 0;
   function gQAll() {
-    return [...[...byId.values()].map(({ type, e }) => ({ id: e.id, type, title: e.title || "Untitled" })), ...routines.map(r => ({ id: r.id, type: "routine", title: r.name || "Untitled routine" }))];
+    return [...liveEntries().map(({ type, e }) => ({ id: e.id, type, title: e.title || "Untitled" })), ...routines.map(r => ({ id: r.id, type: "routine", title: r.name || "Untitled routine" }))];
   }
   function gQRender() {
     const q = ($("gQ").value || "").trim().toLowerCase(), box = $("gQList");
@@ -5014,7 +5018,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const folderById = (id) => vault.folders.find(f => f.id === id);
   const folderPath = (id) => { const out = []; let f = folderById(id), guard = 0; while (f && guard++ < 50) { out.unshift(f.name); f = folderById(f.parent); } return out; };
   const childFolders = (pid) => vault.folders.filter(f => (f.parent || "") === (pid || "")).sort((a, b) => a.name.localeCompare(b.name));
-  const notesIn = (fid) => [...byId.values()].filter(x => (x.e.folder || "") === fid && fid).sort(titleSort);
+  const notesIn = (fid) => liveEntries().filter(x => (x.e.folder || "") === fid && fid).sort(titleSort);
   const unfiled = (type) => data[type].filter(e => !e.folder || !folderById(e.folder)).map(e => ({ type, e })).sort(titleSort);
 
   async function saveFolder(f) {
@@ -5105,7 +5109,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!$("vFilterRow").hidden) {
       const grp = (title, html) => `<div class="vf-g"><div class="ctl-title">${title}</div><div class="chips">${html}</div></div>`;
       $("vFilterRow").innerHTML =
-        grp("Database", TYPES.map(T => vChip("types", T.key, T.label, vF.types.includes(T.key))).join("")) +
+        grp("Database", TYPES.filter(T => !T.archive).map(T => vChip("types", T.key, T.label, vF.types.includes(T.key))).join("")) +
         grp("Status", STATUSES.map(s => vChip("status", s.v, (s.v === "Done" ? "✓ " : "") + s.v, vF.status.includes(s.v))).join("")) +
         grp("When", V_FOCUS.map(([k, l]) => vChip("focus", k, l, vF.focus.includes(k))).join("")) +
         grp("Tags", allTags().map(t => vChip("tags", t.toLowerCase(), esc(t), vF.tags.includes(t.toLowerCase()))).join("")) +
@@ -5143,8 +5147,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     { key: "projects", label: "Projects, Goals, Routines", types: ["projects", "goals"], routines: true },
     { key: "areas", label: "Areas", types: ["areas"] },
     { key: "pages", label: "Resources", types: ["pages", "ideas", "values"] },
-    { key: "archive", label: "Archive", types: ["archive"] },
-  ];
+  ]; // the Archive isn't shown in Obsidian (archived entries only appear on the Archive tab)
   const vaultGroupOf = (type) => (VAULT_GROUPS.find(G => G.types.includes(type)) || VAULT_GROUPS[0]).key;
   function renderTree() {
     const q = ($("vSearch").value || "").trim().toLowerCase();
@@ -5450,7 +5453,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const blocksOf = (e) => { const own = savedBlocks(e), auto = whenBlocks(e).filter(w => !own.some(b => b.date === w.date && b.slot === w.slot)); return [...own, ...auto]; };
   const isAutoBlock = (e, date, slot) => whenBlocks(e).some(b => b.date === date && b.slot === slot) && !savedBlocks(e).some(b => b.date === date && b.slot === slot);
   const inFocusOn = (e, d) => { const s = e.focusStart || e.focusEnd, en = e.focusEnd || e.focusStart; return !!s && s <= d && d <= en; };
-  const plPool = () => TYPES.flatMap(T => data[T.key].map(e => ({ type: T.key, e })));
+  const plPool = () => TYPES.filter(T => !T.archive).flatMap(T => data[T.key].map(e => ({ type: T.key, e })));
   const dayName = (d) => { const n = dn(d); return DOW[new Date(n * 864e5).getUTCDay()]; };
   const isDone = (x) => (x.e.status || "") === "Done";
   const plChip = (x, date, slot, opts = {}) => {
@@ -5649,7 +5652,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   function wkFacts(mon) {
     const m = dn(mon), days = [0, 1, 2, 3, 4, 5, 6].map(i => dIso(m + i)), lastFrom = dIso(m - 7), lastTo = dIso(m - 1);
     const pool = plPool(), live = pool.filter(x => x.type !== "archive");
-    const finished = (data.archive || []).filter(e => (e.status || "") === "Done" && e.archivedAt && e.archivedAt.slice(0, 10) >= lastFrom && e.archivedAt.slice(0, 10) <= lastTo);
+    const finished = []; // finished projects move to the Archive, and archived entries aren't shown outside the Archive tab
     let rtPlanned = 0, rtDone = 0, blocksLast = 0;
     routines.forEach(r => rtPlans(r).forEach(x => { if (x.date >= lastFrom && x.date <= lastTo) { rtPlanned++; if (x.status === "done") rtDone++; } }));
     pool.forEach(x => { blocksLast += savedBlocks(x.e).filter(b => b.date >= lastFrom && b.date <= lastTo).length; });
@@ -5868,7 +5871,7 @@ Don't invent appointments or facts that aren't listed.`);
     const t = today(), thisMon = mondayOf(t), lastSun = dIso(dn(thisMon) + 7 * (CD_WEEKS + 1) - 1);
     const q = cd.q.trim().toLowerCase();
     const projList = (data.projects || []).filter(e => (e.status || "") !== "Done").map(e => ({ type: "projects", e })).sort(titleSort);
-    const CD_EXTRA = ["areas", "pages", "archive"];
+    const CD_EXTRA = ["areas", "pages"];
     const areaCards = CD_EXTRA.flatMap(k => (data[k] || []).filter(e => e.cardOn === true && !(k === "archive" && false)).map(e => ({ type: k, e }))).sort(titleSort);
     const areaRest = CD_EXTRA.map(k => [k, (data[k] || []).filter(e => e.cardOn !== true).sort((a, b) => (a.title || "").localeCompare(b.title || ""))]);
     const list = [...projList, ...areaCards];
@@ -5880,7 +5883,7 @@ Don't invent appointments or facts that aren't listed.`);
     const deckSec = (label, arr) => { const a = arr.filter(match); return a.length ? `<div class="cd-dlabel">${label} · ${a.length}</div>${a.map(cdCard).join("")}` : ""; };
     const deckCount = deck.none.length + deck.earlier.length + deck.later.length;
     const areaSec = `<div class="cd-areas"><div class="cd-dlabel">Area, resource &amp; archive cards${areaDeck.length ? " · " + areaDeck.length : ""}</div>
-      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an entry into a card"><option value="">+ Add a card from Areas, Resources or Archive…</option>${areaRest.map(([k, l]) => l.length ? `<optgroup label="${esc(TYPE[k].label)}">${l.map(a => `<option value="${esc(k + "|" + a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</optgroup>` : "").join("")}${NEG(areaRest.map(([k]) => k).filter(k => TYPE[k] && !TYPE[k].archive), true)}</select>
+      <select class="qe-sel" id="cdAreaAdd" aria-label="Make an entry into a card"><option value="">+ Add a card from Areas or Resources…</option>${areaRest.map(([k, l]) => l.length ? `<optgroup label="${esc(TYPE[k].label)}">${l.map(a => `<option value="${esc(k + "|" + a.id)}">${esc(a.title || "Untitled")}</option>`).join("")}</optgroup>` : "").join("")}${NEG(areaRest.map(([k]) => k).filter(k => TYPE[k] && !TYPE[k].archive), true)}</select>
       ${areaDeck.filter(match).map(cdCard).join("")}${!areaDeck.length && !areaCards.length ? '<div class="pl-none">Pick an area, resource or archive entry above to make it a card you can place.</div>' : ""}</div>`;
     const days = [0, 1, 2, 3, 4, 5, 6].map(i => dIso(dn(thisMon) + i));
     const wi = isoWeekInfo(thisMon);
@@ -6597,7 +6600,7 @@ Don't invent appointments or facts that aren't listed.`);
     const COLW = { red: "personal admin", orange: "family and friends", yellow: "community", green: "money and work", blue: "everything else" };
     const when = (e) => { const d = e.focusStart ? (e.focusEnd && e.focusEnd !== e.focusStart ? e.focusStart + "→" + e.focusEnd : e.focusStart) : ""; const t = e.timeStart ? timeRange(e.timeStart, e.timeEnd) : ""; return [d, t].filter(Boolean).join(" "); };
     const clean = (s) => String(s || "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
-    const order = ["areas", "goals", "projects", "pages", "ideas", "values", "archive"];
+    const order = ["areas", "goals", "projects", "pages", "ideas", "values"];
     const out = [`# ${pick && pick.title ? pick.title : "My LifeOS entries"} (${today()})\nLayers: ${LAY.map((t, i) => `L${i} ${t}`).join("; ")}.\nColors: ${Object.entries(COLW).map(([k, v]) => k + " " + v).join("; ")}; purple routines. Links are two-way.`];
     order.forEach(k => {
       const T = TYPE[k]; const list = pick ? (pick.types[k] || []) : data[k].slice().sort((a, b) => (a.title || "").localeCompare(b.title || "")); if (!list.length) return;
@@ -6635,7 +6638,7 @@ Don't invent appointments or facts that aren't listed.`);
   const csvCell = (v) => { const s = v == null ? "" : Array.isArray(v) ? v.join("; ") : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const toCsv = (rows) => "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
   function dlLayersCsv(pick) {
-    const cps = cpDefs("_all"), TL = pick ? pick.types : Object.fromEntries(TYPES.map(T => [T.key, data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || ""))])), RL = pick ? (pick.routines || []) : routines;
+    const cps = cpDefs("_all"), TL = pick ? pick.types : Object.fromEntries(TYPES.filter(T => !T.archive).map(T => [T.key, data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || ""))])), RL = pick ? (pick.routines || []) : routines;
     const head = ["Title", "Database", "Status", "Layers", "Color", "Tags", "When", "Links", "Subtitle", "Created", "Last edited", ...cps.map(P => P.label)];
     const rows = [head];
     TYPES.forEach(T => (TL[T.key] || []).forEach(e => rows.push([e.title || "Untitled", T.label, e.status || "", layersOf(e).join(" "), colorOf(e) || "", tagsOf(e), whenText(e) || "", [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))], e.subtitle || "", String(e.created || e.createdTime || e.createdAt || "").slice(0, 10), String(e.updatedAt || "").slice(0, 10), ...cps.map(P => K.cprop.show(e, P))])));
@@ -6810,7 +6813,7 @@ Don't invent appointments or facts that aren't listed.`);
   function renderDeckBuilder() {
     const el = $("dkBody"); if (!el || $("dkPop").hidden) return;
     const q = dk.q.trim().toLowerCase(), chosen = new Set(dk.ids);
-    const all = [...byId.values()].filter(x => !TYPE[x.type].archive || true);
+    const all = liveEntries();
     const hits = q ? all.filter(x => !chosen.has(x.e.id) && (x.e.title || "").toLowerCase().includes(q)).sort((a, b) => (a.e.title || "").localeCompare(b.e.title || "")).slice(0, 30) : [];
     const sel = dk.ids.map(dkEntry).filter(Boolean);
     const layN = (dbLastRows || []).filter(x => x.type !== "routine" && !chosen.has(x.e.id)).length;
