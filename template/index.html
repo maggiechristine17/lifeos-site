@@ -2832,6 +2832,13 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
 
 ### 📥 How Claude adds rules to this note
 - Because LifeOS is shared publicly, Claude can't write to this note directly. Claude adds new rules to LifeOS's code instead. The next time I open LifeOS (as its owner), the page writes them into this note under the right date. Each rule is added only once.` },
+    { marker: "### 📥 Bring Google files into LifeOS", text: `
+
+### 📥 Bring Google files into LifeOS
+- In **🔗 Google** (footer), tapping a file opens it and shows its text in a bigger reading area.
+- **📥 Add the whole file to LifeOS** or **📥 Add selected text** (I highlight part of the text first) asks Claude to work out where each piece belongs. Facts about my life go to Layer 1 resources, related facts are grouped, and pieces that belong with an existing entry are added to it.
+- Before anything is saved, I see each suggestion with its title, kind (and layer for resources) or the entry it would be added to, the text, and why it goes there. I can change any of it, untick what I don't want, then tap **Add**.
+- Text added to an existing entry goes at the end of its notes under "From <file name>". Nothing changes in the Google file.` },
   ];
   let siBusy = false; const siDone = new Set();
   async function sysInstSync() {
