@@ -2872,7 +2872,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   }
   async function saveEntryRaw(type, e) {
     if (PUBLIC) return;
-    if (siteAdd && e && e.public === undefined && !byId.has(e.id)) e = { ...e, public: true }; // every database, by default
+    if (siteAdd && e && e.public === undefined) e = { ...e, public: true }; // every database, by default: an entry that never had the switch set is shown
     const { id, ...body } = e;
     if (local || !db) {
       const list = data[type], i = list.findIndex(x => x.id === id);
