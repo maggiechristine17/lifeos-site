@@ -382,6 +382,9 @@ body.dk-open { overflow: hidden; }
 .imp-it textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; }
 .imp-why { font-size: 12px; color: var(--muted); }
 .add-entry { font-size: 13px; padding: 5px 12px; margin-left: 8px; }
+.kind-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--panel-line); }
+.kind-toggle[aria-pressed="true"] { font-weight: 600; }
+.kind-chip { font-weight: 600; }
 .fx-slot { display: contents; }
 .fx-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700; margin-left: 2px; }
 .fx-panel { margin: 8px 0; }
@@ -2442,7 +2445,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const typeOpts = TYPES.filter(T => !T.archive).map(T => [T.key, T.label]).concat([["routine", "Routines"]]);
     const lay = (x) => x.type === "routine" ? ["7"] : (Array.isArray(x.e.layers) ? x.e.layers.map(String) : []);
     return [
-      { key: "type", label: "Database", opts: () => typeOpts, get: (x) => [x.type] },
+      { key: "type", label: "Kind (tag)", opts: () => typeOpts, get: (x) => [x.type] },
       { key: "status", label: "Status", opts: () => STATUSES.map(s => [s.v, s.v]), get: (x) => x.type === "routine" ? [] : [x.e.status || "Not started"] },
       { key: "layer", label: "Layer", opts: () => ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(l => [l, "Layer " + l]).concat([["none", "No layer"]]), get: (x) => { const l = lay(x); return l.length ? l : ["none"]; } },
       { key: "color", label: "Color", opts: () => COLORS.map(c => [c, c[0].toUpperCase() + c.slice(1)]).concat([["none", "No color"]]), get: (x) => [(x.type === "routine" ? x.e.color || "purple" : colorOf(x.e)) || "none"] },
@@ -3197,6 +3200,16 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const dbOptions = (cur, sched) => DB_ORDER.concat(cur === "ideas" ? ["ideas"] : []).filter(k => TYPE[k]).map(k => k === "projects"
     ? `<option value="projects"${cur === "projects" && !sched ? " selected" : ""}>Projects · One time</option><option value="projects|s"${cur === "projects" && sched ? " selected" : ""}>Projects · Scheduled</option>${PUBLIC ? "" : `<option value="routine">Projects · Routines</option>`}`
     : `<option value="${k}"${k === cur ? " selected" : ""}>${TYPE[k].label}</option>`).join("");
+  // ---------- Kinds are tags (Nov 23): one master database; an entry's kinds (Values, Areas, Goals, Projects…) show under Tags, and it can have several ----------
+  // Storage: the first kind is where the entry lives; the others are in e.kinds. Each tab shows its own entries plus any entry that has its kind in e.kinds.
+  const KIND_TAGS = [["values", "Value"], ["areas", "Area"], ["goals", "Goal"], ["projects", "Project · One time"], ["projects|s", "Project · Scheduled"], ["routine", "Project · Routine"], ["pages", "Resource"], ["archive", "Archive"]];
+  const KIND_SOLO = ["routine", "archive"]; // these can't be combined with others
+  const kindsOf = (e, type) => { const p = type === "projects" && e && e.scheduled ? "projects|s" : type; return [p, ...((e && Array.isArray(e.kinds)) ? e.kinds.filter(k => k !== type && TYPE[k]) : [])]; };
+  const kindLabel = (k) => (KIND_TAGS.find(x => x[0] === k) || [k, k])[1];
+  const extraMembers = (k) => TYPES.filter(T => T.key !== k && !T.archive).flatMap(T => data[T.key].filter(e => Array.isArray(e.kinds) && e.kinds.includes(k)));
+  const members = (k) => k === "archive" ? data[k] : data[k].concat(extraMembers(k));
+  const realType = (id, t) => (data[t] && data[t].some(x => x.id === id)) ? t : ((byId.get(id) || {}).type || t);
+  const kindChip = (k) => `<span class="tag-chip kind-chip">${esc(kindLabel(k))}</span>`;
   // Archive remembers which database each entry came from ("Came from"), and I can set or change it
   const ORIGINS = [["values", "Values"], ["areas", "Areas"], ["goals", "Goals"], ["projects", "Projects · One time"], ["projects|s", "Projects · Scheduled"], ["routine", "Projects · Routines"], ["pages", "Resources"]];
   const originOf = (e) => !e || !e.archivedFrom ? "" : e.archivedFrom === "projects" && e.scheduled ? "projects|s" : ORIGINS.some(o => o[0] === e.archivedFrom) ? e.archivedFrom : "";
@@ -3469,9 +3482,9 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       search: e => tagsOf(e).join(" "),
       filterHtml: (P) => `<span class="flabel">${P.label}</span><div class="chips" data-dyn></div>`,
       sync: (box, f) => { box.querySelector("[data-dyn]").innerHTML = allTags().map(t => `<button type="button" class="chip" aria-pressed="${f.values.includes(t.toLowerCase())}" data-act="tag" data-val="${esc(t.toLowerCase())}">${esc(t)}</button>`).join(""); },
-      cell: (e) => { const t = tagsOf(e); return t.length ? `<span class="tags">${[...t].sort((a, b) => (b.toLowerCase() === "now") - (a.toLowerCase() === "now")).map(tagChip).join("")}</span>` : '<span style="color:var(--muted)">—</span>'; },
+      cell: (e, P, T) => { const t = tagsOf(e), ks = T ? kindsOf(e, realType(e.id, T.key)) : []; if (!t.length && !ks.length) return '<span style="color:var(--muted)">—</span>'; return `<span class="tags">${ks.map(kindChip).join("")}`+(t.length ? `${[...t].sort((a, b) => (b.toLowerCase() === "now") - (a.toLowerCase() === "now")).map(tagChip).join("")}` : "") + "</span>"; },
       editHtml: (P) => `<div class="tags-edit"><span class="flabel">${P.label}</span><div class="tag-pick" id="ed-tags"></div><div class="task-add"><input id="ed-tag-new" type="text" placeholder="New tag…" autocomplete="off"><button type="button" class="btn" id="ed-tag-add">Add tag</button></div></div>`,
-      read: (P, out) => { out.tags = [...draft.tags]; },
+      read: (P, out) => { out.tags = [...draft.tags]; const base = (k) => k === "projects|s" ? "projects" : k, prim = base(draft.ksel && draft.ksel[0] || ""); out.kinds = [...new Set((draft.ksel || []).slice(1).map(base).filter(k => TYPE[k] && !TYPE[k].archive && k !== prim))]; },
     },
     tasks: {
       empty: () => ({ mode: "any" }),
@@ -3603,7 +3616,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     // Columns
     // Default columns: Title, When, Links, Status; everything else starts hidden. Subtitle is never a column (it always shows under the title).
     const DEF_SHOW = ["title", "focus", "links", "status"];
-    const colProps = T.props.filter(P => P.key !== "subtitle");
+    const colProps = T.props.filter(P => P.key !== "subtitle" && P.kind !== "dbmove"); // Database is shown as kind tags under Tags
     const SHOW = T.archive ? ["title", "origin", ...DEF_SHOW.filter(k => k !== "title")] : DEF_SHOW; // Archive always shows "Came from"
     const defaults = [...SHOW.map(k => colProps.find(P => P.key === k)).filter(Boolean), ...colProps.filter(P => !SHOW.includes(P.key))].map(P => ({ key: P.key, visible: SHOW.includes(P.key) || P.kind === "cprop", width: P.width }));
     const normalize = (list) => {
@@ -3818,7 +3831,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     // Rows
     function visible() {
       const q = ui.q.trim().toLowerCase();
-      const list = data[T.key].filter(e => {
+      const list = members(T.key).filter(e => {
         if (q && !T.props.map(P => K[P.kind].search(e, P)).join(" ").toLowerCase().includes(q)) return false;
         return T.props.every(P => K[P.kind].test(e, P, ui.f[P.key]));
       });
@@ -3972,7 +3985,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       bdMove(id, col.dataset.bdcol, before);
     });
     function renderRows() {
-      const list = visible(), total = data[T.key].length, span = shown().length, noun = (n) => n === 1 ? T.singular : T.label.toLowerCase();
+      const list = visible(), total = members(T.key).length, span = shown().length, noun = (n) => n === 1 ? T.singular : T.label.toLowerCase();
       R("count").textContent = !loaded[T.key] && !total ? "Loading…" : (list.length === total ? `${total} ${noun(total)}` : `Showing ${list.length} of ${total} ${noun(total)}`);
       R("gbaLbl").hidden = !isProj || ui.layout !== "table"; R("gba").checked = ui.gba !== false;
       const gallery = false, feed = ui.layout === "feed", tline = ui.layout === "timeline", cards = ui.layout === "cards";
@@ -4033,10 +4046,10 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       const tk = e.target.closest("input[data-task][data-entry]"); if (tk) { toggleTask(tk.dataset.etype, tk.dataset.entry, tk.dataset.task, tk.checked); return; }
       const mv = e.target.closest("[data-move-for]");
       if (mv) { try { await moveEntryTo(T.key, mv.dataset.moveFor, mv.value); } catch (err) { notice(err.message || "Couldn't move it."); renderAll(); } return; }
-      const og = e.target.closest("[data-origin-for]"); if (og) { const it = data[T.key].find(x => x.id === og.dataset.originFor); if (!it) return; const nx = { ...it, ...originPatch(og.value), updatedAt: new Date().toISOString() }; if (!og.value) delete nx.archivedFrom; try { await saveEntry(T.key, nx); } catch (err) { notice(err.message); renderAll(); } return; }
+      const og = e.target.closest("[data-origin-for]"); if (og) { const it = members(T.key).find(x => x.id === og.dataset.originFor); if (!it) return; const nx = { ...it, ...originPatch(og.value), updatedAt: new Date().toISOString() }; if (!og.value) delete nx.archivedFrom; try { await saveEntry(T.key, nx); } catch (err) { notice(err.message); renderAll(); } return; }
       const sel = e.target.closest("[data-status-for]"); if (!sel) return;
-      const it = data[T.key].find(x => x.id === sel.dataset.statusFor); if (!it) return;
-      try { await saveEntry(T.key, { ...it, status: sel.value, updatedAt: new Date().toISOString() }); }
+      const it = members(T.key).find(x => x.id === sel.dataset.statusFor); if (!it) return;
+      try { await saveEntry(realType(it.id, T.key), { ...it, status: sel.value, updatedAt: new Date().toISOString() }); }
       catch (err) { notice(err.message); renderAll(); }
     });
 
@@ -4144,7 +4157,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     R("timeline").addEventListener("keydown", e => { const b = e.target.closest("[data-tlbar]"); if (b && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openEditor(T.key, b.dataset.tlbar); } });
     R("timeline").addEventListener("pointerdown", e => {
       const bar = e.target.closest("[data-tlbar]"); if (!bar || e.button > 0) return;
-      const it = data[T.key].find(x => x.id === bar.dataset.tlbar); if (!it) return;
+      const it = members(T.key).find(x => x.id === bar.dataset.tlbar); if (!it) return; const RT = realType(it.id, T.key);
       tlDrag = { it, bar, x0: e.clientX, mode: e.target.dataset.h || "m", moved: false, dd: 0, ro: bar.classList.contains("ro"), left0: bar.offsetLeft, w0: bar.offsetWidth, sp: spanOf(it, tlProp()) };
       try { bar.setPointerCapture(e.pointerId); } catch (err) {}
     });
@@ -4171,7 +4184,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
         if (d.mode === "m") { patch[P.start] = shift(it[P.start], d.dd); patch[P.end] = shift(it[P.end], d.dd); }
         else { const s = d.sp[0] + (d.mode === "s" ? d.dd : 0), en = d.sp[1] + (d.mode === "e" ? d.dd : 0); patch[P.start] = dIso(s); patch[P.end] = dIso(en); }
       } else { const v = it[P.field] || ""; patch[P.field] = dIso(dn(v.slice(0, 10)) + d.dd) + v.slice(10); }
-      try { await saveEntry(T.key, { ...it, ...patch, updatedAt: new Date().toISOString() }); }
+      try { await saveEntry(RT, { ...it, ...patch, updatedAt: new Date().toISOString() }); }
       catch (err) { notice(err.message); renderAll(); }
     };
     R("timeline").addEventListener("pointerup", tlEnd);
@@ -4199,9 +4212,17 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
   const draft = { links: [], cover: "", tasks: [], tags: [], tabs: [{ id: "main", name: "Notes", body: "", files: [] }], ti: 0 };
   // draft.body always means the notes of the tab that's open
   Object.defineProperty(draft, "body", { get() { return (draft.tabs[draft.ti] || draft.tabs[0]).body; }, set(v) { (draft.tabs[draft.ti] || draft.tabs[0]).body = v; } });
+  // Kind tags: tapping one adds it; the first one picked is where the entry lives. Routine and Archive can't be combined with others.
+  function kindSync() {
+    const sel = $("ed-database"); if (sel && draft.ksel && draft.ksel[0] && [...sel.options].some(o => o.value === draft.ksel[0])) sel.value = draft.ksel[0];
+  }
   function renderTagsEditor() {
     const box = $("ed-tags"); if (!box) return;
     const ro = !!(editing && editing.ro);
+    if (!draft.ksel || !draft.ksel.length) draft.ksel = [editing ? editing.type : "projects"];
+    kindSync();
+    let kb = $("ed-kinds"); if (!kb) { box.insertAdjacentHTML("beforebegin", '<div class="kind-pick" id="ed-kinds" aria-label="Kinds"></div>'); kb = $("ed-kinds"); }
+    kb.innerHTML = KIND_TAGS.filter(([k]) => k === "routine" ? !PUBLIC : true).map(([k, l]) => { const i = draft.ksel.indexOf(k); return `<button type="button" class="tag-toggle kind-toggle" aria-pressed="${i >= 0}" data-kindtoggle="${k}"${ro ? " disabled" : ""}>${esc(l)}${i === 0 && draft.ksel.length > 1 ? ' <span class="tag-hint">· main</span>' : ""}</button>`; }).join("");
     const lower = draft.tags.map(t => t.toLowerCase());
     const opts = [...new Set([...allTags(), ...draft.tags].map(t => t))].filter((t, i, a) => a.findIndex(x => x.toLowerCase() === t.toLowerCase()) === i);
     const list = ro ? opts.filter(t => lower.includes(t.toLowerCase())) : opts;
@@ -4375,6 +4396,12 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       if (cp.dataset.colorpick) $("editForm").classList.add("ec-" + cp.dataset.colorpick);
       return;
     }
+    const kt = e.target.closest("[data-kindtoggle]");
+    if (kt) { e.preventDefault(); const k = kt.dataset.kindtoggle; let ks = [...(draft.ksel || [])];
+      if (ks.includes(k)) { if (ks.length === 1) { notice("An entry needs at least one kind."); return; } ks = ks.filter(x => x !== k); }
+      else if (KIND_SOLO.includes(k)) ks = [k];
+      else { ks = ks.filter(x => !KIND_SOLO.includes(x) && !(k === "projects" && x === "projects|s") && !(k === "projects|s" && x === "projects")); ks.push(k); }
+      draft.ksel = ks; renderTagsEditor(); return; }
     const tg = e.target.closest("[data-tagtoggle]");
     if (tg) {
       const t = tg.dataset.tagtoggle, k = t.toLowerCase();
@@ -4594,7 +4621,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     draft.ti = 0; attMsg("");
     draft.cover = e?.cover || "";
     draft.tasks = taskList(e).map(t => ({ ...t }));
-    draft.tags = [...tagsOf(e)];
+    draft.tags = [...tagsOf(e)]; draft.ksel = kindsOf(e, type);
     draft.emoji = e && typeof e.emoji === "string" ? e.emoji.trim() : ""; closeEmojiPop(); renderEmojiBtn();
     renderCoverEditor();
     setTimeout(renderPropBar, 0); setTimeout(growTitle, 0);
@@ -4626,7 +4653,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       case "subtitle": { const n = draft.tasks.filter(t => (t.text || "").trim()).length, d = draft.tasks.filter(t => t.done && (t.text || "").trim()).length, s = v("input"); return [s, n ? "☑ " + d + "/" + n : ""].filter(Boolean).join(" · ") || "—"; }
       case "dbmove": { const s = box.querySelector("select"); return s ? s.options[s.selectedIndex].text : ""; }
       case "links": { const n = draft.links.length; return n ? n + " link" + (n === 1 ? "" : "s") : "None"; }
-      case "tags": return draft.tags.length ? draft.tags.slice(0, 2).join(", ") + (draft.tags.length > 2 ? " +" + (draft.tags.length - 2) : "") : "None";
+      case "tags": { const all = [...(draft.ksel || []).map(kindLabel), ...draft.tags]; return all.length ? all.slice(0, 2).join(", ") + (all.length > 2 ? " +" + (all.length - 2) : "") : "None"; }
       case "multi": { const on = [...box.querySelectorAll('[aria-pressed="true"]')].map(b => b.dataset.val); return on.length ? on.map(x => "L" + x).join(" ") : "Auto"; }
       case "color": { const b = box.querySelector('[data-colorpick][aria-pressed="true"]'); const c = b && b.dataset.colorpick; if (c) return c[0].toUpperCase() + c.slice(1); const ex = editing && data[editing.type].find(x => x.id === editing.id); const ac = ex ? areaColorFor(ex) : ""; return ac ? ac[0].toUpperCase() + ac.slice(1) + " (area)" : "No color"; }
       case "date": { const r = box.querySelector(".ro-date"), x = r ? r.dataset.v : v("input"); return x ? fmt(x) : "—"; }
@@ -4665,7 +4692,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const btnFor = (P) => { if (P.kind === "check") { const cb = document.getElementById("ed-" + P.key), on = !!(cb && cb.checked); return `<button type="button" class="prop-btn qt-prop" data-propbtn="${P.key}" data-propqt="1" aria-pressed="${on}" title="Click to turn ${on ? "off" : "on"}"><span class="qt-sw" aria-hidden="true"></span><span class="qt-txt"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${on ? "On" : "Off"}</span></span></button>`; } const box = $("edFields").querySelector(`[data-pk="${P.key}"]`), open = box && box.classList.contains("open"), pc = propColor(P);
       if (!editing.ro && !PUBLIC && QE_NATIVE(P, editing.type)) return `<label class="prop-btn prop-live" data-proplive="${P.key}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))} <span class="db-caret" aria-hidden="true">▾</span></span>${propLiveControl(P)}</label>`;
       return `<button type="button" class="prop-btn${open ? " on" : ""}" data-propbtn="${P.key}" aria-expanded="${!!open}"><span class="pb-l">${esc(P.label)}</span><span class="pb-v">${pc ? `<i class="swatch sw-${pc}" aria-hidden="true"></i>` : ""}${esc(propSummary(P))}</span></button>`; };
-    const all = T.props.filter(P => P.kind !== "title" && !(P.key === "focus" && P.kind === "daterange")), main = all.filter(P => SHARED.has(P.key)), spec = all.filter(P => !SHARED.has(P.key));
+    const all = T.props.filter(P => P.kind !== "title" && P.kind !== "dbmove" && !(P.key === "focus" && P.kind === "daterange")), main = all.filter(P => SHARED.has(P.key)), spec = all.filter(P => !SHARED.has(P.key));
     const ia = (sc, l) => editing.ro ? "" : `<div class="pb-iadd">${cpIAddHtml(sc, l)}</div>`;
     bar.innerHTML = `<div class="pb-h">Properties <span>every entry has these</span></div>${main.map(btnFor).join("")}${ia("_all", "to every entry")}
       <div class="pb-h">Specific properties <span>only for ${esc(T.label)}</span></div>${spec.map(btnFor).join("") || `<span class="pb-none">None yet.</span>`}${["projects", "areas", "pages"].includes(T.key) ? ia(T.key, "only for " + T.label) : ""}`;
@@ -5237,7 +5264,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     if (!$("vFilterRow").hidden) {
       const grp = (title, html) => `<div class="vf-g"><div class="ctl-title">${title}</div><div class="chips">${html}</div></div>`;
       $("vFilterRow").innerHTML =
-        grp("Database", TYPES.filter(T => !T.archive).map(T => vChip("types", T.key, T.label, vF.types.includes(T.key))).join("")) +
+        grp("Kind", TYPES.filter(T => !T.archive).map(T => vChip("types", T.key, T.label, vF.types.includes(T.key))).join("")) +
         grp("Status", STATUSES.map(s => vChip("status", s.v, (s.v === "Done" ? "✓ " : "") + s.v, vF.status.includes(s.v))).join("")) +
         grp("When", V_FOCUS.map(([k, l]) => vChip("focus", k, l, vF.focus.includes(k))).join("")) +
         grp("Tags", allTags().map(t => vChip("tags", t.toLowerCase(), esc(t), vF.tags.includes(t.toLowerCase()))).join("")) +
@@ -6270,7 +6297,7 @@ Don't invent appointments or facts that aren't listed.`);
   dbs.group = false;
   dbs.types = []; dbs.status = []; // the database and status filter chips were removed, so nothing stays filtered
   // [key, label, width, shown by default]
-  const DB_COLS = [["title", "Title", 300, true], ["focus", "When", 240, true], ["links", "Links", 220, true], ["status", "Status", 140, true], ["type", "Database", 140, false], ["tags", "Tags", 180, false], ["layer", "Layer", 130, false], ["color", "Color", 130, false], ["created", "Created", 150, false], ["public", "Show on website", 150, false], ["updated", "Last edited", 150, false]];
+  const DB_COLS = [["title", "Title", 300, true], ["focus", "When", 240, true], ["links", "Links", 220, true], ["status", "Status", 140, true], ["type", "Kind", 140, false], ["tags", "Tags", 180, false], ["layer", "Layer", 130, false], ["color", "Color", 130, false], ["created", "Created", 150, false], ["public", "Show on website", 150, false], ["updated", "Last edited", 150, false]];
   const DB_COL = Object.fromEntries(DB_COLS.map(c => [c[0], c]));
   const dbNormCols = (list) => { const out = (Array.isArray(list) ? list : []).filter(c => c && DB_COL[c.key]).map(c => ({ key: c.key, width: Math.max(80, Number(c.width) || DB_COL[c.key][2]), visible: c.key === "title" ? true : c.visible !== false })).filter((c, i, a) => a.findIndex(x => x.key === c.key) === i); DB_COLS.forEach(([k, , w, v]) => { if (!out.some(c => c.key === k)) out.push({ key: k, width: w, visible: v }); }); return out; };
   const dbShown = () => dbs.cols.filter(c => c.visible);
@@ -6279,7 +6306,7 @@ Don't invent appointments or facts that aren't listed.`);
   let dbQ = "";
   const saveDb = () => store("chevy.database", dbs);
   const layersOf = (e) => (Array.isArray(e && e.layers) ? e.layers : []).map(String).filter(l => LAYERS.includes(l)).sort();
-  const DB_SORTS = [["title", "Title"], ["type", "Database"], ["layer", "Layer"], ["status", "Status"], ["color", "Color"], ["focus", "When"], ["created", "Created date"], ["updated", "Last edited"]];
+  const DB_SORTS = [["title", "Title"], ["type", "Kind"], ["layer", "Layer"], ["status", "Status"], ["color", "Color"], ["focus", "When"], ["created", "Created date"], ["updated", "Last edited"]];
   function dbVal(k, x) {
     const e = x.e;
     return k === "title" ? (e.title || "").toLowerCase() : k === "type" ? TYPES.findIndex(T => T.key === x.type) : k === "status" ? statusIndex(e.status || "Not started")
@@ -6315,7 +6342,7 @@ Don't invent appointments or facts that aren't listed.`);
       ${list.length ? `<div class="table-wrap"><table class="tbl pr-rt"><thead><tr><th>Title</th><th>Color</th><th>Done</th><th>Show on website</th></tr></thead><tbody>${list.map(row).join("")}</tbody></table></div>` : `<div class="empty"><strong>No routines yet</strong>Add one here or in Planner → Routines.</div>`}`;
   }
   let dbLastRows = null;
-  const DB_SORT_CHIPS = [["layer", "Layer"], ["title", "Title"], ["focus", "When"], ["status", "Status"], ["type", "Database"], ["color", "Color"], ["created", "Created"], ["updated", "Last edited"]];
+  const DB_SORT_CHIPS = [["layer", "Layer"], ["title", "Title"], ["focus", "When"], ["status", "Status"], ["type", "Kind"], ["color", "Color"], ["created", "Created"], ["updated", "Last edited"]];
   function renderDbSort() {
     const l = $("dbSortList"); if (!l) return;
     l.innerHTML = DB_SORT_CHIPS.map(([k, lab]) => sortChipHtml(dbs.sorts, k, lab, "data-dbsort")).join("");
@@ -6361,7 +6388,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (x.type === "routine") {
         const r = x.r, done = rtPlans(r).filter(p => p.status === "done");
         if (k === "title") return `<td data-label="Title"><button type="button" class="db-open" data-dbroutine="${esc(r.id)}" title="Open in Planner → Routines"><span class="emo" aria-hidden="true">${esc(rtEmoji(r))}</span><span class="t-main">${esc(r.name || "Untitled routine")}</span></button></td>`;
-        if (k === "type") return `<td data-label="Database"><span class="db-type">🔁 Routines</span></td>`;
+        if (k === "type") return `<td data-label="Kind"><span class="db-type">🔁 Routines</span></td>`;
         if (k === "layer") return `<td data-label="Layer"><span class="layers"><span class="layer${dbs.layer === "7" ? " hot" : ""}">7</span></span></td>`;
         if (k === "created") return `<td data-label="Created" class="num">${r.createdAt ? esc(fmt(r.createdAt.slice(0, 10))) : "—"}</td>`;
         if (k === "updated") return `<td data-label="Last edited" class="num">${x.e.updatedAt ? esc(fmt(x.e.updatedAt.slice(0, 10))) : "—"}</td>`;
@@ -6373,7 +6400,7 @@ Don't invent appointments or facts that aren't listed.`);
       const e = x.e, T = TYPE[x.type], ro = !!e._pub, done = (e.status || "") === "Done";
       if (k === "title") return `<td data-label="Title"><button type="button" class="db-open" data-dbopen="${esc(e.id)}" data-dbtype2="${x.type}" title="Open the note">${isPinned(e) ? `<span class="pinned">${PIN_SVG}</span>` : ""}${done ? '<span class="check" aria-label="Done">✓</span>' : ""}${emo(e, x.type)}<span class="t-main">${esc(e.title || "Untitled")}</span>${done && T.archive ? '<span class="done-badge">Done</span>' : ""}${isSched(e, x.type) ? SCHED_TAG : ""}</button>${subEdHtml(e, x.type)}${subTasksHtml(e, x.type)}</td>`;
       const attrs = `data-dbe="${esc(e.id)}" data-dbt="${x.type}"`;
-      if (k === "type") return `<td data-label="Database"><span class="db-type"><i class="tdot t-${x.type}" aria-hidden="true"></i><span class="db-selwrap"><span class="db-sellabel">${esc(T.label)}${isSched(e, x.type) ? SCHED_TAG : ""}<span class="db-caret" aria-hidden="true">▾</span></span><select data-dbedit="type" ${attrs} aria-label="Database for ${esc(e.title)}"${ro ? " disabled" : ""}>${dbOptions(x.type, isSched(e, x.type))}</select></span></span></td>`;
+      if (k === "type") return `<td data-label="Kind"><span class="db-type"><i class="tdot t-${x.type}" aria-hidden="true"></i><span class="db-selwrap"><span class="db-sellabel">${esc(T.label)}${isSched(e, x.type) ? SCHED_TAG : ""}<span class="db-caret" aria-hidden="true">▾</span></span><select data-dbedit="type" ${attrs} aria-label="Database for ${esc(e.title)}"${ro ? " disabled" : ""}>${dbOptions(x.type, isSched(e, x.type))}</select></span></span></td>`;
       if (k === "status") return `<td data-label="Status"><select class="pill ${statusOf(e.status).cls}" data-dbedit="status" ${attrs} aria-label="Status for ${esc(e.title)}"${ro ? " disabled" : ""}>${STATUSES.map(s => `<option${s.v === (e.status || "Not started") ? " selected" : ""}>${s.v}</option>`).join("")}</select></td>`;
       if (k === "subtitle") return `<td data-label="Subtitle"><input type="text" class="db-inline db-text" data-dbedit="subtitle" ${attrs} value="${esc(e.subtitle || "")}" placeholder="—" aria-label="Subtitle for ${esc(e.title)}"${ro ? " disabled" : ""}>${subTasksHtml(e, x.type)}</td>`;
       if (k === "color") return `<td data-label="Color"><span class="db-type">${colorOf(e) ? `<i class="swatch sw-${colorOf(e)}" aria-hidden="true"></i>` : '<i class="swatch sw-white" aria-hidden="true"></i>'}<select class="db-inline" data-dbedit="color" ${attrs} aria-label="Color for ${esc(e.title)}"${ro ? " disabled" : ""}><option value=""${ownColor(e) ? "" : " selected"}>${areaColorFor(e) ? "From area (" + areaColorFor(e) + ")" : "No color"}</option>${COLORS.map(c => `<option value="${c}"${ownColor(e) === c ? " selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("")}</select></span></td>`;
@@ -6385,7 +6412,7 @@ Don't invent appointments or facts that aren't listed.`);
       if (k === "created") { const cv = e[T.props.find(P => P.kind === "date").field] || e.created || e.createdTime || ""; return `<td data-label="Created" class="num" title="Set automatically">${cv ? esc(fmt(String(cv).slice(0, 10))) : "—"}</td>`; }
       const inner = k === "layer" ? (layersOf(e).length ? `<span class="layers">${layersOf(e).map(l => `<span class="layer${l === dbs.layer ? " hot" : ""}">${l}</span>`).join("")}</span>` : dash)
         : k === "focus" ? (whenText(e) ? `<span class="num">${esc(whenText(e))}</span>` : dash)
-        : (tagsOf(e).length ? K.tags.cell(e) : dash);
+        : K.tags.cell(e, null, TYPE[x.type] || null);
       return `<td data-label="${DB_COL[k][1]}"><button type="button" class="db-cellbtn" data-dbpop="${k}" ${attrs}${ro ? " disabled" : ""} aria-label="Change ${DB_COL[k][1].toLowerCase()} for ${esc(e.title)}">${inner}</button></td>`;
     };
     const tr = (x) => `<tr class="row db-row${(x.e.status || "") === "Done" ? " done" : ""}${x.type === "routine" ? " ec-purple" : ecClass(x.e)}">${dbShown().map(c => cellOf(x, c.key)).join("")}</tr>`;
@@ -6407,7 +6434,7 @@ Don't invent appointments or facts that aren't listed.`);
     const pb = e.target.closest("[data-dbpop]"); if (pb) { dbOpenPop(pb.dataset.dbpop, pb.dataset.dbt, pb.dataset.dbe, pb); return; }
   });
   // ----- Editing a property right in its cell -----
-  const dbEntry = (type, id) => data[type] && data[type].find(x => x.id === id);
+  const dbEntry = (type, id) => { const t = realType(id, type); return data[t] && data[t].find(x => x.id === id); };
   async function dbSave(type, id, patch) {
     const e = dbEntry(type, id); if (!e || e._pub) return;
     try { await saveEntry(type, { ...e, ...patch, updatedAt: new Date().toISOString() }); } catch (err) { notice(err.message); renderAll(); }
@@ -6434,6 +6461,7 @@ Don't invent appointments or facts that aren't listed.`);
     $("dbPop").innerHTML = head + body;
   }
   function dbOpenPop(kind, type, id, el) {
+    type = realType(id, type);
     dbPopFor = { kind, type, id, el }; const m = $("dbPop"); dbRenderPop(); plPlace(m, el);
     if (kind === "focus") $("dbFs").focus(); if (kind === "tags") $("dbTagNew").focus();
   }
@@ -6767,7 +6795,7 @@ Don't invent appointments or facts that aren't listed.`);
   const toCsv = (rows) => "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
   function dlLayersCsv(pick) {
     const cps = cpDefs("_all"), TL = pick ? pick.types : Object.fromEntries(TYPES.filter(T => !T.archive).map(T => [T.key, data[T.key].slice().sort((a, b) => (a.title || "").localeCompare(b.title || ""))])), RL = pick ? (pick.routines || []) : routines;
-    const head = ["Title", "Database", "Status", "Layers", "Color", "Tags", "When", "Links", "Subtitle", "Created", "Last edited", ...cps.map(P => P.label)];
+    const head = ["Title", "Kind", "Status", "Layers", "Color", "Tags", "When", "Links", "Subtitle", "Created", "Last edited", ...cps.map(P => P.label)];
     const rows = [head];
     TYPES.forEach(T => (TL[T.key] || []).forEach(e => rows.push([e.title || "Untitled", T.label, e.status || "", layersOf(e).join(" "), colorOf(e) || "", tagsOf(e), whenText(e) || "", [...new Set(linksOf(e.id).map(y => y.e.title || "Untitled"))], e.subtitle || "", String(e.created || e.createdTime || e.createdAt || "").slice(0, 10), String(e.updatedAt || "").slice(0, 10), ...cps.map(P => K.cprop.show(e, P))])));
     RL.forEach(r => rows.push([r.name || "Untitled routine", "Routines", "", "7", r.color || "purple", [], "", [...new Set(linksOf(r.id).map(y => y.e.title || "Untitled"))], "", String(r.createdAt || "").slice(0, 10), String(r.updatedAt || "").slice(0, 10), ...cps.map(() => "")]));
@@ -6883,7 +6911,7 @@ Don't invent appointments or facts that aren't listed.`);
   $("pgDlPop").addEventListener("change", e => { if (e.target.id === "pgNotes") { pgNotes = e.target.checked; renderPgDl(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pgDlPop").hidden) pgOpen(false); });
   // ---------- 🎞 Slide deck (footer): pick entries and which properties show, then present. Built right on the page: no AI, no tokens. ----------
-  const DK_PROPS = [["type", "Database"], ["subtitle", "Subtitle"], ["status", "Status"], ["when", "When"], ["layer", "Layer"], ["color", "Color"], ["tags", "Tags"], ["links", "Links"], ["created", "Created"], ["updated", "Last edited"], ["tasks", "Tasks (own slides)"], ["notes", "Notes (own slides)"]];
+  const DK_PROPS = [["type", "Kind"], ["subtitle", "Subtitle"], ["status", "Status"], ["when", "When"], ["layer", "Layer"], ["color", "Color"], ["tags", "Tags"], ["links", "Links"], ["created", "Created"], ["updated", "Last edited"], ["tasks", "Tasks (own slides)"], ["notes", "Notes (own slides)"]];
   const dk = Object.assign({ title: "", ids: [], props: ["subtitle", "status", "when", "tags", "tasks", "notes"], q: "" }, recall("chevy.deck") || {});
   dk.q = ""; let dkSlides = [], dkAt = 0, dkTimer = null, dkStart = 0;
   const dkSave = () => store("chevy.deck", { title: dk.title, ids: dk.ids, props: dk.props });
