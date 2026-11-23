@@ -2653,6 +2653,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     { key: "color", kind: "color", label: "Color", field: "color", width: 120 },
     { key: createdField, kind: "date", label: "Created date", field: createdField, width: 150 },
     { key: "status", kind: "status", label: "Status", field: "status", width: 150 },
+    { key: "modified", kind: "modified", label: "Modified date", field: "updatedAt", width: 170 },
     { key: "focus", kind: "daterange", label: "When", start: "focusStart", end: "focusEnd", tStart: "timeStart", tEnd: "timeEnd", width: 260 },
     { key: "cover", kind: "image", label: "Cover", field: "cover", width: 110, hidden: true },
     { key: "public", kind: "check", label: "Show on website", field: "public", width: 150 },
@@ -3458,6 +3459,14 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
       editHtml: (P) => `<div class="link-edit"><label for="ed-addlink">${P.label}</label><div class="lchips" id="ed-links"></div><div class="lk-search"><input id="ed-linkq" type="search" autocomplete="off" spellcheck="false" placeholder="🔍 Search entries to link… (type a few letters)" aria-label="Search entries to link" aria-controls="ed-linkres"><div class="lk-res" id="ed-linkres" role="listbox" hidden></div></div><select id="ed-addlink"></select><div class="newlink" id="ed-newlink" hidden><span class="newlink-k" id="ed-newlink-k"></span><input id="ed-newlink-t" type="text" autocomplete="off" placeholder="Title"><button type="button" class="btn primary" id="ed-newlink-go">Create &amp; link</button><button type="button" class="btn" id="ed-newlink-x">Cancel</button></div></div>`,
       read: (P, out) => { out.links = [...draft.links]; },
     },
+  };
+  // Modified date: set automatically every time an entry is saved (from updatedAt). No AI, no tokens. Read-only.
+  const mdFmt = (v) => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); };
+  K.modified = { ...K.date,
+    search: (e) => e.updatedAt ? fmt(e.updatedAt.slice(0, 10)) : "",
+    cell: (e) => `<span class="num">${e.updatedAt ? esc(mdFmt(e.updatedAt)) : "—"}</span>`,
+    editHtml: (P, e) => { const v = e && e.updatedAt; return `<label>${P.label}</label><div class="ro-date" id="ed-${P.key}" title="Changes by itself every time this entry is saved">${v ? esc(mdFmt(v)) : "Not saved yet"} <span class="ro-note">· set automatically</span></div>`; },
+    read: () => {},
   };
 
   // ---------- Views ----------
@@ -4573,7 +4582,7 @@ tr.row[class*="ec-"] .t-main, .card[class*="ec-"] .t-main, .post[class*="ec-"] .
     const id = "ed-" + P.key, el = $(id);
     if (P.kind === "status" || P.kind === "dbmove") return el ? `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}">${el.innerHTML}</select>` : "";
     if (P.kind === "date") return el ? `<input type="date" class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}" value="${esc(el.value.slice(0, 10))}">` : "";
-    if (P.kind === "color") { const cur = ($("edFields").querySelector('[data-colorpick][aria-pressed="true"]') || {}).dataset?.colorpick || ""; const opts = [...$("edFields").querySelectorAll("[data-colorpick]")].map(b => b.dataset.colorpick); return `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}">${[...new Set(["", ...opts])].map(c => `<option value="${c}"${c === cur ? " selected" : ""}>${c ? c[0].toUpperCase() + c.slice(1) : "None (white / from area)"}</option>`).join("")}</select>`; }
+    if (P.kind === "color") { const cur = ($("edFields").querySelector('[data-colorpick][aria-pressed="true"]') || {}).dataset?.colorpick || ""; const opts = [...$("edFields").querySelectorAll("[data-colorpick]")].map(b => b.dataset.colorpick); return `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}">${[...new Set(["", ...opts])].map(c => `<option value="${c}"${c === cur ? " selected" : ""}>${c ? c[0].toUpperCase() + c.slice(1) : "No color (or from area)"}</option>`).join("")}</select>`; }
     if (P.key === "layers") { const on = [...$("edFields").querySelectorAll('[data-multi="layers"][aria-pressed="true"]')].map(b => b.dataset.val); return `<select class="pl-native" data-plive="${P.key}" aria-label="${esc(P.label)}"><option value="">${on.length ? "No layer" : "Automatic"}</option>${["0","1","2","3","4","5","6","7","8","9"].map(l => `<option value="${l}"${on[0] === l ? " selected" : ""}>Layer ${l}</option>`).join("")}</select>`; }
     return "";
   }
